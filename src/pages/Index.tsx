@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
-import Dashboard from '@/components/Dashboard';
+import Dashboard from '@/components/dashboard';
 import TenderList from '@/components/TenderList';
 import TenderForm from '@/components/TenderForm';
 import BidSubmission from '@/components/BidSubmission';
