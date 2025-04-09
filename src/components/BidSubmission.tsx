@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowUpRight, DollarSign, FileText, Calendar, Upload, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tender } from '@/types/tender';
+import { cn } from '@/lib/utils';
 
-// Mock data for active tenders
 const activeTenders: Tender[] = [
   {
     id: '1',
@@ -57,14 +56,12 @@ const BidSubmission: React.FC = () => {
   const [selectedTenderId, setSelectedTenderId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   
-  // Get selected tender details
   const selectedTender = activeTenders.find(tender => tender.id === selectedTenderId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     
-    // Simulate api call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     toast({
@@ -73,7 +70,6 @@ const BidSubmission: React.FC = () => {
     });
     
     setSubmitting(false);
-    // Reset form (here we just reset the tender selection)
     setSelectedTenderId('');
   };
 
