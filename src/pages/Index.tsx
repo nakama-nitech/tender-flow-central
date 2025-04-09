@@ -1,12 +1,59 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import Sidebar from '@/components/Sidebar';
+import Dashboard from '@/components/Dashboard';
+import TenderList from '@/components/TenderList';
+import TenderForm from '@/components/TenderForm';
+import BidSubmission from '@/components/BidSubmission';
+import EvaluationTable from '@/components/EvaluationTable';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePage, setActivePage] = useState('dashboard');
+  const [isCreatingTender, setIsCreatingTender] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const renderContent = () => {
+    if (activePage === 'tenders') {
+      if (isCreatingTender) {
+        return <TenderForm onCancel={() => setIsCreatingTender(false)} />;
+      }
+      return <TenderList onNewTender={() => setIsCreatingTender(true)} />;
+    }
+    
+    if (activePage === 'dashboard') return <Dashboard />;
+    if (activePage === 'bids') return <BidSubmission />;
+    if (activePage === 'evaluation') return <EvaluationTable />;
+    
+    return <Dashboard />;
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen flex w-full bg-background">
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        toggleSidebar={toggleSidebar} 
+        activePage={activePage}
+        setActivePage={(page) => {
+          setActivePage(page);
+          setIsCreatingTender(false);
+        }}
+      />
+      
+      <main 
+        className={cn(
+          "flex-1 p-6 md:p-8 transition-all duration-300",
+          sidebarOpen ? "md:ml-64" : "md:ml-16"
+        )}
+      >
+        <div className="max-w-7xl mx-auto">
+          {renderContent()}
+        </div>
+      </main>
     </div>
   );
 };
