@@ -73,6 +73,7 @@ const mockBids: Bid[] = [
     vendorEmail: 'proposals@buildright.com',
     amount: 725000,
     proposal: 'Comprehensive renovation plan with eco-friendly materials and energy-efficient solutions.',
+    submittedDate: '2025-04-02T11:30:00Z',
     submittedAt: '2025-04-02T11:30:00Z',
     status: 'shortlisted',
     score: 87
@@ -84,6 +85,7 @@ const mockBids: Bid[] = [
     vendorEmail: 'bids@premium-builders.com',
     amount: 695000,
     proposal: 'Full renovation service with 2-year warranty on all work performed.',
+    submittedDate: '2025-04-05T14:45:00Z',
     submittedAt: '2025-04-05T14:45:00Z',
     status: 'shortlisted',
     score: 82
@@ -95,6 +97,7 @@ const mockBids: Bid[] = [
     vendorEmail: 'contracts@urbandg.com',
     amount: 780000,
     proposal: 'Premium quality materials with extended warranties and post-completion support.',
+    submittedDate: '2025-04-08T09:20:00Z',
     submittedAt: '2025-04-08T09:20:00Z',
     status: 'reviewed',
     score: 76
@@ -106,6 +109,7 @@ const mockBids: Bid[] = [
     vendorEmail: 'bids@ecoconstruct.com',
     amount: 749000,
     proposal: 'Sustainable renovation with minimal environmental impact and LEED certification assistance.',
+    submittedDate: '2025-04-10T16:35:00Z',
     submittedAt: '2025-04-10T16:35:00Z',
     status: 'pending',
     score: undefined
@@ -117,6 +121,7 @@ const mockBids: Bid[] = [
     vendorEmail: 'proposals@fasttrack.com',
     amount: 675000,
     proposal: 'Expedited timeline with experienced crew and project management.',
+    submittedDate: '2025-04-12T10:15:00Z',
     submittedAt: '2025-04-12T10:15:00Z',
     status: 'rejected',
     score: 65
@@ -144,6 +149,10 @@ const getBidStatusBadge = (status: Bid['status']) => {
       return <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>;
     case 'awarded':
       return <Badge variant="outline" className="bg-purple-100 text-purple-800">Awarded</Badge>;
+    case 'qualified':
+      return <Badge variant="outline" className="bg-green-100 text-green-800">Qualified</Badge>;
+    case 'disqualified':
+      return <Badge variant="outline" className="bg-red-100 text-red-800">Disqualified</Badge>;
     default:
       return <Badge variant="outline">Unknown</Badge>;
   }
@@ -160,7 +169,7 @@ const EvaluationTable: React.FC = () => {
     setBids(prevBids => 
       prevBids.map(bid => 
         bid.id === bidId 
-          ? { ...bid, score: scoreValue, status: 'reviewed' } 
+          ? { ...bid, score: scoreValue, status: 'reviewed' as Bid['status'] } 
           : bid
       )
     );
@@ -192,8 +201,8 @@ const EvaluationTable: React.FC = () => {
     setBids(prevBids => 
       prevBids.map(bid => 
         bid.id === bidId 
-          ? { ...bid, status: 'awarded' } 
-          : { ...bid, status: bid.status === 'awarded' ? 'shortlisted' : bid.status }
+          ? { ...bid, status: 'awarded' as Bid['status'] } 
+          : { ...bid, status: bid.status === 'awarded' ? 'shortlisted' as Bid['status'] : bid.status }
       )
     );
     
@@ -252,7 +261,7 @@ const EvaluationTable: React.FC = () => {
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="table-row-alternating">
+              <TableBody>
                 {bids.map(bid => (
                   <TableRow key={bid.id}>
                     <TableCell>

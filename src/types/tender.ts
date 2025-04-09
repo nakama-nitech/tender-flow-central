@@ -1,3 +1,4 @@
+
 export type TenderCategory = 'construction' | 'services' | 'goods' | 'consulting' | 'other';
 export type TenderStatus = 'draft' | 'published' | 'under_evaluation' | 'awarded' | 'closed';
 
@@ -15,6 +16,14 @@ export interface TenderQuestion {
   date: string;
 }
 
+// Add evaluation criteria type
+export interface EvaluationCriteria {
+  id: string;
+  name: string;
+  weight: number;
+  description: string;
+}
+
 // Extend the Tender interface with optional documents and questions
 export interface Tender {
   id: string;
@@ -29,14 +38,17 @@ export interface Tender {
   questions?: TenderQuestion[];
 }
 
-// Add bid-related types
+// Add bid-related types with extended status options
 export interface Bid {
   id: string;
   tenderId: string;
   vendorName: string;
+  vendorEmail?: string; // Added vendorEmail as optional
   amount: number;
+  proposal?: string;
+  submittedAt?: string;
   submittedDate: string;
-  status: 'pending' | 'qualified' | 'disqualified';
+  status: 'pending' | 'qualified' | 'disqualified' | 'shortlisted' | 'reviewed' | 'rejected' | 'awarded';
   score?: number;
   documents?: TenderDocument[];
   notes?: string;
