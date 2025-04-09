@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/dashboard';
@@ -92,11 +91,11 @@ const Index = () => {
       
       <main 
         className={cn(
-          "flex-1 p-4 transition-all duration-300",
-          sidebarOpen ? "md:ml-64" : "md:ml-16"
+          "flex-1 transition-all duration-300",
+          sidebarOpen ? "md:ml-0" : "md:ml-0"
         )}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           {renderContent()}
         </div>
       </main>
