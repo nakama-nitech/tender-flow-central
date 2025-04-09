@@ -116,9 +116,11 @@ const getCategoryBadge = (category: TenderCategory) => {
 
 interface TenderListProps {
   onNewTender: () => void;
+  onViewDetails: (tenderId: string) => void;
+  onManageBids: (tenderId: string) => void;
 }
 
-const TenderList: React.FC<TenderListProps> = ({ onNewTender }) => {
+const TenderList: React.FC<TenderListProps> = ({ onNewTender, onViewDetails, onManageBids }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<TenderCategory[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<TenderStatus[]>([]);
@@ -170,7 +172,7 @@ const TenderList: React.FC<TenderListProps> = ({ onNewTender }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Tenders</h2>
@@ -281,7 +283,7 @@ const TenderList: React.FC<TenderListProps> = ({ onNewTender }) => {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredTenders.map((tender) => (
-          <Card key={tender.id}>
+          <Card key={tender.id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle>{tender.title}</CardTitle>
@@ -312,8 +314,20 @@ const TenderList: React.FC<TenderListProps> = ({ onNewTender }) => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between pt-2">
-              <Button variant="outline" size="sm">View Details</Button>
-              <Button variant="outline" size="sm">Manage Bids</Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onViewDetails(tender.id)}
+              >
+                View Details
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onManageBids(tender.id)}
+              >
+                Manage Bids
+              </Button>
             </CardFooter>
           </Card>
         ))}
