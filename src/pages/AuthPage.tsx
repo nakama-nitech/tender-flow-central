@@ -15,6 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
+type CompanyType = Database['public']['Tables']['company_types']['Row'];
+type Category = Database['public']['Tables']['categories']['Row'];
+type Location = Database['public']['Tables']['locations']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Supplier = Database['public']['Tables']['suppliers']['Row'];
+
 const AuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
@@ -45,16 +51,19 @@ const AuthPage: React.FC = () => {
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [companyTypes, setCompanyTypes] = useState<{id: number, name: string}[]>([]);
-  const [categories, setCategories] = useState<{id: number, name: string}[]>([]);
-  const [locations, setLocations] = useState<{id: number, name: string}[]>([]);
+  const [companyTypes, setCompanyTypes] = useState<CompanyType[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   
   useEffect(() => {
     const fetchReferenceData = async () => {
       // Fetch company types
       const { data: companyTypesData, error: companyTypesError } = await supabase
         .from('company_types')
-        .select('id, name');
+        .select('id, name') as { 
+          data: CompanyType[] | null; 
+          error: any 
+        };
         
       if (companyTypesError) {
         console.error('Error fetching company types:', companyTypesError);
@@ -65,7 +74,10 @@ const AuthPage: React.FC = () => {
       // Fetch categories
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
-        .select('id, name');
+        .select('id, name') as { 
+          data: Category[] | null; 
+          error: any 
+        };
         
       if (categoriesError) {
         console.error('Error fetching categories:', categoriesError);
@@ -76,7 +88,10 @@ const AuthPage: React.FC = () => {
       // Fetch locations
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
-        .select('id, name');
+        .select('id, name') as { 
+          data: Location[] | null; 
+          error: any 
+        };
         
       if (locationsError) {
         console.error('Error fetching locations:', locationsError);
@@ -105,7 +120,10 @@ const AuthPage: React.FC = () => {
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
-        .single();
+        .single() as { 
+          data: Profile | null; 
+          error: any 
+        };
       
       toast({
         title: "Logged in successfully",
@@ -188,7 +206,7 @@ const AuthPage: React.FC = () => {
           kra_pin: registerForm.kraPin,
           physical_address: registerForm.physicalAddress,
           website_url: registerForm.websiteUrl,
-        });
+        } as Supplier);
         
       if (supplierError) throw supplierError;
       
@@ -201,7 +219,7 @@ const AuthPage: React.FC = () => {
         
         const { error: categoriesError } = await supabase
           .from('supplier_categories')
-          .insert(supplierCategories);
+          .insert(supplierCategories as any);
           
         if (categoriesError) throw categoriesError;
       }
@@ -215,7 +233,7 @@ const AuthPage: React.FC = () => {
         
         const { error: locationsError } = await supabase
           .from('supplier_locations')
-          .insert(supplierLocations);
+          .insert(supplierLocations as any);
           
         if (locationsError) throw locationsError;
       }

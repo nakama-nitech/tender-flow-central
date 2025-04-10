@@ -46,7 +46,10 @@ const SupplierLayout = () => {
         .from('profiles')
         .select('role')
         .eq('id', data.session.user.id)
-        .single();
+        .single() as { 
+          data: Database['public']['Tables']['profiles']['Row'] | null; 
+          error: any 
+        };
         
       if (profileError || !profileData || profileData.role !== 'supplier') {
         navigate('/auth');
