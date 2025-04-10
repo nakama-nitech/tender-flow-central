@@ -14,6 +14,7 @@ import TenderDetails from "./pages/supplier/TenderDetails";
 import BidPreparation from "./pages/supplier/BidPreparation";
 import BidStatus from "./pages/supplier/BidStatus";
 import BidsList from "./pages/supplier/BidsList";
+import SupplierLayout from "./layouts/SupplierLayout";
 
 const queryClient = new QueryClient();
 
@@ -32,12 +33,14 @@ const App = () => (
           <Route path="/admin" element={<Index />} />
           
           {/* Supplier Routes */}
-          <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
-          <Route path="/supplier/tenders" element={<TenderDiscovery />} />
-          <Route path="/supplier/tender-details/:tenderId" element={<TenderDetails />} />
-          <Route path="/supplier/prepare-bid/:tenderId" element={<BidPreparation />} />
-          <Route path="/supplier/bid-status/:bidId" element={<BidStatus />} />
-          <Route path="/supplier/my-bids" element={<BidsList />} />
+          <Route path="/supplier" element={<SupplierLayout />}>
+            <Route path="dashboard" element={<SupplierDashboard />} />
+            <Route path="tenders" element={<TenderDiscovery />} />
+            <Route path="tender-details/:tenderId" element={<TenderDetails />} />
+            <Route path="prepare-bid/:tenderId" element={<BidPreparation />} />
+            <Route path="bid-status/:bidId" element={<BidStatus />} />
+            <Route path="my-bids" element={<BidsList />} />
+          </Route>
           
           {/* Redirects */}
           <Route path="/admin/*" element={<Navigate to="/admin" />} />

@@ -92,11 +92,11 @@ const Index = () => {
       
       <main 
         className={cn(
-          "flex-1 p-6 transition-all duration-300",
+          "flex-1 p-6 md:p-8 transition-all duration-300 overflow-auto",
           sidebarOpen ? "md:ml-0" : "md:ml-0"
         )}
       >
-        <div className="w-full mx-auto max-w-7xl">
+        <div className="w-full mx-auto max-w-7xl bg-background rounded-lg shadow-sm border border-border p-6">
           {renderContent()}
         </div>
       </main>
