@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
 const SupplierLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
@@ -47,7 +49,7 @@ const SupplierLayout = () => {
         .select('role')
         .eq('id', data.session.user.id)
         .single() as { 
-          data: Database['public']['Tables']['profiles']['Row'] | null; 
+          data: Profile | null; 
           error: any 
         };
         

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Globe, Phone, Building, Briefcase, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Globe, Phone, Building, Briefcase, ShieldCheck, Eye, EyeOff, Flag, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -19,6 +20,11 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Location = Database['public']['Tables']['locations']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Supplier = Database['public']['Tables']['suppliers']['Row'];
+
+// County/Province data by country
+interface CountryLocations {
+  [key: string]: string[];
+}
 
 const AuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -53,6 +59,40 @@ const AuthPage: React.FC = () => {
   const [companyTypes, setCompanyTypes] = useState<CompanyType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [availableLocations, setAvailableLocations] = useState<string[]>([]);
+  
+  // County/Province data by country
+  const countryLocations: CountryLocations = {
+    'Kenya': [
+      'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Nyeri', 'Kakamega', 'Kisii', 
+      'Garissa', 'Embu', 'Machakos', 'Meru', 'Thika', 'Kitale', 'Bungoma', 'Malindi'
+    ],
+    'Uganda': [
+      'Kampala', 'Gulu', 'Lira', 'Mbarara', 'Jinja', 'Bwizibwera', 'Mbale', 'Mukono',
+      'Kasese', 'Masaka', 'Entebbe', 'Arua', 'Fort Portal', 'Kabale', 'Hoima', 'Mityana'
+    ],
+    'Tanzania': [
+      'Dar es Salaam', 'Mwanza', 'Arusha', 'Dodoma', 'Mbeya', 'Morogoro', 'Tanga', 'Kigoma',
+      'Zanzibar', 'Moshi', 'Tabora', 'Iringa', 'Sumbawanga', 'Shinyanga', 'Musoma', 'Bukoba'
+    ],
+    'Rwanda': [
+      'Kigali', 'Butare', 'Gitarama', 'Ruhengeri', 'Gisenyi', 'Byumba', 'Cyangugu', 'Kibuye',
+      'Kibungo', 'Nyanza', 'Ruhango', 'Karongi', 'Musanze', 'Muhanga', 'Huye', 'Nyagatare'
+    ],
+    'Ethiopia': [
+      'Addis Ababa', 'Dire Dawa', 'Mek\'ele', 'Gondar', 'Adama', 'Hawassa', 'Bahir Dar', 'Jimma',
+      'Dessie', 'Jijiga', 'Shashamane', 'Bishoftu', 'Sodo', 'Arba Minch', 'Hosaena', 'Harar'
+    ]
+  };
+  
+  useEffect(() => {
+    // Set available locations based on selected country
+    if (registerForm.country) {
+      setAvailableLocations(countryLocations[registerForm.country] || []);
+    }
+  }, [registerForm.country]);
   
   useEffect(() => {
     const fetchReferenceData = async () => {
@@ -327,15 +367,28 @@ const AuthPage: React.FC = () => {
                           Forgot password?
                         </a>
                       </div>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                        required
-                        className="border-primary/20 focus:border-primary"
-                      />
+                      <div className="relative">
+                        <Input 
+                          id="password" 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={loginForm.password}
+                          onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                          required
+                          className="border-primary/20 focus:border-primary pr-10"
+                        />
+                        <button 
+                          type="button"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </CardContent>
                   
@@ -395,6 +448,58 @@ const AuthPage: React.FC = () => {
                       </div>
                       
                       <div className="space-y-2">
+                        <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <Input 
+                            id="password" 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            value={registerForm.password}
+                            onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                            required
+                            className="border-primary/20 pr-10"
+                          />
+                          <button 
+                            type="button"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <Input 
+                            id="confirmPassword" 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            value={registerForm.confirmPassword}
+                            onChange={(e) => setRegisterForm({...registerForm, confirmPassword: e.target.value})}
+                            required
+                            className="border-primary/20 pr-10"
+                          />
+                          <button 
+                            type="button"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
                         <Label htmlFor="companyName">Company Name <span className="text-red-500">*</span></Label>
                         <Input 
                           id="companyName"
@@ -422,7 +527,7 @@ const AuthPage: React.FC = () => {
                         <Label htmlFor="country">Country <span className="text-red-500">*</span></Label>
                         <Select 
                           value={registerForm.country}
-                          onValueChange={(value) => setRegisterForm({...registerForm, country: value})}
+                          onValueChange={(value) => setRegisterForm({...registerForm, country: value, supplyLocations: []})}
                           required
                         >
                           <SelectTrigger className="border-primary/20">
@@ -536,25 +641,40 @@ const AuthPage: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="supplyLocations">Supply Locations</Label>
-                      <Select
-                        value={registerForm.supplyLocations.join(',')}
-                        onValueChange={(value) => {
-                          const selectedLocations = value ? value.split(',') : [];
-                          setRegisterForm({...registerForm, supplyLocations: selectedLocations});
-                        }}
-                      >
-                        <SelectTrigger className="border-primary/20">
-                          <SelectValue placeholder="Select supply locations" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {locations.map(location => (
-                            <SelectItem key={location.id} value={location.id.toString()}>
-                              {location.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="supplyLocations" className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-2 text-primary" />
+                        Supply Locations in {registerForm.country}
+                      </Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border rounded-md border-primary/20 max-h-[200px] overflow-y-auto">
+                        {availableLocations.map((location, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`location-${index}`}
+                              checked={registerForm.supplyLocations.includes(location)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setRegisterForm({
+                                    ...registerForm,
+                                    supplyLocations: [...registerForm.supplyLocations, location]
+                                  });
+                                } else {
+                                  setRegisterForm({
+                                    ...registerForm,
+                                    supplyLocations: registerForm.supplyLocations.filter(loc => loc !== location)
+                                  });
+                                }
+                              }}
+                              className="border-primary/40 data-[state=checked]:bg-primary"
+                            />
+                            <label
+                              htmlFor={`location-${index}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {location}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     
                     <div className="space-y-2">
