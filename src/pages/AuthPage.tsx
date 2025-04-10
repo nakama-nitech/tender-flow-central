@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Globe, Phone } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Globe, Phone, Building, Briefcase, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -259,21 +258,42 @@ const AuthPage: React.FC = () => {
     }
   };
   
+  const defaultCompanyTypes = [
+    { id: 1, name: 'Sole Proprietor' },
+    { id: 2, name: 'Limited Company' },
+    { id: 3, name: 'Partnership' }
+  ];
+  
+  const defaultCategories = [
+    { id: 1, name: 'Construction & Building' },
+    { id: 2, name: 'Medical Supplies' },
+    { id: 3, name: 'IT & Technology' },
+    { id: 4, name: 'Office Supplies' },
+    { id: 5, name: 'Food & Catering' },
+    { id: 6, name: 'Transportation' },
+    { id: 7, name: 'Security Services' },
+    { id: 8, name: 'Cleaning Services' },
+    { id: 9, name: 'Consultancy Services' }
+  ];
+  
+  const displayCompanyTypes = companyTypes.length > 0 ? companyTypes : defaultCompanyTypes;
+  const displayCategories = categories.length > 0 ? categories : defaultCategories;
+  
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
-      <header className="py-4 px-6 md:px-10 flex justify-between items-center border-b bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-indigo-100">
+      <header className="py-4 px-6 md:px-10 flex justify-between items-center border-b bg-white shadow-sm">
         <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg">
           <ArrowLeft className="h-4 w-4" />
           Back to Home
         </Link>
       </header>
       
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-6 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center bg-no-repeat">
         <div className="w-full max-w-3xl">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="text-center">
+          <Card className="border-none shadow-xl backdrop-blur-sm bg-white/95">
+            <CardHeader className="text-center bg-gradient-to-r from-primary/80 to-indigo-600/80 text-white rounded-t-lg">
               <CardTitle className="text-2xl">Welcome to TenderFlow</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-white/90">
                 Your platform for discovering and bidding on tenders
               </CardDescription>
             </CardHeader>
@@ -296,6 +316,7 @@ const AuthPage: React.FC = () => {
                         value={loginForm.email}
                         onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
                         required
+                        className="border-primary/20 focus:border-primary"
                       />
                     </div>
                     
@@ -313,12 +334,13 @@ const AuthPage: React.FC = () => {
                         value={loginForm.password}
                         onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
                         required
+                        className="border-primary/20 focus:border-primary"
                       />
                     </div>
                   </CardContent>
                   
                   <CardFooter className="flex flex-col">
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
                           <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
@@ -333,7 +355,10 @@ const AuthPage: React.FC = () => {
               <TabsContent value="register">
                 <form onSubmit={handleRegisterSubmit}>
                   <CardContent className="space-y-6">
-                    <div className="text-lg font-medium">Company Details</div>
+                    <div className="text-lg font-medium flex items-center">
+                      <Building className="h-5 w-5 mr-2 text-primary" />
+                      <span>Company Details</span>
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -343,11 +368,11 @@ const AuthPage: React.FC = () => {
                           onValueChange={(value) => setRegisterForm({...registerForm, companyType: value})}
                           required
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="border-primary/20">
                             <SelectValue placeholder="Select company type" />
                           </SelectTrigger>
                           <SelectContent>
-                            {companyTypes.map(type => (
+                            {displayCompanyTypes.map(type => (
                               <SelectItem key={type.id} value={type.id.toString()}>
                                 {type.name}
                               </SelectItem>
@@ -365,6 +390,7 @@ const AuthPage: React.FC = () => {
                           value={registerForm.email}
                           onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
                           required
+                          className="border-primary/20"
                         />
                       </div>
                       
@@ -376,6 +402,7 @@ const AuthPage: React.FC = () => {
                           value={registerForm.companyName}
                           onChange={(e) => setRegisterForm({...registerForm, companyName: e.target.value})}
                           required
+                          className="border-primary/20"
                         />
                       </div>
                       
@@ -387,6 +414,7 @@ const AuthPage: React.FC = () => {
                           value={registerForm.location}
                           onChange={(e) => setRegisterForm({...registerForm, location: e.target.value})}
                           required
+                          className="border-primary/20"
                         />
                       </div>
                       
@@ -397,7 +425,7 @@ const AuthPage: React.FC = () => {
                           onValueChange={(value) => setRegisterForm({...registerForm, country: value})}
                           required
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="border-primary/20">
                             <SelectValue placeholder="Select country" />
                           </SelectTrigger>
                           <SelectContent>
@@ -418,6 +446,7 @@ const AuthPage: React.FC = () => {
                           value={registerForm.contactName}
                           onChange={(e) => setRegisterForm({...registerForm, contactName: e.target.value})}
                           required
+                          className="border-primary/20"
                         />
                       </div>
                       
@@ -425,12 +454,12 @@ const AuthPage: React.FC = () => {
                         <Label htmlFor="phoneNumber">Phone Number <span className="text-red-500">*</span></Label>
                         <div className="flex">
                           <div className="flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <Phone className="h-4 w-4 text-primary" />
                             <span className="ml-2 text-sm text-muted-foreground">+254</span>
                           </div>
                           <Input 
                             id="phoneNumber"
-                            className="rounded-l-none"
+                            className="rounded-l-none border-primary/20"
                             placeholder="7XX XXX XXX"
                             value={registerForm.phoneNumber}
                             onChange={(e) => setRegisterForm({...registerForm, phoneNumber: e.target.value})}
@@ -447,6 +476,7 @@ const AuthPage: React.FC = () => {
                           value={registerForm.kraPin}
                           onChange={(e) => setRegisterForm({...registerForm, kraPin: e.target.value})}
                           required
+                          className="border-primary/20"
                         />
                       </div>
                     </div>
@@ -459,6 +489,7 @@ const AuthPage: React.FC = () => {
                           placeholder="P.O. Box address"
                           value={registerForm.physicalAddress}
                           onChange={(e) => setRegisterForm({...registerForm, physicalAddress: e.target.value})}
+                          className="border-primary/20"
                         />
                       </div>
                       
@@ -466,11 +497,11 @@ const AuthPage: React.FC = () => {
                         <Label htmlFor="websiteUrl">Website or Social Media URL</Label>
                         <div className="flex">
                           <div className="flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md">
-                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <Globe className="h-4 w-4 text-primary" />
                           </div>
                           <Input 
                             id="websiteUrl"
-                            className="rounded-l-none"
+                            className="rounded-l-none border-primary/20"
                             placeholder="http://www.example.com"
                             value={registerForm.websiteUrl}
                             onChange={(e) => setRegisterForm({...registerForm, websiteUrl: e.target.value})}
@@ -480,7 +511,10 @@ const AuthPage: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="categoriesOfInterest">Categories of Interest <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="categoriesOfInterest" className="flex items-center">
+                        <Briefcase className="h-4 w-4 mr-2 text-primary" />
+                        Categories of Interest <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={registerForm.categoriesOfInterest.join(',')}
                         onValueChange={(value) => {
@@ -488,11 +522,11 @@ const AuthPage: React.FC = () => {
                           setRegisterForm({...registerForm, categoriesOfInterest: selectedCategories});
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-primary/20">
                           <SelectValue placeholder="Select categories of interest" />
                         </SelectTrigger>
                         <SelectContent>
-                          {categories.map(category => (
+                          {displayCategories.map(category => (
                             <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
                             </SelectItem>
@@ -510,7 +544,7 @@ const AuthPage: React.FC = () => {
                           setRegisterForm({...registerForm, supplyLocations: selectedLocations});
                         }}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="border-primary/20">
                           <SelectValue placeholder="Select supply locations" />
                         </SelectTrigger>
                         <SelectContent>
@@ -531,17 +565,19 @@ const AuthPage: React.FC = () => {
                           onCheckedChange={(checked) => 
                             setRegisterForm({...registerForm, agreeToTerms: checked as boolean})
                           }
+                          className="border-primary/40 data-[state=checked]:bg-primary"
                         />
                         <label
                           htmlFor="terms"
-                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
                         >
+                          <ShieldCheck className="h-3 w-3 mr-1 text-primary" />
                           I agree to the{" "}
-                          <a href="#" className="text-primary hover:underline">
+                          <a href="#" className="text-primary hover:underline mx-1">
                             Terms of Service
                           </a>{" "}
                           and{" "}
-                          <a href="#" className="text-primary hover:underline">
+                          <a href="#" className="text-primary hover:underline mx-1">
                             Privacy Policy
                           </a>
                           <span className="text-red-500"> *</span>
@@ -566,7 +602,7 @@ const AuthPage: React.FC = () => {
                           Sign In
                         </Button>
                       </div>
-                      <Button type="submit" disabled={isSubmitting}>
+                      <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">
                         {isSubmitting ? (
                           <>
                             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>

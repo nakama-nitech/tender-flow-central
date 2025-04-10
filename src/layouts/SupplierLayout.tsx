@@ -86,14 +86,14 @@ const SupplierLayout = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
       <SupplierSidebar 
         isOpen={sidebarOpen} 
         toggleSidebar={toggleSidebar} 
@@ -107,7 +107,7 @@ const SupplierLayout = () => {
           sidebarOpen ? "md:ml-0" : "md:ml-0"
         )}
       >
-        <div className="w-full mx-auto max-w-7xl bg-background rounded-lg shadow-sm border border-border p-6">
+        <div className="w-full mx-auto max-w-7xl bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-white/50 p-6">
           <Outlet />
         </div>
       </main>
