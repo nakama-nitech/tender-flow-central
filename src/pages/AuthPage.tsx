@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Globe, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 const AuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -99,7 +101,7 @@ const AuthPage: React.FC = () => {
       if (error) throw error;
       
       // Check user role to decide where to redirect
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)

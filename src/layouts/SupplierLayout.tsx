@@ -5,6 +5,7 @@ import SupplierSidebar from '@/components/SupplierSidebar';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
 
 const SupplierLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -47,7 +48,7 @@ const SupplierLayout = () => {
         .eq('id', data.session.user.id)
         .single();
         
-      if (profileError || (profileData && profileData.role !== 'supplier')) {
+      if (profileError || !profileData || profileData.role !== 'supplier') {
         navigate('/auth');
         toast({
           title: "Access denied",
