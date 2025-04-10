@@ -47,7 +47,7 @@ const SupplierLayout = () => {
         .eq('id', data.session.user.id)
         .single();
         
-      if (profileError || profileData?.role !== 'supplier') {
+      if (profileError || (profileData && profileData.role !== 'supplier')) {
         navigate('/auth');
         toast({
           title: "Access denied",

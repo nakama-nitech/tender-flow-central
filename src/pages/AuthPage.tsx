@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -112,7 +111,7 @@ const AuthPage: React.FC = () => {
       });
       
       // Redirect based on role
-      if (profileData?.role === 'admin') {
+      if (profileData && profileData.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/supplier/dashboard');

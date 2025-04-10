@@ -9,7 +9,216 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_types: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      supplier_categories: {
+        Row: {
+          category_id: number
+          supplier_id: string
+        }
+        Insert: {
+          category_id: number
+          supplier_id: string
+        }
+        Update: {
+          category_id?: number
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_categories_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_locations: {
+        Row: {
+          location_id: number
+          supplier_id: string
+        }
+        Insert: {
+          location_id: number
+          supplier_id: string
+        }
+        Update: {
+          location_id?: number
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_locations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          company_name: string
+          company_type_id: number | null
+          country: string
+          created_at: string
+          id: string
+          kra_pin: string | null
+          location: string
+          phone_number: string
+          physical_address: string | null
+          updated_at: string
+          verified: boolean
+          website_url: string | null
+        }
+        Insert: {
+          company_name: string
+          company_type_id?: number | null
+          country: string
+          created_at?: string
+          id: string
+          kra_pin?: string | null
+          location: string
+          phone_number: string
+          physical_address?: string | null
+          updated_at?: string
+          verified?: boolean
+          website_url?: string | null
+        }
+        Update: {
+          company_name?: string
+          company_type_id?: number | null
+          country?: string
+          created_at?: string
+          id?: string
+          kra_pin?: string | null
+          location?: string
+          phone_number?: string
+          physical_address?: string | null
+          updated_at?: string
+          verified?: boolean
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_type_id_fkey"
+            columns: ["company_type_id"]
+            isOneToOne: false
+            referencedRelation: "company_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +227,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "supplier"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +342,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "supplier"],
+    },
   },
 } as const
