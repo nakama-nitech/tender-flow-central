@@ -62,6 +62,7 @@ const AuthPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
+  const [registerFormErrors, setRegisterFormErrors] = useState<{[key: string]: string}>({});
   
   // County/Province data by country
   const countryLocations: CountryLocations = {
@@ -186,22 +187,34 @@ const AuthPage: React.FC = () => {
     }
   };
   
+  const validateRegisterForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!registerForm.email) errors.email = "Email is required";
+    if (!registerForm.password) errors.password = "Password is required";
+    if (registerForm.password.length < 6) errors.password = "Password must be at least 6 characters";
+    if (!registerForm.confirmPassword) errors.confirmPassword = "Please confirm your password";
+    if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = "Passwords don't match";
+    if (!registerForm.companyType) errors.companyType = "Company type is required";
+    if (!registerForm.companyName) errors.companyName = "Company name is required";
+    if (!registerForm.location) errors.location = "Location is required";
+    if (!registerForm.contactName) errors.contactName = "Contact name is required";
+    if (!registerForm.phoneNumber) errors.phoneNumber = "Phone number is required";
+    if (!registerForm.kraPin) errors.kraPin = "Tax PIN is required";
+    if (registerForm.categoriesOfInterest.length === 0) errors.categoriesOfInterest = "Please select at least one category";
+    if (!registerForm.agreeToTerms) errors.agreeToTerms = "You must agree to the terms and conditions";
+    
+    setRegisterFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (registerForm.password !== registerForm.confirmPassword) {
+    if (!validateRegisterForm()) {
       toast({
-        title: "Passwords don't match",
-        description: "Please ensure both passwords match",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!registerForm.agreeToTerms) {
-      toast({
-        title: "Terms and Conditions",
-        description: "You must agree to the Terms of Service and Privacy Policy",
+        title: "Form validation failed",
+        description: "Please check the form for errors and try again",
         variant: "destructive",
       });
       return;
@@ -265,9 +278,9 @@ const AuthPage: React.FC = () => {
       
       // 4. Insert supplier locations
       if (registerForm.supplyLocations.length > 0) {
-        const supplierLocations = registerForm.supplyLocations.map(locationId => ({
+        const supplierLocations = registerForm.supplyLocations.map(location => ({
           supplier_id: authData.user.id,
-          location_id: parseInt(locationId)
+          location_id: parseInt(location)
         }));
         
         const { error: locationsError } = await supabase
@@ -289,6 +302,7 @@ const AuthPage: React.FC = () => {
       navigate({ search: searchParams.toString() });
       
     } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "There was an error creating your account",
@@ -318,6 +332,13 @@ const AuthPage: React.FC = () => {
   
   const displayCompanyTypes = companyTypes.length > 0 ? companyTypes : defaultCompanyTypes;
   const displayCategories = categories.length > 0 ? categories : defaultCategories;
+  
+  // Helper function to display field errors
+  const getFieldError = (field: string) => {
+    return registerFormErrors[field] ? (
+      <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
+    ) : null;
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-indigo-100">
@@ -418,10 +439,13 @@ const AuthPage: React.FC = () => {
                         <Label htmlFor="companyType">Company Type <span className="text-red-500">*</span></Label>
                         <Select 
                           value={registerForm.companyType}
-                          onValueChange={(value) => setRegisterForm({...registerForm, companyType: value})}
+                          onValueChange={(value) => {
+                            setRegisterForm({...registerForm, companyType: value});
+                            setRegisterFormErrors({...registerFormErrors, companyType: ''});
+                          }}
                           required
                         >
-                          <SelectTrigger className="border-primary/20">
+                          <SelectTrigger className={`border-primary/20 ${registerFormErrors.companyType ? 'border-red-500' : ''}`}>
                             <SelectValue placeholder="Select company type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -432,6 +456,7 @@ const AuthPage: React.FC = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                        {getFieldError('companyType')}
                       </div>
                       
                       <div className="space-y-2">
@@ -441,10 +466,14 @@ const AuthPage: React.FC = () => {
                           type="email" 
                           placeholder="Enter email address" 
                           value={registerForm.email}
-                          onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                          onChange={(e) => {
+                            setRegisterForm({...registerForm, email: e.target.value});
+                            setRegisterFormErrors({...registerFormErrors, email: ''});
+                          }}
                           required
-                          className="border-primary/20"
+                          className={`border-primary/20 ${registerFormErrors.email ? 'border-red-500' : ''}`}
                         />
+                        {getFieldError('email')}
                       </div>
                       
                       <div className="space-y-2">
@@ -455,9 +484,12 @@ const AuthPage: React.FC = () => {
                             type={showPassword ? "text" : "password"} 
                             placeholder="••••••••" 
                             value={registerForm.password}
-                            onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                            onChange={(e) => {
+                              setRegisterForm({...registerForm, password: e.target.value});
+                              setRegisterFormErrors({...registerFormErrors, password: ''});
+                            }}
                             required
-                            className="border-primary/20 pr-10"
+                            className={`border-primary/20 pr-10 ${registerFormErrors.password ? 'border-red-500' : ''}`}
                           />
                           <button 
                             type="button"
@@ -471,6 +503,8 @@ const AuthPage: React.FC = () => {
                             )}
                           </button>
                         </div>
+                        {getFieldError('password')}
+                        <p className="text-xs text-muted-foreground">Password must be at least 6 characters long</p>
                       </div>
                       
                       <div className="space-y-2">
@@ -481,9 +515,12 @@ const AuthPage: React.FC = () => {
                             type={showConfirmPassword ? "text" : "password"} 
                             placeholder="••••••••" 
                             value={registerForm.confirmPassword}
-                            onChange={(e) => setRegisterForm({...registerForm, confirmPassword: e.target.value})}
+                            onChange={(e) => {
+                              setRegisterForm({...registerForm, confirmPassword: e.target.value});
+                              setRegisterFormErrors({...registerFormErrors, confirmPassword: ''});
+                            }}
                             required
-                            className="border-primary/20 pr-10"
+                            className={`border-primary/20 pr-10 ${registerFormErrors.confirmPassword ? 'border-red-500' : ''}`}
                           />
                           <button 
                             type="button"
@@ -497,6 +534,7 @@ const AuthPage: React.FC = () => {
                             )}
                           </button>
                         </div>
+                        {getFieldError('confirmPassword')}
                       </div>
                       
                       <div className="space-y-2">
@@ -505,10 +543,14 @@ const AuthPage: React.FC = () => {
                           id="companyName"
                           placeholder="Enter company name"
                           value={registerForm.companyName}
-                          onChange={(e) => setRegisterForm({...registerForm, companyName: e.target.value})}
+                          onChange={(e) => {
+                            setRegisterForm({...registerForm, companyName: e.target.value});
+                            setRegisterFormErrors({...registerFormErrors, companyName: ''});
+                          }}
                           required
-                          className="border-primary/20"
+                          className={`border-primary/20 ${registerFormErrors.companyName ? 'border-red-500' : ''}`}
                         />
+                        {getFieldError('companyName')}
                       </div>
                       
                       <div className="space-y-2">
@@ -517,10 +559,14 @@ const AuthPage: React.FC = () => {
                           id="location"
                           placeholder="Enter location"
                           value={registerForm.location}
-                          onChange={(e) => setRegisterForm({...registerForm, location: e.target.value})}
+                          onChange={(e) => {
+                            setRegisterForm({...registerForm, location: e.target.value});
+                            setRegisterFormErrors({...registerFormErrors, location: ''});
+                          }}
                           required
-                          className="border-primary/20"
+                          className={`border-primary/20 ${registerFormErrors.location ? 'border-red-500' : ''}`}
                         />
+                        {getFieldError('location')}
                       </div>
                       
                       <div className="space-y-2">
@@ -549,10 +595,14 @@ const AuthPage: React.FC = () => {
                           id="contactName"
                           placeholder="First & Last Name"
                           value={registerForm.contactName}
-                          onChange={(e) => setRegisterForm({...registerForm, contactName: e.target.value})}
+                          onChange={(e) => {
+                            setRegisterForm({...registerForm, contactName: e.target.value});
+                            setRegisterFormErrors({...registerFormErrors, contactName: ''});
+                          }}
                           required
-                          className="border-primary/20"
+                          className={`border-primary/20 ${registerFormErrors.contactName ? 'border-red-500' : ''}`}
                         />
+                        {getFieldError('contactName')}
                       </div>
                       
                       <div className="space-y-2">
@@ -564,13 +614,17 @@ const AuthPage: React.FC = () => {
                           </div>
                           <Input 
                             id="phoneNumber"
-                            className="rounded-l-none border-primary/20"
+                            className={`rounded-l-none border-primary/20 ${registerFormErrors.phoneNumber ? 'border-red-500' : ''}`}
                             placeholder="7XX XXX XXX"
                             value={registerForm.phoneNumber}
-                            onChange={(e) => setRegisterForm({...registerForm, phoneNumber: e.target.value})}
+                            onChange={(e) => {
+                              setRegisterForm({...registerForm, phoneNumber: e.target.value});
+                              setRegisterFormErrors({...registerFormErrors, phoneNumber: ''});
+                            }}
                             required
                           />
                         </div>
+                        {getFieldError('phoneNumber')}
                       </div>
                       
                       <div className="space-y-2">
@@ -579,10 +633,14 @@ const AuthPage: React.FC = () => {
                           id="kraPin"
                           placeholder="Enter Tax Identification Number"
                           value={registerForm.kraPin}
-                          onChange={(e) => setRegisterForm({...registerForm, kraPin: e.target.value})}
+                          onChange={(e) => {
+                            setRegisterForm({...registerForm, kraPin: e.target.value});
+                            setRegisterFormErrors({...registerFormErrors, kraPin: ''});
+                          }}
                           required
-                          className="border-primary/20"
+                          className={`border-primary/20 ${registerFormErrors.kraPin ? 'border-red-500' : ''}`}
                         />
+                        {getFieldError('kraPin')}
                       </div>
                     </div>
                     
@@ -625,9 +683,10 @@ const AuthPage: React.FC = () => {
                         onValueChange={(value) => {
                           const selectedCategories = value ? value.split(',') : [];
                           setRegisterForm({...registerForm, categoriesOfInterest: selectedCategories});
+                          setRegisterFormErrors({...registerFormErrors, categoriesOfInterest: ''});
                         }}
                       >
-                        <SelectTrigger className="border-primary/20">
+                        <SelectTrigger className={`border-primary/20 ${registerFormErrors.categoriesOfInterest ? 'border-red-500' : ''}`}>
                           <SelectValue placeholder="Select categories of interest" />
                         </SelectTrigger>
                         <SelectContent>
@@ -638,6 +697,7 @@ const AuthPage: React.FC = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {getFieldError('categoriesOfInterest')}
                     </div>
                     
                     <div className="space-y-2">
@@ -682,10 +742,11 @@ const AuthPage: React.FC = () => {
                         <Checkbox 
                           id="terms" 
                           checked={registerForm.agreeToTerms}
-                          onCheckedChange={(checked) => 
-                            setRegisterForm({...registerForm, agreeToTerms: checked as boolean})
-                          }
-                          className="border-primary/40 data-[state=checked]:bg-primary"
+                          onCheckedChange={(checked) => {
+                            setRegisterForm({...registerForm, agreeToTerms: checked as boolean});
+                            setRegisterFormErrors({...registerFormErrors, agreeToTerms: ''});
+                          }}
+                          className={`border-primary/40 data-[state=checked]:bg-primary ${registerFormErrors.agreeToTerms ? 'border-red-500' : ''}`}
                         />
                         <label
                           htmlFor="terms"
@@ -703,6 +764,7 @@ const AuthPage: React.FC = () => {
                           <span className="text-red-500"> *</span>
                         </label>
                       </div>
+                      {getFieldError('agreeToTerms')}
                     </div>
                     
                     <div className="space-y-2">
