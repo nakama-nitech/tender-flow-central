@@ -65,65 +65,52 @@ const SupplierLayout = () => {
         }
         
         console.log("User authenticated, checking profile...");
-        console.log("User ID:", data.session.user.id);
         
-        // Check if profile exists - avoid recursive RLS by using .from() without .select() first
-        try {
-          // Attempt to create profile directly without checking if it exists first
-          // This avoids the recursive RLS issue by not querying the profiles table first
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert([
-              { 
-                id: data.session.user.id,
-                role: 'supplier',
-                first_name: data.session.user.user_metadata?.first_name || '',
-                last_name: data.session.user.user_metadata?.last_name || ''
-              }
-            ])
-            .select();
-            
-          if (insertError) {
-            // If the error is about uniqueness constraint, it means profile already exists
-            if (insertError.code === '23505') {
-              console.log("Profile already exists, proceeding...");
-              // Profile exists, we can continue
-              setIsLoading(false);
-              return;
-            } else {
-              console.error("Profile creation error:", insertError);
-              setError("Failed to create your profile. Please try again or contact support.");
-              toast({
-                title: "Profile error",
-                description: insertError.message || "There was an error setting up your profile",
-                variant: "destructive",
-              });
-              setIsLoading(false);
-              return;
-            }
+        // Check if profile exists by using direct GET instead of creating
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, role, first_name, last_name')
+          .eq('id', data.session.user.id)
+          .maybeSingle();
+        
+        if (profileError) {
+          console.error("Error checking profile:", profileError);
+          setError("Failed to load your profile. Please try again.");
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!profileData) {
+          console.log("Profile not found, creating one...");
+          
+          // Handle profile creation via RPC function to avoid RLS issues
+          const { error: upsertError } = await supabase.rpc('upsert_profile', {
+            user_id: data.session.user.id,
+            user_role: 'supplier',
+            first_name: data.session.user.user_metadata?.first_name || '',
+            last_name: data.session.user.user_metadata?.last_name || ''
+          });
+          
+          if (upsertError) {
+            console.error("Profile creation error:", upsertError);
+            setError("Failed to create your profile. Please try again or contact support.");
+            setIsLoading(false);
+            return;
           }
           
-          console.log("Profile created successfully");
           toast({
             title: "Profile created",
             description: "Your supplier profile has been set up successfully",
           });
-          setIsLoading(false);
-          
-        } catch (profileCheckError) {
-          console.error("Profile check error:", profileCheckError);
-          setError("An unexpected error occurred while checking your profile. Please try again.");
-          setIsLoading(false);
+        } else {
+          console.log("Profile exists:", profileData);
         }
+        
+        setIsLoading(false);
         
       } catch (error) {
         console.error("Auth check error:", error);
         setError("Authentication error. Please try logging in again.");
-        toast({
-          title: "Authentication error",
-          description: "An unexpected error occurred. Please try logging in again.",
-          variant: "destructive",
-        });
         setIsLoading(false);
       }
     };
