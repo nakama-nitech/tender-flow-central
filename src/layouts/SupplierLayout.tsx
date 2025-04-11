@@ -31,39 +31,59 @@ const SupplierLayout = () => {
   useEffect(() => {
     // Check authentication
     const checkAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error || !data.session) {
-        navigate('/auth');
-        toast({
-          title: "Authentication required",
-          description: "Please log in to access the supplier dashboard",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Check if user is a supplier
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.session.user.id)
-        .single() as { 
-          data: Profile | null; 
-          error: any 
-        };
+      try {
+        const { data, error } = await supabase.auth.getSession();
         
-      if (profileError || !profileData || profileData.role !== 'supplier') {
+        if (error || !data.session) {
+          console.log("No active session found");
+          navigate('/auth');
+          toast({
+            title: "Authentication required",
+            description: "Please log in to access the supplier dashboard",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Check if user is a supplier
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+          
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          navigate('/auth');
+          toast({
+            title: "Profile error",
+            description: "There was an error loading your profile. Please try logging in again.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (!profileData || profileData.role !== 'supplier') {
+          console.log("User is not a supplier:", profileData);
+          navigate('/auth');
+          toast({
+            title: "Access denied",
+            description: "You do not have permission to access the supplier dashboard",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
         navigate('/auth');
         toast({
-          title: "Access denied",
-          description: "You do not have permission to access the supplier dashboard",
+          title: "Authentication error",
+          description: "Please log in to continue",
           variant: "destructive",
         });
-        return;
       }
-      
-      setIsLoading(false);
     };
     
     checkAuth();
