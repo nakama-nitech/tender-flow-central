@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -16,6 +17,7 @@ const SupplierLayout = () => {
   const [activePage, setActivePage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -64,85 +66,48 @@ const SupplierLayout = () => {
         
         console.log("User authenticated, checking profile...");
         console.log("User ID:", data.session.user.id);
-        console.log("User metadata:", data.session.user.user_metadata);
         
-        // Attempt to create profile if it doesn't exist
+        // Check if profile exists - avoid recursive RLS by using .from() without .select() first
         try {
-          // First attempt to get the profile
-          const { data: profileData, error: profileError } = await supabase
+          // Attempt to create profile directly without checking if it exists first
+          // This avoids the recursive RLS issue by not querying the profiles table first
+          const { error: insertError } = await supabase
             .from('profiles')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-            
-          if (profileError) {
-            console.error("Profile fetch error:", profileError);
-            
-            // If profile not found, create one
-            if (profileError.code === 'PGRST116') {
-              console.log("Profile not found, creating one...");
-              
-              // Create profile with explicit role cast
-              const { data: newProfile, error: insertError } = await supabase
-                .from('profiles')
-                .insert([
-                  { 
-                    id: data.session.user.id,
-                    role: 'supplier',
-                    first_name: data.session.user.user_metadata?.first_name || '',
-                    last_name: data.session.user.user_metadata?.last_name || ''
-                  }
-                ])
-                .select()
-                .single();
-                
-              if (insertError) {
-                console.error("Profile creation error:", insertError);
-                setError("Failed to create your profile. Please try again or contact support.");
-                toast({
-                  title: "Profile creation failed",
-                  description: insertError.message || "There was an error setting up your profile",
-                  variant: "destructive",
-                });
-                setIsLoading(false);
-                return;
+            .insert([
+              { 
+                id: data.session.user.id,
+                role: 'supplier',
+                first_name: data.session.user.user_metadata?.first_name || '',
+                last_name: data.session.user.user_metadata?.last_name || ''
               }
-              
-              console.log("Profile created successfully:", newProfile);
+            ])
+            .select();
+            
+          if (insertError) {
+            // If the error is about uniqueness constraint, it means profile already exists
+            if (insertError.code === '23505') {
+              console.log("Profile already exists, proceeding...");
+              // Profile exists, we can continue
+              setIsLoading(false);
+              return;
+            } else {
+              console.error("Profile creation error:", insertError);
+              setError("Failed to create your profile. Please try again or contact support.");
               toast({
-                title: "Profile created",
-                description: "Your supplier profile has been set up successfully",
+                title: "Profile error",
+                description: insertError.message || "There was an error setting up your profile",
+                variant: "destructive",
               });
               setIsLoading(false);
               return;
             }
-            
-            // For other profile errors
-            setError("Error loading your profile. Please try again or contact support.");
-            toast({
-              title: "Profile error",
-              description: profileError.message || "There was an error loading your profile",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            return;
           }
           
-          console.log("Profile loaded successfully:", profileData);
-          
-          if (profileData.role !== 'supplier') {
-            console.log("User is not a supplier:", profileData.role);
-            setError("You do not have supplier access. Please contact support if you believe this is an error.");
-            toast({
-              title: "Access denied",
-              description: "You do not have permission to access the supplier dashboard",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            return;
-          }
-          
-          // All checks passed
+          console.log("Profile created successfully");
+          toast({
+            title: "Profile created",
+            description: "Your supplier profile has been set up successfully",
+          });
           setIsLoading(false);
           
         } catch (profileCheckError) {
@@ -163,7 +128,10 @@ const SupplierLayout = () => {
       }
     };
     
-    checkAuth();
+    // Add delay before checking auth to ensure session is fully established
+    const timer = setTimeout(() => {
+      checkAuth();
+    }, 500);
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -174,21 +142,30 @@ const SupplierLayout = () => {
         } else if (event === 'SIGNED_IN') {
           console.log("User signed in, checking profile...");
           setIsLoading(true);
+          setRetryCount(0);
           // Wait a moment for auth to complete, then check profile
           setTimeout(() => {
             checkAuth();
-          }, 500);
+          }, 1000);
         }
       }
     );
     
     return () => {
+      clearTimeout(timer);
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, toast, retryCount]);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setIsLoading(true);
+    setError(null);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
   };
 
   if (isLoading) {
@@ -208,18 +185,18 @@ const SupplierLayout = () => {
             <AlertDescription className="mt-2">{error}</AlertDescription>
           </Alert>
           <div className="flex justify-between mt-4">
-            <button 
-              onClick={() => navigate('/auth')}
+            <Button 
+              onClick={handleSignOut}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
             >
               Back to login
-            </button>
-            <button 
-              onClick={() => window.location.reload()}
+            </Button>
+            <Button 
+              onClick={handleRetry}
               className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
             >
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -247,6 +224,10 @@ const SupplierLayout = () => {
       </main>
     </div>
   );
+  
+  function toggleSidebar() {
+    setSidebarOpen(!sidebarOpen);
+  }
 };
 
 export default SupplierLayout;
