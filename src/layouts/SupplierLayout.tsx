@@ -32,9 +32,21 @@ const SupplierLayout = () => {
     // Check authentication
     const checkAuth = async () => {
       try {
+        // First, check if user is authenticated
         const { data, error } = await supabase.auth.getSession();
         
-        if (error || !data.session) {
+        if (error) {
+          console.error("Session error:", error);
+          navigate('/auth');
+          toast({
+            title: "Authentication error",
+            description: error.message || "Please log in to continue",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (!data.session) {
           console.log("No active session found");
           navigate('/auth');
           toast({
@@ -45,15 +57,51 @@ const SupplierLayout = () => {
           return;
         }
         
+        console.log("User authenticated, checking profile...");
+        
         // Check if user is a supplier
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', data.session.user.id)
           .single();
           
         if (profileError) {
           console.error("Error fetching profile:", profileError);
+          
+          // Check if it's a not found error
+          if (profileError.code === 'PGRST116') {
+            console.log("Profile not found, attempting to create one...");
+            
+            // Try to create a profile for the user
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert([
+                { 
+                  id: data.session.user.id,
+                  role: 'supplier',
+                  first_name: data.session.user.user_metadata.first_name || '',
+                  last_name: data.session.user.user_metadata.last_name || ''
+                }
+              ]);
+              
+            if (insertError) {
+              console.error("Error creating profile:", insertError);
+              navigate('/auth');
+              toast({
+                title: "Profile creation failed",
+                description: "There was an error setting up your profile. Please try again.",
+                variant: "destructive",
+              });
+              return;
+            }
+            
+            // Profile created successfully
+            setIsLoading(false);
+            return;
+          }
+          
+          // For other errors, redirect to auth
           navigate('/auth');
           toast({
             title: "Profile error",
@@ -63,8 +111,21 @@ const SupplierLayout = () => {
           return;
         }
         
-        if (!profileData || profileData.role !== 'supplier') {
-          console.log("User is not a supplier:", profileData);
+        console.log("Profile fetched:", profileData);
+        
+        if (!profileData) {
+          console.log("Profile not found");
+          navigate('/auth');
+          toast({
+            title: "Profile not found",
+            description: "Your user profile could not be found. Please contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (profileData.role !== 'supplier') {
+          console.log("User is not a supplier:", profileData.role);
           navigate('/auth');
           toast({
             title: "Access denied",
@@ -74,13 +135,14 @@ const SupplierLayout = () => {
           return;
         }
         
+        // All checks passed
         setIsLoading(false);
       } catch (error) {
         console.error("Auth check error:", error);
         navigate('/auth');
         toast({
           title: "Authentication error",
-          description: "Please log in to continue",
+          description: "An unexpected error occurred. Please try logging in again.",
           variant: "destructive",
         });
       }
@@ -91,8 +153,12 @@ const SupplierLayout = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT') {
           navigate('/auth');
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Reload the page to ensure fresh profile data
+          checkAuth();
         }
       }
     );
