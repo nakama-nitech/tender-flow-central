@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -13,6 +15,7 @@ const SupplierLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -32,6 +35,8 @@ const SupplierLayout = () => {
     // Check authentication
     const checkAuth = async () => {
       try {
+        setError(null);
+        
         // First, check if user is authenticated
         const { data, error } = await supabase.auth.getSession();
         
@@ -58,93 +63,103 @@ const SupplierLayout = () => {
         }
         
         console.log("User authenticated, checking profile...");
+        console.log("User ID:", data.session.user.id);
+        console.log("User metadata:", data.session.user.user_metadata);
         
-        // Check if user is a supplier
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.session.user.id)
-          .single();
-          
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          
-          // Check if it's a not found error
-          if (profileError.code === 'PGRST116') {
-            console.log("Profile not found, attempting to create one...");
+        // Attempt to create profile if it doesn't exist
+        try {
+          // First attempt to get the profile
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.session.user.id)
+            .single();
             
-            // Try to create a profile for the user
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert([
-                { 
-                  id: data.session.user.id,
-                  role: 'supplier',
-                  first_name: data.session.user.user_metadata.first_name || '',
-                  last_name: data.session.user.user_metadata.last_name || ''
-                }
-              ]);
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            
+            // If profile not found, create one
+            if (profileError.code === 'PGRST116') {
+              console.log("Profile not found, creating one...");
               
-            if (insertError) {
-              console.error("Error creating profile:", insertError);
-              navigate('/auth');
+              // Create profile with explicit role cast
+              const { data: newProfile, error: insertError } = await supabase
+                .from('profiles')
+                .insert([
+                  { 
+                    id: data.session.user.id,
+                    role: 'supplier',
+                    first_name: data.session.user.user_metadata?.first_name || '',
+                    last_name: data.session.user.user_metadata?.last_name || ''
+                  }
+                ])
+                .select()
+                .single();
+                
+              if (insertError) {
+                console.error("Profile creation error:", insertError);
+                setError("Failed to create your profile. Please try again or contact support.");
+                toast({
+                  title: "Profile creation failed",
+                  description: insertError.message || "There was an error setting up your profile",
+                  variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+              }
+              
+              console.log("Profile created successfully:", newProfile);
               toast({
-                title: "Profile creation failed",
-                description: "There was an error setting up your profile. Please try again.",
-                variant: "destructive",
+                title: "Profile created",
+                description: "Your supplier profile has been set up successfully",
               });
+              setIsLoading(false);
               return;
             }
             
-            // Profile created successfully
+            // For other profile errors
+            setError("Error loading your profile. Please try again or contact support.");
+            toast({
+              title: "Profile error",
+              description: profileError.message || "There was an error loading your profile",
+              variant: "destructive",
+            });
             setIsLoading(false);
             return;
           }
           
-          // For other errors, redirect to auth
-          navigate('/auth');
-          toast({
-            title: "Profile error",
-            description: "There was an error loading your profile. Please try logging in again.",
-            variant: "destructive",
-          });
-          return;
+          console.log("Profile loaded successfully:", profileData);
+          
+          if (profileData.role !== 'supplier') {
+            console.log("User is not a supplier:", profileData.role);
+            setError("You do not have supplier access. Please contact support if you believe this is an error.");
+            toast({
+              title: "Access denied",
+              description: "You do not have permission to access the supplier dashboard",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+          // All checks passed
+          setIsLoading(false);
+          
+        } catch (profileCheckError) {
+          console.error("Profile check error:", profileCheckError);
+          setError("An unexpected error occurred while checking your profile. Please try again.");
+          setIsLoading(false);
         }
         
-        console.log("Profile fetched:", profileData);
-        
-        if (!profileData) {
-          console.log("Profile not found");
-          navigate('/auth');
-          toast({
-            title: "Profile not found",
-            description: "Your user profile could not be found. Please contact support.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (profileData.role !== 'supplier') {
-          console.log("User is not a supplier:", profileData.role);
-          navigate('/auth');
-          toast({
-            title: "Access denied",
-            description: "You do not have permission to access the supplier dashboard",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // All checks passed
-        setIsLoading(false);
       } catch (error) {
         console.error("Auth check error:", error);
-        navigate('/auth');
+        setError("Authentication error. Please try logging in again.");
         toast({
           title: "Authentication error",
           description: "An unexpected error occurred. Please try logging in again.",
           variant: "destructive",
         });
+        setIsLoading(false);
       }
     };
     
@@ -156,9 +171,13 @@ const SupplierLayout = () => {
         console.log("Auth state changed:", event);
         if (event === 'SIGNED_OUT') {
           navigate('/auth');
-        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // Reload the page to ensure fresh profile data
-          checkAuth();
+        } else if (event === 'SIGNED_IN') {
+          console.log("User signed in, checking profile...");
+          setIsLoading(true);
+          // Wait a moment for auth to complete, then check profile
+          setTimeout(() => {
+            checkAuth();
+          }, 500);
         }
       }
     );
@@ -176,6 +195,33 @@ const SupplierLayout = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="mt-2">{error}</AlertDescription>
+          </Alert>
+          <div className="flex justify-between mt-4">
+            <button 
+              onClick={() => navigate('/auth')}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Back to login
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
