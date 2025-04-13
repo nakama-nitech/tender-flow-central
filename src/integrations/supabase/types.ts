@@ -224,7 +224,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      upsert_profile: {
+        Args: {
+          user_id: string
+          user_role: string
+          first_name: string
+          last_name: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role: "admin" | "supplier"
