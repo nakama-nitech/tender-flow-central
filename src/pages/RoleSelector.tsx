@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,13 +13,9 @@ const RoleSelector = () => {
   const { isLoading, error, userRole, checkRole } = useAuth();
 
   useEffect(() => {
-    // If user has only one role, redirect to that role's dashboard
-    if (!isLoading && !error && userRole) {
-      if (userRole === 'admin') {
-        navigate('/admin');
-      } else if (userRole === 'supplier') {
-        navigate('/supplier/dashboard');
-      }
+    // If user is not authenticated, redirect to auth page
+    if (!isLoading && !error && !userRole) {
+      navigate('/auth');
     }
   }, [isLoading, error, userRole, navigate]);
 

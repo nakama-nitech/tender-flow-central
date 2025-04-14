@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -148,30 +149,31 @@ const AuthPage: React.FC = () => {
       
       if (error) throw error;
       
+      // Fetch the user's profile to determine their role
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
-        .maybeSingle() as { 
-          data: Profile | null; 
-          error: any 
-        };
+        .single();
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Error fetching profile:", profileError);
+      }
       
       toast({
         title: "Logged in successfully",
         description: "Welcome back to TenderFlow",
       });
       
-      if (profileData) {
-        if (profileData.role === 'admin') {
-          navigate('/select-role');
-        } else {
-          navigate('/supplier/dashboard');
-        }
+      // Redirect based on role or to role selection if admin
+      if (profileData && profileData.role === 'admin') {
+        navigate('/select-role');
       } else {
+        // Default to supplier dashboard for other roles or if no profile
         navigate('/supplier/dashboard');
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again",

@@ -16,6 +16,20 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Set up auth state listener FIRST to prevent deadlocks
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event);
+        if (event === 'SIGNED_OUT') {
+          navigate('/auth');
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // We'll fetch profile data in the main effect, not here
+          // This prevents deadlocks in the Supabase client
+          setIsLoading(true);
+        }
+      }
+    );
+    
     // Check authentication
     const checkAuth = async () => {
       try {
@@ -27,28 +41,18 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         if (error) {
           console.error("Session error:", error);
           navigate('/auth');
-          toast({
-            title: "Authentication error",
-            description: error.message || "Please log in to continue",
-            variant: "destructive",
-          });
           return;
         }
         
         if (!data.session) {
           console.log("No active session found");
           navigate('/auth');
-          toast({
-            title: "Authentication required",
-            description: "Please log in to access this area",
-            variant: "destructive",
-          });
           return;
         }
         
         console.log("User authenticated, checking profile...");
         
-        // Check if profile exists by using direct GET
+        // Check if profile exists
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id, role, first_name, last_name')
@@ -112,24 +116,6 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     const timer = setTimeout(() => {
       checkAuth();
     }, 500);
-    
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event);
-        if (event === 'SIGNED_OUT') {
-          navigate('/auth');
-        } else if (event === 'SIGNED_IN') {
-          console.log("User signed in, checking profile...");
-          setIsLoading(true);
-          setRetryCount(0);
-          // Wait a moment for auth to complete, then check profile
-          setTimeout(() => {
-            checkAuth();
-          }, 1000);
-        }
-      }
-    );
     
     return () => {
       clearTimeout(timer);
