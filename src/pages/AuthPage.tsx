@@ -314,7 +314,7 @@ const AuthPage: React.FC = () => {
       if (registerForm.supplyLocations.length > 0) {
         const supplierLocations = registerForm.supplyLocations.map(location => ({
           supplier_id: authData.user.id,
-          location_id: location
+          location_id: parseInt(location) || location
         }));
         
         const { error: locationsError } = await supabase
