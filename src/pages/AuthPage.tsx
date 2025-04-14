@@ -312,10 +312,18 @@ const AuthPage: React.FC = () => {
       
       // Add supplier locations
       if (registerForm.supplyLocations.length > 0) {
-        const supplierLocations = registerForm.supplyLocations.map(location => ({
-          supplier_id: authData.user.id,
-          location_id: parseInt(location) || location
-        }));
+        const supplierLocations = registerForm.supplyLocations
+          .map(location => {
+            const locationId = typeof location === 'string' ? 
+              (isNaN(parseInt(location)) ? null : parseInt(location)) : 
+              location;
+              
+            return locationId !== null ? {
+              supplier_id: authData.user.id,
+              location_id: locationId as number
+            } : null;
+          })
+          .filter((item): item is { supplier_id: string; location_id: number } => item !== null);
         
         const { error: locationsError } = await supabase
           .from('supplier_locations')
