@@ -15,6 +15,8 @@ import BidPreparation from "./pages/supplier/BidPreparation";
 import BidStatus from "./pages/supplier/BidStatus";
 import BidsList from "./pages/supplier/BidsList";
 import SupplierLayout from "./layouts/SupplierLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import RoleSelector from "./pages/RoleSelector";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +31,13 @@ const App = () => (
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
           
+          {/* Role Selection Route */}
+          <Route path="/select-role" element={<RoleSelector />} />
+          
           {/* Admin Routes */}
-          <Route path="/admin" element={<Index />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Index />} />
+          </Route>
           
           {/* Supplier Routes */}
           <Route path="/supplier" element={<SupplierLayout />}>

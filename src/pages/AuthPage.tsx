@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ type Location = Database['public']['Tables']['locations']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Supplier = Database['public']['Tables']['suppliers']['Row'];
 
-// County/Province data by country
 interface CountryLocations {
   [key: string]: string[];
 }
@@ -64,7 +62,6 @@ const AuthPage: React.FC = () => {
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
   const [registerFormErrors, setRegisterFormErrors] = useState<{[key: string]: string}>({});
   
-  // County/Province data by country
   const countryLocations: CountryLocations = {
     'Kenya': [
       'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Nyeri', 'Kakamega', 'Kisii', 
@@ -89,7 +86,6 @@ const AuthPage: React.FC = () => {
   };
   
   useEffect(() => {
-    // Set available locations based on selected country
     if (registerForm.country) {
       setAvailableLocations(countryLocations[registerForm.country] || []);
     }
@@ -97,7 +93,6 @@ const AuthPage: React.FC = () => {
   
   useEffect(() => {
     const fetchReferenceData = async () => {
-      // Fetch company types
       const { data: companyTypesData, error: companyTypesError } = await supabase
         .from('company_types')
         .select('id, name') as { 
@@ -111,7 +106,6 @@ const AuthPage: React.FC = () => {
         setCompanyTypes(companyTypesData || []);
       }
       
-      // Fetch categories
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name') as { 
@@ -125,7 +119,6 @@ const AuthPage: React.FC = () => {
         setCategories(categoriesData || []);
       }
       
-      // Fetch locations
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select('id, name') as { 
@@ -155,12 +148,11 @@ const AuthPage: React.FC = () => {
       
       if (error) throw error;
       
-      // Check user role to decide where to redirect
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
-        .single() as { 
+        .maybeSingle() as { 
           data: Profile | null; 
           error: any 
         };
@@ -170,9 +162,12 @@ const AuthPage: React.FC = () => {
         description: "Welcome back to TenderFlow",
       });
       
-      // Redirect based on role
-      if (profileData && profileData.role === 'admin') {
-        navigate('/admin');
+      if (profileData) {
+        if (profileData.role === 'admin') {
+          navigate('/select-role');
+        } else {
+          navigate('/supplier/dashboard');
+        }
       } else {
         navigate('/supplier/dashboard');
       }
@@ -223,12 +218,10 @@ const AuthPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Split the contact name into first and last name
       const nameParts = registerForm.contactName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      // 1. Register the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: registerForm.email,
         password: registerForm.password,
@@ -245,7 +238,6 @@ const AuthPage: React.FC = () => {
       
       if (!authData.user) throw new Error("User registration failed");
       
-      // 2. Insert supplier data
       const { error: supplierError } = await supabase
         .from('suppliers')
         .insert({
@@ -262,7 +254,6 @@ const AuthPage: React.FC = () => {
         
       if (supplierError) throw supplierError;
       
-      // 3. Insert supplier categories
       if (registerForm.categoriesOfInterest.length > 0) {
         const supplierCategories = registerForm.categoriesOfInterest.map(categoryId => ({
           supplier_id: authData.user.id,
@@ -276,7 +267,6 @@ const AuthPage: React.FC = () => {
         if (categoriesError) throw categoriesError;
       }
       
-      // 4. Insert supplier locations
       if (registerForm.supplyLocations.length > 0) {
         const supplierLocations = registerForm.supplyLocations.map(location => ({
           supplier_id: authData.user.id,
@@ -295,7 +285,6 @@ const AuthPage: React.FC = () => {
         description: "Your account has been created. You can now log in.",
       });
       
-      // Switch to login tab
       setIsSubmitting(false);
       const searchParams = new URLSearchParams();
       searchParams.set('tab', 'login');
@@ -333,7 +322,6 @@ const AuthPage: React.FC = () => {
   const displayCompanyTypes = companyTypes.length > 0 ? companyTypes : defaultCompanyTypes;
   const displayCategories = categories.length > 0 ? categories : defaultCategories;
   
-  // Helper function to display field errors
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
       <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
