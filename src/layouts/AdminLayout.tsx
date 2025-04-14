@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePage, setActivePage] = useState('dashboard');
   const { isLoading, error, userRole, handleRetry, handleSignOut } = useAuth('admin');
 
   if (isLoading) {
@@ -54,7 +55,12 @@ const AdminLayout = () => {
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        toggleSidebar={toggleSidebar} 
+        activePage={activePage}
+        setActivePage={setActivePage}
+      />
       
       <main 
         className={cn(
