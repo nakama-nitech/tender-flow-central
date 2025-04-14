@@ -1,48 +1,70 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Store, ArrowLeft } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Shield, Store, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const RoleSelector = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isLoading, error, userRole, checkRole } = useAuth();
+  const { isLoading, error, user, userRole, checkRole } = useAuth();
 
   useEffect(() => {
-    // If user is not authenticated, redirect to auth page
-    if (!isLoading && !error && !userRole) {
-      navigate('/auth');
+    // Check if we have a user session
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        console.log("No active session, redirecting to auth");
+        navigate('/auth');
+      }
+    };
+    
+    if (!isLoading && !user) {
+      console.log("No user found after loading, checking session");
+      checkSession();
     }
-  }, [isLoading, error, userRole, navigate]);
+  }, [isLoading, user, navigate]);
 
   const selectRole = async (role: 'admin' | 'supplier') => {
-    // If user already has the role, simply navigate
-    if (role === userRole) {
+    try {
+      // If user already has the role, simply navigate
+      if (role === userRole) {
+        navigate(role === 'admin' ? '/admin' : '/supplier/dashboard');
+        return;
+      }
+
+      // Only allow selection of roles the user has
+      if (role === 'admin' && !checkRole('admin')) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have administrator privileges.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       navigate(role === 'admin' ? '/admin' : '/supplier/dashboard');
-      return;
-    }
-
-    // Only allow selection of roles the user has
-    if (role === 'admin' && !checkRole('admin')) {
+    } catch (error) {
+      console.error("Role selection error:", error);
       toast({
-        title: "Access Denied",
-        description: "You don't have administrator privileges.",
-        variant: "destructive",
+        title: "Navigation Error",
+        description: "Could not access the selected dashboard. Please try again.",
+        variant: "destructive"
       });
-      return;
     }
-
-    navigate(role === 'admin' ? '/admin' : '/supplier/dashboard');
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
       </div>
     );
   }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -137,6 +136,28 @@ const AuthPage: React.FC = () => {
     fetchReferenceData();
   }, []);
   
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        // Get user role
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .maybeSingle();
+        
+        if (profileData && profileData.role === 'admin') {
+          navigate('/select-role');
+        } else {
+          navigate('/supplier/dashboard');
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+  
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -149,15 +170,24 @@ const AuthPage: React.FC = () => {
       
       if (error) throw error;
       
+      console.log("Login successful, session:", data.session);
+      
       // Fetch the user's profile to determine their role
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle();
       
       if (profileError && profileError.code !== 'PGRST116') {
         console.error("Error fetching profile:", profileError);
+        toast({
+          title: "Profile error",
+          description: "There was an issue loading your profile. You'll be directed to the supplier dashboard.",
+          variant: "destructive",
+        });
+        navigate('/supplier/dashboard');
+        return;
       }
       
       toast({
@@ -165,7 +195,7 @@ const AuthPage: React.FC = () => {
         description: "Welcome back to TenderFlow",
       });
       
-      // Redirect based on role or to role selection if admin
+      // Redirect based on role
       if (profileData && profileData.role === 'admin') {
         navigate('/select-role');
       } else {
@@ -224,6 +254,7 @@ const AuthPage: React.FC = () => {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
+      // Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: registerForm.email,
         password: registerForm.password,
@@ -240,6 +271,9 @@ const AuthPage: React.FC = () => {
       
       if (!authData.user) throw new Error("User registration failed");
       
+      console.log("User registered successfully:", authData.user.id);
+      
+      // Create supplier record
       const { error: supplierError } = await supabase
         .from('suppliers')
         .insert({
@@ -252,10 +286,14 @@ const AuthPage: React.FC = () => {
           kra_pin: registerForm.kraPin,
           physical_address: registerForm.physicalAddress,
           website_url: registerForm.websiteUrl,
-        } as Supplier);
+        });
         
-      if (supplierError) throw supplierError;
+      if (supplierError) {
+        console.error("Supplier creation error:", supplierError);
+        throw supplierError;
+      }
       
+      // Add supplier categories
       if (registerForm.categoriesOfInterest.length > 0) {
         const supplierCategories = registerForm.categoriesOfInterest.map(categoryId => ({
           supplier_id: authData.user.id,
@@ -264,22 +302,29 @@ const AuthPage: React.FC = () => {
         
         const { error: categoriesError } = await supabase
           .from('supplier_categories')
-          .insert(supplierCategories as any);
+          .insert(supplierCategories);
           
-        if (categoriesError) throw categoriesError;
+        if (categoriesError) {
+          console.error("Categories error:", categoriesError);
+          throw categoriesError;
+        }
       }
       
+      // Add supplier locations
       if (registerForm.supplyLocations.length > 0) {
         const supplierLocations = registerForm.supplyLocations.map(location => ({
           supplier_id: authData.user.id,
-          location_id: parseInt(location)
+          location_id: location
         }));
         
         const { error: locationsError } = await supabase
           .from('supplier_locations')
-          .insert(supplierLocations as any);
+          .insert(supplierLocations);
           
-        if (locationsError) throw locationsError;
+        if (locationsError) {
+          console.error("Locations error:", locationsError);
+          throw locationsError;
+        }
       }
       
       toast({
@@ -287,6 +332,7 @@ const AuthPage: React.FC = () => {
         description: "Your account has been created. You can now log in.",
       });
       
+      // Switch to login tab
       setIsSubmitting(false);
       const searchParams = new URLSearchParams();
       searchParams.set('tab', 'login');
