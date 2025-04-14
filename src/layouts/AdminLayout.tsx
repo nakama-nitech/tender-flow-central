@@ -6,12 +6,12 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
-  const { isLoading, error, userRole, handleRetry, handleSignOut } = useAuth('admin');
+  const { isLoading, error, userRole, handleRetry, handleSignOut } = useAdminAuth();
 
   if (isLoading) {
     return (

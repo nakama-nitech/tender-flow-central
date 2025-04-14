@@ -27,7 +27,16 @@ const RoleSelector = () => {
       console.log("No user found after loading, checking session");
       checkSession();
     }
-  }, [isLoading, user, navigate]);
+    
+    // If we have a role but no error, auto-navigate
+    if (!isLoading && !error && userRole) {
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'supplier') {
+        navigate('/supplier/dashboard');
+      }
+    }
+  }, [isLoading, user, userRole, error, navigate]);
 
   const selectRole = async (role: 'admin' | 'supplier') => {
     try {
@@ -37,8 +46,10 @@ const RoleSelector = () => {
         return;
       }
 
-      // Only allow selection of roles the user has
-      if (role === 'admin' && !checkRole('admin')) {
+      const hasAdminRole = user?.user_metadata?.role === 'admin';
+      
+      // Only allow selection of admin if the user has admin role in metadata
+      if (role === 'admin' && !hasAdminRole) {
         toast({
           title: "Access Denied",
           description: "You don't have administrator privileges.",
@@ -87,6 +98,9 @@ const RoleSelector = () => {
     );
   }
 
+  // Check if user has admin role from metadata
+  const hasAdminRole = user?.user_metadata?.role === 'admin';
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
       <header className="py-4 px-6 md:px-10 flex justify-between items-center bg-white shadow-sm">
@@ -114,10 +128,10 @@ const RoleSelector = () => {
               <Button
                 variant="outline"
                 className={`h-auto p-6 flex flex-col items-center gap-4 border-2 ${
-                  checkRole('admin') ? 'border-primary hover:border-primary hover:bg-primary/5' : 'opacity-50 cursor-not-allowed'
+                  hasAdminRole ? 'border-primary hover:border-primary hover:bg-primary/5' : 'opacity-50 cursor-not-allowed'
                 }`}
                 onClick={() => selectRole('admin')}
-                disabled={!checkRole('admin')}
+                disabled={!hasAdminRole}
               >
                 <Shield className="h-12 w-12 text-primary" />
                 <div className="text-center">
