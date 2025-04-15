@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,8 @@ const RoleSelector = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isLoading, error, user, userRole, checkRole } = useAuth();
-
+  const [updatingRole, setUpdatingRole] = useState(false);
+  
   useEffect(() => {
     // Check if we have a user session
     const checkSession = async () => {
@@ -29,24 +30,31 @@ const RoleSelector = () => {
     }
     
     // If we have a role but no error, auto-navigate
-    if (!isLoading && !error && userRole) {
+    if (!isLoading && !error && userRole && !updatingRole) {
+      console.log("Auto-navigating based on role:", userRole);
       if (userRole === 'admin') {
         navigate('/admin');
       } else if (userRole === 'supplier') {
         navigate('/supplier/dashboard');
       }
     }
-  }, [isLoading, user, userRole, error, navigate]);
+  }, [isLoading, user, userRole, error, navigate, updatingRole]);
 
   const selectRole = async (role: 'admin' | 'supplier') => {
     try {
+      setUpdatingRole(true);
+      
       // If user already has the role, simply navigate
       if (role === userRole) {
+        console.log(`User already has role ${role}, navigating directly`);
         navigate(role === 'admin' ? '/admin' : '/supplier/dashboard');
+        setUpdatingRole(false);
         return;
       }
 
-      const hasAdminRole = user?.user_metadata?.role === 'admin';
+      // Check if the user has admin rights in metadata
+      const { data: userData } = await supabase.auth.getUser();
+      const hasAdminRole = userData?.user?.user_metadata?.role === 'admin';
       
       // Only allow selection of admin if the user has admin role in metadata
       if (role === 'admin' && !hasAdminRole) {
@@ -55,9 +63,38 @@ const RoleSelector = () => {
           description: "You don't have administrator privileges.",
           variant: "destructive",
         });
+        setUpdatingRole(false);
         return;
       }
 
+      // Update the user's profile in the database
+      if (user?.id) {
+        console.log(`Updating user profile to role: ${role}`);
+        const { error } = await supabase.rpc('upsert_profile', {
+          user_id: user.id,
+          user_role: role,
+          first_name: '',
+          last_name: ''
+        });
+        
+        if (error) {
+          console.error("Error updating role:", error);
+          toast({
+            title: "Role Update Failed",
+            description: "Could not update your role. Please try again.",
+            variant: "destructive"
+          });
+          setUpdatingRole(false);
+          return;
+        }
+        
+        toast({
+          title: "Role Updated",
+          description: `You are now accessing the ${role} dashboard`,
+        });
+      }
+
+      // Navigate to the appropriate dashboard
       navigate(role === 'admin' ? '/admin' : '/supplier/dashboard');
     } catch (error) {
       console.error("Role selection error:", error);
@@ -66,15 +103,19 @@ const RoleSelector = () => {
         description: "Could not access the selected dashboard. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setUpdatingRole(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || updatingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading your profile...</p>
+          <p className="text-muted-foreground">
+            {updatingRole ? "Updating your role..." : "Loading your profile..."}
+          </p>
         </div>
       </div>
     );
@@ -100,6 +141,7 @@ const RoleSelector = () => {
 
   // Check if user has admin role from metadata
   const hasAdminRole = user?.user_metadata?.role === 'admin';
+  console.log("Has admin role from metadata:", hasAdminRole);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
