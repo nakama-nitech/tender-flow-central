@@ -26,38 +26,23 @@ export const useProfile = (userId: string | undefined, session: any) => {
       const metadataRole = userData?.user?.user_metadata?.role;
       console.log("User metadata role:", metadataRole);
       
-      // First try direct query with a timeout
-      const fetchPromise = new Promise<any>(async (resolve, reject) => {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('id, role, first_name, last_name')
-            .eq('id', userId)
-            .maybeSingle();
-          
-          if (error) {
-            reject(error);
-          } else {
-            resolve(data);
-          }
-        } catch (e) {
-          reject(e);
-        }
-      });
+      // First try direct query
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, role, first_name, last_name')
+        .eq('id', userId)
+        .maybeSingle();
       
-      // Set a timeout to prevent hanging
-      const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), 2000);
-      });
-      
-      // Use Promise.race to handle potential deadlocks
-      const profileData = await Promise.race([fetchPromise, timeoutPromise]);
+      if (error) {
+        console.error("Profile query error:", error);
+        throw error;
+      }
       
       // If profile data was retrieved successfully
-      if (profileData) {
-        console.log("Profile loaded successfully:", profileData);
+      if (data) {
+        console.log("Profile loaded successfully:", data);
         setIsProfileLoading(false);
-        return profileData;
+        return data;
       }
       
       // If we couldn't get the profile data from the table, use the fallback
@@ -72,44 +57,45 @@ export const useProfile = (userId: string | undefined, session: any) => {
       
       // Create a profile if none exists
       console.log("No profile found, creating one...");
-      
-      // Use a simple fetch to avoid Supabase client deadlocks
-      const response = await fetch(`https://llguuxqvggwpqjhupnjm.supabase.co/rest/v1/rpc/upsert_profile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsZ3V1eHF2Z2d3cHFqaHVwbmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxOTQyNTQsImV4cCI6MjA1OTc3MDI1NH0.7YJkRFBdhsRt8u-sXWgEFNbRFyhQWKsQHcF656WGHcg',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          user_role: metadataRole || 'supplier', // Use metadata role if available, otherwise default to supplier
-          first_name: '',
-          last_name: ''
-        })
+      const { data: newProfile, error: createError } = await supabase.rpc('upsert_profile', {
+        user_id: userId,
+        user_role: metadataRole || 'supplier', // Use metadata role if available, otherwise default to supplier
+        first_name: '',
+        last_name: ''
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Profile creation failed", errorData);
-        setProfileError("Failed to create user profile");
-        setIsProfileLoading(false);
-        return null;
+      if (createError) {
+        console.error("Profile creation failed:", createError);
+        throw createError;
       }
       
-      toast({
-        title: "Profile created",
-        description: "Your profile has been set up successfully",
-      });
+      // Fetch the newly created profile
+      const { data: createdProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, role, first_name, last_name')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error("Fetch after creation error:", fetchError);
+        throw fetchError;
+      }
       
-      setIsProfileLoading(false);
-      return { 
-        id: userId, 
-        role: metadataRole || 'supplier'
-      };
+      if (createdProfile) {
+        toast({
+          title: "Profile created",
+          description: "Your profile has been set up successfully",
+        });
+        
+        console.log("Created new profile:", createdProfile);
+        setIsProfileLoading(false);
+        return createdProfile;
+      }
+      
+      throw new Error("Failed to create and fetch profile");
     } catch (e) {
-      console.error("Profile fetch error:", e);
-      setProfileError("Error fetching profile data");
+      console.error("Profile fetch/create error:", e);
+      setProfileError("Error with profile data");
       setIsProfileLoading(false);
       return null;
     }

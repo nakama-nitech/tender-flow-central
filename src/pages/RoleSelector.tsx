@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 const RoleSelector = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isLoading, error, user, userRole, checkRole } = useAuth();
+  const { isLoading, error, user, userRole } = useAuth();
   const [updatingRole, setUpdatingRole] = useState(false);
   
   useEffect(() => {
