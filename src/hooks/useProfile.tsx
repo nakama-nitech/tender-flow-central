@@ -12,7 +12,7 @@ export const useProfile = (userId: string | undefined, session: any) => {
   const [profileError, setProfileError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Fetch profile data using RPC function to bypass RLS issues
+  // Fetch profile data
   const fetchProfileData = useCallback(async (userId: string) => {
     if (!userId) return null;
     
@@ -26,58 +26,36 @@ export const useProfile = (userId: string | undefined, session: any) => {
       const metadataRole = userData?.user?.user_metadata?.role;
       console.log("User metadata role:", metadataRole);
       
-      // Use direct RPC call instead of querying the profiles table directly
-      // This bypasses RLS and avoids recursion issues
-      const { data, error } = await supabase.rpc('get_profile', {
-        p_user_id: userId
-      });
+      // Use direct query to get the profile instead of RPC
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, role, first_name, last_name')
+        .eq('id', userId)
+        .maybeSingle();
       
       if (error) {
-        console.error("Profile RPC error:", error);
-        
-        // Fallback: Try a simpler query with admin auth bypassing
-        const { data: directData, error: directError } = await supabase
-          .from('profiles')
-          .select('id, role, first_name, last_name')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        if (directError) {
-          console.error("Direct profile query error:", directError);
-          throw directError;
-        }
-        
-        if (directData) {
-          console.log("Profile loaded through direct query:", directData);
-          setIsProfileLoading(false);
-          return directData;
-        }
-        
+        console.error("Profile query error:", error);
         throw error;
       }
       
       // If profile data was retrieved successfully
       if (data) {
-        console.log("Profile loaded successfully via RPC:", data);
+        console.log("Profile loaded successfully:", data);
         setIsProfileLoading(false);
         return data;
       }
       
-      // If we couldn't get the profile data from RPC, use the fallback
+      // If we couldn't get the profile, use the fallback metadata or create a new profile
       if (metadataRole) {
         console.log("Using metadata role as fallback:", metadataRole);
         
-        // Use a simpler, direct insert that avoids potential RLS issues
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            role: metadataRole,
-            first_name: '',
-            last_name: ''
-          })
-          .select()
-          .single();
+        // Use the upsert_profile RPC function
+        const { error: insertError } = await supabase.rpc('upsert_profile', {
+          user_id: userId,
+          user_role: metadataRole,
+          first_name: '',
+          last_name: ''
+        });
         
         if (insertError) {
           console.error("Profile creation error:", insertError);
@@ -107,16 +85,12 @@ export const useProfile = (userId: string | undefined, session: any) => {
       
       // Create a default profile if nothing else worked
       console.log("No profile found, creating default one...");
-      const { error: createError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          role: 'supplier', // Default role
-          first_name: '',
-          last_name: ''
-        })
-        .select()
-        .single();
+      const { error: createError } = await supabase.rpc('upsert_profile', {
+        user_id: userId,
+        user_role: 'supplier', // Default role
+        first_name: '',
+        last_name: ''
+      });
       
       if (createError) {
         console.error("Default profile creation failed:", createError);

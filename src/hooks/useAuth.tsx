@@ -34,7 +34,8 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     checkRequiredRole,
     checkRole,
     hasRequiredRole,
-    isAdmin
+    isAdmin,
+    checkAdminByEmail
   } = useRoleAccess(userRole, requiredRole);
 
   // Special case for admins - they can access supplier paths
@@ -50,8 +51,36 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
       console.log(`Profile loading attempt ${loadingAttempts + 1}...`);
       
       try {
+        // Check if user should be admin by email
+        const isAdminByEmail = await checkAdminByEmail();
+        
         // Load the user profile
         const profile = await loadUserProfile();
+        
+        // If user should be admin but profile doesn't have admin role, update it
+        if (isAdminByEmail && profile && profile.role !== 'admin') {
+          console.log("User should be admin but has role:", profile.role);
+          try {
+            const { error } = await supabase.rpc('upsert_profile', {
+              user_id: user.id,
+              user_role: 'admin',
+              first_name: profile.first_name || '',
+              last_name: profile.last_name || ''
+            });
+            
+            if (error) {
+              console.error("Error updating to admin role:", error);
+            } else {
+              console.log("Updated user to admin role");
+              // Force reload to get updated role
+              window.location.reload();
+              return;
+            }
+          } catch (error) {
+            console.error("Error in admin role update:", error);
+          }
+        }
+        
         if (profile) {
           console.log("Profile loaded successfully:", profile);
           setProfileLoaded(true);
@@ -80,7 +109,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     };
 
     loadProfile();
-  }, [authLoading, user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile, setError]);
+  }, [authLoading, user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile, setError, checkAdminByEmail]);
 
   // Handle profile errors
   useEffect(() => {
@@ -137,3 +166,6 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     isAdmin: isAdmin
   };
 };
+
+// Add missing supabase import
+import { supabase } from '@/integrations/supabase/client';

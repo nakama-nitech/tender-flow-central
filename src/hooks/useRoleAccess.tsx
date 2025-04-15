@@ -1,8 +1,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useRoleAccess = (userRole: string | null, requiredRole?: 'admin' | 'supplier') => {
   const [hasRequiredRole, setHasRequiredRole] = useState<boolean>(false);
+  const [isAdminChecking, setIsAdminChecking] = useState<boolean>(false);
+  const [adminEmailList] = useState<string[]>(['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com']);
 
   // Check if user has required role
   const checkRequiredRole = useCallback((profileRole: string | null) => {
@@ -11,12 +14,18 @@ export const useRoleAccess = (userRole: string | null, requiredRole?: 'admin' | 
       return false;
     }
     
-    if (requiredRole && profileRole !== requiredRole) {
-      console.log(`Role mismatch: Required ${requiredRole}, User has ${profileRole}`);
-      return false;
+    // If this is an admin user or required role matches user role
+    if (profileRole === 'admin' || (requiredRole && profileRole === requiredRole)) {
+      return true;
     }
     
-    return true;
+    // Special case: admin can access supplier paths
+    if (requiredRole === 'supplier' && profileRole === 'admin') {
+      return true;
+    }
+    
+    console.log(`Role mismatch: Required ${requiredRole}, User has ${profileRole}`);
+    return false;
   }, [requiredRole]);
 
   // Simple role checker
@@ -27,7 +36,7 @@ export const useRoleAccess = (userRole: string | null, requiredRole?: 'admin' | 
     }
     
     // Match both exact role and special case for admin (admin can access everything)
-    const result = userRole === role || (userRole === 'admin' && role === 'supplier');
+    const result = userRole === role || (userRole === 'admin');
     console.log(`Checking for role ${role}: ${result ? 'Yes' : 'No'}`);
     return result;
   }, [userRole]);
@@ -44,10 +53,34 @@ export const useRoleAccess = (userRole: string | null, requiredRole?: 'admin' | 
     return userRole === 'admin';
   }, [userRole]);
 
+  // Check if email is in admin list
+  const checkAdminByEmail = useCallback(async () => {
+    if (isAdminChecking) return false;
+    
+    try {
+      setIsAdminChecking(true);
+      const { data } = await supabase.auth.getUser();
+      const userEmail = data?.user?.email;
+      
+      if (userEmail && adminEmailList.includes(userEmail)) {
+        console.log("User email is in admin list:", userEmail);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error checking admin by email:", error);
+      return false;
+    } finally {
+      setIsAdminChecking(false);
+    }
+  }, [adminEmailList, isAdminChecking]);
+
   return {
     checkRequiredRole,
     checkRole,
     hasRequiredRole,
-    isAdmin
+    isAdmin,
+    checkAdminByEmail
   };
 };

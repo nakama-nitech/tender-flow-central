@@ -21,7 +21,14 @@ const RoleSelector = () => {
       if (!user) return;
       
       try {
-        // First check user metadata for admin role
+        // First check if user role is already admin
+        if (userRole === 'admin') {
+          console.log("Admin role found in profile");
+          setHasAdminPermission(true);
+          return;
+        }
+        
+        // Check user metadata for admin role
         const { data: userData } = await supabase.auth.getUser();
         const metadataRole = userData?.user?.user_metadata?.role;
         
@@ -46,15 +53,23 @@ const RoleSelector = () => {
             console.error("Error updating user metadata:", updateError);
           } else {
             console.log("Updated user metadata with admin role");
+            
+            // Also update profile in database to ensure consistency
+            const { error: profileError } = await supabase.rpc('upsert_profile', {
+              user_id: user.id,
+              user_role: 'admin',
+              first_name: '',
+              last_name: ''
+            });
+            
+            if (profileError) {
+              console.error("Error updating profile with admin role:", profileError);
+            } else {
+              console.log("Updated profile with admin role");
+            }
           }
           
           return;
-        }
-        
-        // Finally check user profile
-        if (userRole === 'admin') {
-          console.log("Admin role found in profile");
-          setHasAdminPermission(true);
         }
       } catch (error) {
         console.error("Error checking admin permission:", error);
