@@ -33,8 +33,12 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const {
     checkRequiredRole,
     checkRole,
-    hasRequiredRole
+    hasRequiredRole,
+    isAdmin
   } = useRoleAccess(userRole, requiredRole);
+
+  // Special case for admins - they can access supplier paths
+  const canAccessCurrentPath = isAdmin() || hasRequiredRole;
 
   // Attempt to load profile if not loaded yet
   useEffect(() => {
@@ -45,21 +49,32 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
       
       console.log(`Profile loading attempt ${loadingAttempts + 1}...`);
       
-      // Load the user profile
-      const profile = await loadUserProfile();
-      if (profile) {
-        console.log("Profile loaded successfully:", profile);
-        setProfileLoaded(true);
-      } else {
-        // If profile loading failed, try again after a delay (max 3 attempts)
+      try {
+        // Load the user profile
+        const profile = await loadUserProfile();
+        if (profile) {
+          console.log("Profile loaded successfully:", profile);
+          setProfileLoaded(true);
+        } else {
+          // If profile loading failed, try again after a delay (max 3 attempts)
+          if (loadingAttempts < 3) {
+            console.log("Profile loading failed, retrying...");
+            setTimeout(() => {
+              setLoadingAttempts(prev => prev + 1);
+            }, 1000);
+          } else {
+            console.error("Failed to load profile after multiple attempts");
+            setError("Failed to load your profile. Please try logging in again.");
+          }
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
         if (loadingAttempts < 3) {
-          console.log("Profile loading failed, retrying...");
           setTimeout(() => {
             setLoadingAttempts(prev => prev + 1);
           }, 1000);
         } else {
-          console.error("Failed to load profile after multiple attempts");
-          setError("Failed to load your profile. Please try logging in again.");
+          setError("Failed to load your profile due to an error. Please try logging in again.");
         }
       }
     };
@@ -81,7 +96,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     
     if (shouldCheckAccess) {
       // If a specific role is required but the user doesn't have it
-      if (user && userRole && requiredRole && !hasRequiredRole) {
+      if (user && userRole && requiredRole && !canAccessCurrentPath) {
         console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
         setError(`You need ${requiredRole} permissions to access this area.`);
         navigate('/select-role');
@@ -99,7 +114,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     user, 
     userRole, 
     requiredRole, 
-    hasRequiredRole, 
+    canAccessCurrentPath, 
     navigate, 
     setError
   ]);
@@ -118,6 +133,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     userRole, 
     handleRetry, 
     handleSignOut, 
-    checkRole 
+    checkRole,
+    isAdmin: isAdmin
   };
 };

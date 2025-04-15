@@ -26,7 +26,8 @@ export const useRoleAccess = (userRole: string | null, requiredRole?: 'admin' | 
       return false;
     }
     
-    const result = userRole === role;
+    // Match both exact role and special case for admin (admin can access everything)
+    const result = userRole === role || (userRole === 'admin' && role === 'supplier');
     console.log(`Checking for role ${role}: ${result ? 'Yes' : 'No'}`);
     return result;
   }, [userRole]);
@@ -38,9 +39,15 @@ export const useRoleAccess = (userRole: string | null, requiredRole?: 'admin' | 
     setHasRequiredRole(result);
   }, [userRole, checkRequiredRole]);
 
+  // Special check for admin - admin can access any protected resources
+  const isAdmin = useCallback(() => {
+    return userRole === 'admin';
+  }, [userRole]);
+
   return {
     checkRequiredRole,
     checkRole,
-    hasRequiredRole
+    hasRequiredRole,
+    isAdmin
   };
 };

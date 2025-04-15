@@ -13,6 +13,56 @@ const RoleSelector = () => {
   const { toast } = useToast();
   const { isLoading, error, user, userRole } = useAuth();
   const [updatingRole, setUpdatingRole] = useState(false);
+  const [hasAdminPermission, setHasAdminPermission] = useState(false);
+  
+  // Check if user has admin permission from metadata or profile
+  useEffect(() => {
+    const checkAdminPermission = async () => {
+      if (!user) return;
+      
+      try {
+        // First check user metadata for admin role
+        const { data: userData } = await supabase.auth.getUser();
+        const metadataRole = userData?.user?.user_metadata?.role;
+        
+        if (metadataRole === 'admin') {
+          console.log("Admin role found in metadata");
+          setHasAdminPermission(true);
+          return;
+        }
+        
+        // Check if user is in the list of admin emails
+        const adminEmails = ['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com'];
+        if (user.email && adminEmails.includes(user.email)) {
+          console.log("User email is in admin list");
+          setHasAdminPermission(true);
+          
+          // Set admin role in user metadata
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { role: 'admin' }
+          });
+          
+          if (updateError) {
+            console.error("Error updating user metadata:", updateError);
+          } else {
+            console.log("Updated user metadata with admin role");
+          }
+          
+          return;
+        }
+        
+        // Finally check user profile
+        if (userRole === 'admin') {
+          console.log("Admin role found in profile");
+          setHasAdminPermission(true);
+        }
+      } catch (error) {
+        console.error("Error checking admin permission:", error);
+      }
+    };
+    
+    checkAdminPermission();
+  }, [user, userRole]);
   
   useEffect(() => {
     // Check if we have a user session
@@ -52,12 +102,8 @@ const RoleSelector = () => {
         return;
       }
 
-      // Check if the user has admin rights in metadata
-      const { data: userData } = await supabase.auth.getUser();
-      const hasAdminRole = userData?.user?.user_metadata?.role === 'admin';
-      
-      // Only allow selection of admin if the user has admin role in metadata
-      if (role === 'admin' && !hasAdminRole) {
+      // Check if the user has admin permission when selecting admin role
+      if (role === 'admin' && !hasAdminPermission) {
         toast({
           title: "Access Denied",
           description: "You don't have administrator privileges.",
@@ -70,6 +116,16 @@ const RoleSelector = () => {
       // Update the user's profile in the database
       if (user?.id) {
         console.log(`Updating user profile to role: ${role}`);
+        // First update user metadata
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: { role: role }
+        });
+        
+        if (metadataError) {
+          console.error("Error updating user metadata:", metadataError);
+        }
+        
+        // Then update profile in database
         const { error } = await supabase.rpc('upsert_profile', {
           user_id: user.id,
           user_role: role,
@@ -139,10 +195,6 @@ const RoleSelector = () => {
     );
   }
 
-  // Check if user has admin role from metadata
-  const hasAdminRole = user?.user_metadata?.role === 'admin';
-  console.log("Has admin role from metadata:", hasAdminRole);
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
       <header className="py-4 px-6 md:px-10 flex justify-between items-center bg-white shadow-sm">
@@ -170,10 +222,10 @@ const RoleSelector = () => {
               <Button
                 variant="outline"
                 className={`h-auto p-6 flex flex-col items-center gap-4 border-2 ${
-                  hasAdminRole ? 'border-primary hover:border-primary hover:bg-primary/5' : 'opacity-50 cursor-not-allowed'
+                  hasAdminPermission ? 'border-primary hover:border-primary hover:bg-primary/5' : 'opacity-50 cursor-not-allowed'
                 }`}
                 onClick={() => selectRole('admin')}
-                disabled={!hasAdminRole}
+                disabled={!hasAdminPermission}
               >
                 <Shield className="h-12 w-12 text-primary" />
                 <div className="text-center">
