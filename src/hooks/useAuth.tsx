@@ -7,7 +7,6 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [loadingAttempts, setLoadingAttempts] = useState(0);
   const navigate = useNavigate();
   
   // Use the base auth state hook
@@ -24,9 +23,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   // Use the profile hook
   const {
     userRole,
-    loadUserProfile,
-    isProfileLoading,
-    profileError
+    loadUserProfile
   } = useProfile(user?.id, session);
 
   // Use the role access hook
@@ -36,83 +33,41 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     hasRequiredRole
   } = useRoleAccess(userRole, requiredRole);
 
-  // Attempt to load profile if not loaded yet
   useEffect(() => {
     const loadProfile = async () => {
       // Skip if we're still loading auth, or if we don't have a user, 
-      // or if profile is already loaded, or if we're currently loading the profile
-      if (authLoading || !user || profileLoaded || isProfileLoading) return;
-      
-      console.log(`Profile loading attempt ${loadingAttempts + 1}...`);
+      // or if profile is already loaded
+      if (authLoading || !user || profileLoaded) return;
       
       // Load the user profile
-      const profile = await loadUserProfile();
-      if (profile) {
-        console.log("Profile loaded successfully:", profile);
-        setProfileLoaded(true);
-      } else {
-        // If profile loading failed, try again after a delay (max 3 attempts)
-        if (loadingAttempts < 3) {
-          console.log("Profile loading failed, retrying...");
-          setTimeout(() => {
-            setLoadingAttempts(prev => prev + 1);
-          }, 1000);
-        } else {
-          console.error("Failed to load profile after multiple attempts");
-          setError("Failed to load your profile. Please try logging in again.");
-        }
-      }
+      await loadUserProfile();
+      setProfileLoaded(true);
     };
 
     loadProfile();
-  }, [authLoading, user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile, setError]);
+  }, [authLoading, user, profileLoaded, loadUserProfile]);
 
-  // Handle profile errors
   useEffect(() => {
-    if (profileError) {
-      setError(profileError);
-    }
-  }, [profileError, setError]);
-
-  // Handle redirections based on role requirements
-  useEffect(() => {
-    // Only perform redirects if auth is complete and we've attempted to load the profile
-    const shouldCheckAccess = !authLoading && (profileLoaded || loadingAttempts >= 3);
-    
-    if (shouldCheckAccess) {
-      // If a specific role is required but the user doesn't have it
-      if (user && userRole && requiredRole && !hasRequiredRole) {
-        console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
+    // If we have completed loading the profile, check required roles
+    if (!authLoading && profileLoaded && userRole) {
+      if (requiredRole && !hasRequiredRole) {
         setError(`You need ${requiredRole} permissions to access this area.`);
         navigate('/select-role');
       }
-      
-      // If authentication fails and we have a required role, redirect to auth
-      if (!user && requiredRole) {
-        navigate('/auth');
-      }
     }
-  }, [
-    authLoading, 
-    profileLoaded, 
-    loadingAttempts, 
-    user, 
-    userRole, 
-    requiredRole, 
-    hasRequiredRole, 
-    navigate, 
-    setError
-  ]);
+    
+    // If authentication fails and we have a required role, redirect to auth
+    if (!authLoading && !user && requiredRole) {
+      navigate('/auth');
+    }
+  }, [authLoading, profileLoaded, userRole, requiredRole, hasRequiredRole, navigate, setError]);
 
-  // Combine and expose all error states
-  const error = authError || profileError;
-  
   // Calculate the final loading state (either auth is loading or profile is loading)
-  const isLoading = authLoading || (user && !profileLoaded && loadingAttempts < 3);
+  const isLoading = authLoading || (user && !profileLoaded);
 
   return { 
     isLoading, 
-    error, 
+    error: authError, 
     user,
     session,
     userRole, 
