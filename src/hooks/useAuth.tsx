@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthState } from '@/hooks/useAuthState';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -166,6 +167,3 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     isAdmin: isAdmin
   };
 };
-
-// Add missing supabase import
-import { supabase } from '@/integrations/supabase/client';
