@@ -1,8 +1,11 @@
 
 import React from 'react';
-import { Home, FileText, Send, Award, Settings, Menu, X } from 'lucide-react';
+import { Home, FileText, Users, Settings, Menu, X, PlusCircle, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,13 +20,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   activePage, 
   setActivePage 
 }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const menuItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: Home },
-    { id: 'tenders', name: 'Tenders', icon: FileText },
-    { id: 'bids', name: 'Bid Submission', icon: Send },
-    { id: 'evaluation', name: 'Evaluation', icon: Award },
-    { id: 'settings', name: 'Settings', icon: Settings }
+    { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/admin' },
+    { id: 'tenders', name: 'Manage Tenders', icon: FileText, path: '/admin/tenders' },
+    { id: 'createTender', name: 'Create Tender', icon: PlusCircle, path: '/admin/create-tender' },
+    { id: 'settings', name: 'Settings', icon: Settings, path: '/admin/settings' }
   ];
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error logging out",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <>
@@ -43,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
-          <h1 className={cn("font-bold text-xl", !isOpen && "md:hidden")}>TenderFlow</h1>
+          <h1 className={cn("font-bold text-xl", !isOpen && "md:hidden")}>AdminPanel</h1>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -64,7 +86,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                     "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     activePage === item.id && "bg-sidebar-accent text-sidebar-accent-foreground"
                   )}
-                  onClick={() => setActivePage(item.id)}
+                  onClick={() => {
+                    setActivePage(item.id);
+                    navigate(item.path);
+                  }}
                 >
                   <item.icon className="mr-2 h-5 w-5" />
                   <span className={cn(!isOpen && "md:hidden")}>
@@ -82,10 +107,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-sm font-medium">AD</span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium">Admin User</p>
+              <p className="text-sm font-medium">Admin</p>
               <p className="text-xs text-sidebar-foreground/70">admin@example.com</p>
             </div>
           </div>
+          <Button 
+            variant="outline" 
+            className="w-full mt-4 justify-start" 
+            onClick={handleLogout}
+          >
+            Sign Out
+          </Button>
         </div>
       </aside>
     </>

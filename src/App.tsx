@@ -17,6 +17,8 @@ import BidsList from "./pages/supplier/BidsList";
 import SupplierLayout from "./layouts/SupplierLayout";
 import AdminLayout from "./layouts/AdminLayout";
 import RoleSelector from "./pages/RoleSelector";
+import AdminTenderCreate from "./pages/admin/AdminTenderCreate";
+import AdminTenderList from "./pages/admin/AdminTenderList";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,7 +45,9 @@ const App = () => (
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Index />} />
+            <Route index element={<AdminTenderList />} />
+            <Route path="tenders" element={<AdminTenderList />} />
+            <Route path="create-tender" element={<AdminTenderCreate />} />
           </Route>
           
           {/* Supplier Routes */}
