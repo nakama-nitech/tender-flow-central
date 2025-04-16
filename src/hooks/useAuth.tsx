@@ -5,11 +5,13 @@ import { useAuthState } from '@/hooks/useAuthState';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [loadingAttempts, setLoadingAttempts] = useState(0);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Use the base auth state hook
   const { 
@@ -62,12 +64,11 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         if (isAdminByEmail && profile && profile.role !== 'admin') {
           console.log("User should be admin but has role:", profile.role);
           try {
-            const { error } = await supabase.rpc('upsert_profile', {
-              user_id: user.id,
-              user_role: 'admin',
-              first_name: profile.first_name || '',
-              last_name: profile.last_name || ''
-            });
+            // Direct update instead of RPC call
+            const { error } = await supabase
+              .from('profiles')
+              .update({ role: 'admin' })
+              .eq('id', user.id);
             
             if (error) {
               console.error("Error updating to admin role:", error);
@@ -85,6 +86,13 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         if (profile) {
           console.log("Profile loaded successfully:", profile);
           setProfileLoaded(true);
+          
+          // Show success toast on successful profile load
+          toast({
+            title: "Profile loaded",
+            description: `Welcome ${profile.role === 'admin' ? 'Administrator' : 'Supplier'}!`,
+            variant: "default"
+          });
         } else {
           // If profile loading failed, try again after a delay (max 3 attempts)
           if (loadingAttempts < 3) {
@@ -95,29 +103,37 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
           } else {
             console.error("Failed to load profile after multiple attempts");
             setError("Failed to load your profile. Please try logging in again.");
+            // Add fallback redirection
+            navigate('/auth');
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading profile:", error);
         if (loadingAttempts < 3) {
           setTimeout(() => {
             setLoadingAttempts(prev => prev + 1);
           }, 1000);
         } else {
-          setError("Failed to load your profile due to an error. Please try logging in again.");
+          setError(error.message || "Failed to load your profile due to an error. Please try logging in again.");
+          // Add fallback redirection
+          navigate('/auth');
         }
       }
     };
 
     loadProfile();
-  }, [authLoading, user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile, setError, checkAdminByEmail]);
+  }, [authLoading, user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile, setError, checkAdminByEmail, toast, navigate]);
 
   // Handle profile errors
   useEffect(() => {
     if (profileError) {
       setError(profileError);
+      // Add default redirect
+      if (loadingAttempts >= 3) {
+        navigate('/auth');
+      }
     }
-  }, [profileError, setError]);
+  }, [profileError, setError, loadingAttempts, navigate]);
 
   // Handle redirections based on role requirements
   useEffect(() => {

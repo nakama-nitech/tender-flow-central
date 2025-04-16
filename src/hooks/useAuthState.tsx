@@ -29,8 +29,10 @@ export const useAuthState = () => {
           console.log("User signed in or token refreshed");
           setSession(sessionData);
           setUser(sessionData.user);
-          setIsLoading(false);
         }
+        
+        // Always update loading state on auth events
+        setIsLoading(false);
       }
     );
     
@@ -66,7 +68,7 @@ export const useAuthState = () => {
     // Add delay before checking auth to ensure session is fully established
     const timer = setTimeout(() => {
       checkSession();
-    }, 100);
+    }, 300); // Increased delay for better reliability
     
     return () => {
       clearTimeout(timer);
@@ -78,22 +80,43 @@ export const useAuthState = () => {
     setRetryCount(prev => prev + 1);
     setIsLoading(true);
     setError(null);
+    toast({
+      title: "Retrying...",
+      description: "Attempting to reconnect to your account"
+    });
   };
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Sign out error:", error);
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Sign out error:", error);
+        toast({
+          title: "Sign out failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      setUser(null);
+      setSession(null);
+      setIsLoading(false);
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out"
+      });
+    } catch (e: any) {
+      console.error("Sign out exception:", e);
+      setIsLoading(false);
       toast({
         title: "Sign out failed",
-        description: error.message,
+        description: e.message || "An unexpected error occurred",
         variant: "destructive",
       });
-      return;
     }
-    
-    setUser(null);
-    setSession(null);
   };
 
   return { 
