@@ -46,7 +46,7 @@ export const useProfile = (userId: string | undefined, session: any) => {
       
       console.log("Creating new profile with role:", metadataRole);
       
-      // Create a new profile directly with INSERT instead of using RPC
+      // Create a new profile with direct insert
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert([{
@@ -75,6 +75,33 @@ export const useProfile = (userId: string | undefined, session: any) => {
       console.error("Profile fetch/create error:", e);
       setProfileError(e.message || "Error with profile data");
       setIsProfileLoading(false);
+      
+      // Try again with a direct approach if there's an RLS error
+      if (e.message && e.message.includes("recursion")) {
+        try {
+          console.log("Attempting alternate profile creation due to RLS error");
+          
+          // Use a direct insert approach to avoid recursion issues
+          const { data: directProfile, error: directError } = await supabase
+            .from('profiles')
+            .insert([{
+              id: userId,
+              role: 'supplier', // Default role
+              first_name: '',
+              last_name: ''
+            }])
+            .select()
+            .single();
+            
+          if (!directError && directProfile) {
+            console.log("Created profile using direct approach:", directProfile);
+            setIsProfileLoading(false);
+            return directProfile;
+          }
+        } catch (directErr) {
+          console.error("Even direct profile creation failed:", directErr);
+        }
+      }
       
       // Create a fallback profile object
       return {

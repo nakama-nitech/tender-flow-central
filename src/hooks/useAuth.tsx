@@ -44,6 +44,16 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   // Special case for admins - they can access supplier paths
   const canAccessCurrentPath = isAdmin() || hasRequiredRole;
 
+  // Display helpful toast when profile loading begins
+  useEffect(() => {
+    if (user && !profileLoaded && !isProfileLoading && loadingAttempts === 0) {
+      toast({
+        title: "Loading your profile",
+        description: "Please wait while we retrieve your account information",
+      });
+    }
+  }, [user, profileLoaded, isProfileLoading, loadingAttempts, toast]);
+
   // Attempt to load profile if not loaded yet
   useEffect(() => {
     const loadProfile = async () => {
@@ -93,9 +103,14 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
             description: `Welcome ${profile.role === 'admin' ? 'Administrator' : 'Supplier'}!`,
             variant: "default"
           });
+          
+          // If user is on the auth page, redirect to appropriate dashboard
+          if (window.location.pathname === '/auth') {
+            navigate(profile.role === 'admin' ? '/admin' : '/supplier/dashboard');
+          }
         } else {
           // If profile loading failed, try again after a delay (max 3 attempts)
-          if (loadingAttempts < 3) {
+          if (loadingAttempts < 5) { // Increased from 3 to 5 attempts
             console.log("Profile loading failed, retrying...");
             setTimeout(() => {
               setLoadingAttempts(prev => prev + 1);
@@ -109,7 +124,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         }
       } catch (error: any) {
         console.error("Error loading profile:", error);
-        if (loadingAttempts < 3) {
+        if (loadingAttempts < 5) { // Increased from 3 to 5 attempts
           setTimeout(() => {
             setLoadingAttempts(prev => prev + 1);
           }, 1000);
@@ -129,7 +144,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     if (profileError) {
       setError(profileError);
       // Add default redirect
-      if (loadingAttempts >= 3) {
+      if (loadingAttempts >= 5) { // Increased from 3 to 5 attempts
         navigate('/auth');
       }
     }
@@ -138,7 +153,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   // Handle redirections based on role requirements
   useEffect(() => {
     // Only perform redirects if auth is complete and we've attempted to load the profile
-    const shouldCheckAccess = !authLoading && (profileLoaded || loadingAttempts >= 3);
+    const shouldCheckAccess = !authLoading && (profileLoaded || loadingAttempts >= 5); // Increased from 3 to 5 attempts
     
     if (shouldCheckAccess) {
       // If a specific role is required but the user doesn't have it
@@ -169,7 +184,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const error = authError || profileError;
   
   // Calculate the final loading state (either auth is loading or profile is loading)
-  const isLoading = authLoading || (user && !profileLoaded && loadingAttempts < 3);
+  const isLoading = authLoading || (user && !profileLoaded && loadingAttempts < 5); // Increased from 3 to 5 attempts
 
   return { 
     isLoading, 

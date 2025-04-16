@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Home, FileText, Users, Settings, Menu, X, PlusCircle, BarChart3 } from 'lucide-react';
+import { Home, FileText, Users, Settings, Menu, X, PlusCircle, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/admin' },
     { id: 'tenders', name: 'Manage Tenders', icon: FileText, path: '/admin/tenders' },
     { id: 'createTender', name: 'Create Tender', icon: PlusCircle, path: '/admin/create-tender' },
+    { id: 'suppliers', name: 'Manage Suppliers', icon: Store, path: '/admin/suppliers' },
     { id: 'settings', name: 'Settings', icon: Settings, path: '/admin/settings' }
   ];
 

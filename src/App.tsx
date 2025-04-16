@@ -18,11 +18,13 @@ import AdminLayout from "./layouts/AdminLayout";
 import RoleSelector from "./pages/RoleSelector";
 import AdminTenderCreate from "./pages/admin/AdminTenderCreate";
 import AdminTenderList from "./pages/admin/AdminTenderList";
+import AdminSupplierList from "./pages/admin/AdminSupplierList";
+import AdminSupplierDetails from "./pages/admin/AdminSupplierDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2, // Increased from 1 to 2
+      retry: 3, // Increased from 2 to 3 for better reliability
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
@@ -47,6 +49,8 @@ const App = () => (
             <Route index element={<AdminTenderList />} />
             <Route path="tenders" element={<AdminTenderList />} />
             <Route path="create-tender" element={<AdminTenderCreate />} />
+            <Route path="suppliers" element={<AdminSupplierList />} />
+            <Route path="suppliers/:supplierId" element={<AdminSupplierDetails />} />
           </Route>
           
           {/* Supplier Routes */}
