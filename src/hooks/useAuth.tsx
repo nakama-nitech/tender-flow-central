@@ -75,10 +75,12 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
           console.log("User should be admin but has role:", profile.role);
           try {
             // Direct update instead of using the previous method that might cause recursion
-            const { error } = await supabase
-              .from('profiles')
-              .update({ role: 'admin' })
-              .eq('id', user.id);
+            const { error } = await supabase.rpc('upsert_profile', {
+              user_id: user.id,
+              user_role: 'admin',
+              first_name: profile.first_name || '',
+              last_name: profile.last_name || ''
+            });
             
             if (error) {
               console.error("Error updating to admin role:", error);

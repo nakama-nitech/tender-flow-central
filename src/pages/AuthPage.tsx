@@ -172,21 +172,18 @@ const AuthPage: React.FC = () => {
       
       console.log("Login successful, session:", data.session);
       
-      // Fetch the user's profile to determine their role
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .maybeSingle();
+      // Get user role using RPC to avoid recursion
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_profile_role', { user_id: data.user.id });
       
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Error fetching profile:", profileError);
+      if (roleError && roleError.code !== 'PGRST116') {
+        console.error("Error fetching role:", roleError);
         toast({
           title: "Profile error",
-          description: "There was an issue loading your profile. You'll be directed to the supplier dashboard.",
+          description: "There was an issue loading your profile. You'll be directed to select a role.",
           variant: "destructive",
         });
-        navigate('/supplier/dashboard');
+        navigate('/select-role');
         return;
       }
       
@@ -196,11 +193,11 @@ const AuthPage: React.FC = () => {
       });
       
       // Redirect based on role
-      if (profileData && profileData.role === 'admin') {
+      if (roleData === 'admin') {
         navigate('/select-role');
       } else {
-        // Default to supplier dashboard for other roles or if no profile
-        navigate('/supplier/dashboard');
+        // Default to role selection if no clear role
+        navigate('/select-role');
       }
     } catch (error: any) {
       console.error("Login error:", error);
