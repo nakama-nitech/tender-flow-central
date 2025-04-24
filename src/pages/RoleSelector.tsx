@@ -131,6 +131,7 @@ const RoleSelector = () => {
       // Update the user's profile in the database
       if (user?.id) {
         console.log(`Updating user profile to role: ${role}`);
+        
         // First update user metadata
         const { error: metadataError } = await supabase.auth.updateUser({
           data: { role: role }
