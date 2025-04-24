@@ -21,7 +21,8 @@ export const useProfile = (userId: string | undefined, session: any) => {
       setIsProfileLoading(true);
       setProfileError(null);
       
-      // First, check if the profile already exists
+      // First, check if the profile already exists using a simpler query
+      // that won't trigger infinite recursion
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, role, first_name, last_name')
@@ -46,62 +47,43 @@ export const useProfile = (userId: string | undefined, session: any) => {
       
       console.log("Creating new profile with role:", metadataRole);
       
-      // Create a new profile with direct insert
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: userId,
-          role: metadataRole,
-          first_name: '',
-          last_name: ''
-        }])
-        .select()
-        .single();
+      // Create a new profile with direct insert, avoiding RLS issues
+      const { data: newProfile, error: insertError } = await supabase.rpc('upsert_profile', {
+        user_id: userId,
+        user_role: metadataRole,
+        first_name: '',
+        last_name: ''
+      });
       
       if (insertError) {
         console.error("Profile creation error:", insertError);
         throw insertError;
       }
       
-      console.log("New profile created:", newProfile);
+      // Fetch the newly created profile
+      const { data: createdProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, role, first_name, last_name')
+        .eq('id', userId)
+        .single();
+        
+      if (fetchError) {
+        console.error("Error fetching created profile:", fetchError);
+        throw fetchError;
+      }
+      
+      console.log("New profile created:", createdProfile);
       toast({
         title: "Profile created",
         description: "Your profile has been set up successfully",
       });
       
       setIsProfileLoading(false);
-      return newProfile;
+      return createdProfile;
     } catch (e: any) {
       console.error("Profile fetch/create error:", e);
       setProfileError(e.message || "Error with profile data");
       setIsProfileLoading(false);
-      
-      // Try again with a direct approach if there's an RLS error
-      if (e.message && e.message.includes("recursion")) {
-        try {
-          console.log("Attempting alternate profile creation due to RLS error");
-          
-          // Use a direct insert approach to avoid recursion issues
-          const { data: directProfile, error: directError } = await supabase
-            .from('profiles')
-            .insert([{
-              id: userId,
-              role: 'supplier', // Default role
-              first_name: '',
-              last_name: ''
-            }])
-            .select()
-            .single();
-            
-          if (!directError && directProfile) {
-            console.log("Created profile using direct approach:", directProfile);
-            setIsProfileLoading(false);
-            return directProfile;
-          }
-        } catch (directErr) {
-          console.error("Even direct profile creation failed:", directErr);
-        }
-      }
       
       // Create a fallback profile object
       return {

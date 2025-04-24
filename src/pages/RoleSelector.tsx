@@ -140,7 +140,7 @@ const RoleSelector = () => {
           console.error("Error updating user metadata:", metadataError);
         }
         
-        // Then update profile in database
+        // Then update profile in database using RPC to avoid recursion
         const { error } = await supabase.rpc('upsert_profile', {
           user_id: user.id,
           user_role: role,
