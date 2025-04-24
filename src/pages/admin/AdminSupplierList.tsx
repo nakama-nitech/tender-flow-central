@@ -158,7 +158,7 @@ const AdminSupplierList = () => {
                       <TableCell>{supplier.country}</TableCell>
                       <TableCell>{supplier.phone_number}</TableCell>
                       <TableCell>
-                        <Badge variant={supplier.verified ? "success" : "secondary"}>
+                        <Badge variant={supplier.verified ? "outline" : "secondary"} className={supplier.verified ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
                           {supplier.verified ? 'Verified' : 'Pending'}
                         </Badge>
                       </TableCell>

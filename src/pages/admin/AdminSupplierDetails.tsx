@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -130,7 +129,7 @@ const AdminSupplierDetails = () => {
           </div>
         </div>
         
-        <Badge variant={isVerified ? "success" : "secondary"} className="text-sm px-3 py-1">
+        <Badge variant={isVerified ? "outline" : "secondary"} className={`text-sm px-3 py-1 ${isVerified ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}`}>
           {isVerified ? 'Verified' : 'Pending Verification'}
         </Badge>
       </div>
@@ -252,7 +251,6 @@ const AdminSupplierDetails = () => {
               variant="destructive" 
               className="w-full"
               onClick={() => {
-                // Show confirmation toast here in real implementation
                 toast({
                   title: "Feature coming soon",
                   description: "The ability to remove suppliers will be available soon",
