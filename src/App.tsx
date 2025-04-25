@@ -69,6 +69,7 @@ const App = () => (
           {/* Redirects */}
           <Route path="/admin/*" element={<Navigate to="/admin" />} />
           <Route path="/supplier" element={<Navigate to="/supplier/dashboard" />} />
+          <Route path="/select-role" element={<Navigate to="/redirect" />} />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
