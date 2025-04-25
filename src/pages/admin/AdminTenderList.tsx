@@ -64,7 +64,22 @@ const AdminTenderList: React.FC = () => {
           throw error;
         }
         
-        setTenders(data || []);
+        // Map database fields to our interface
+        const formattedTenders: Tender[] = data?.map(tender => ({
+          id: tender.id,
+          title: tender.title,
+          description: tender.description,
+          category: tender.category,
+          budget: tender.budget,
+          deadline: tender.deadline,
+          status: tender.status,
+          createdAt: tender.created_at,
+          created_at: tender.created_at,
+          created_by: tender.created_by,
+          updated_at: tender.updated_at
+        })) || [];
+        
+        setTenders(formattedTenders);
       } catch (err: any) {
         console.error('Error fetching tenders:', err);
         toast({

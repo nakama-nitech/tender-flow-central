@@ -33,25 +33,35 @@ export interface Tender {
   budget: number;
   deadline: string;
   status: TenderStatus;
-  createdAt: string;
+  createdAt?: string; // Making this optional 
+  created_at?: string; // Support both formats
   documents?: TenderDocument[];
   questions?: TenderQuestion[];
+  created_by?: string;
+  updated_at?: string;
 }
 
 // Add bid-related types with extended status options
 export interface Bid {
   id: string;
-  tenderId: string;
-  vendorName: string;
-  vendorEmail?: string; // Added vendorEmail as optional
+  tenderId?: string;
+  tenderid?: string; // Support database field name 
+  vendorName?: string;
+  vendorname?: string; // Support database field name
+  vendorEmail?: string; 
+  vendoremail?: string; // Support database field name
   amount: number;
   proposal?: string;
   submittedAt?: string;
-  submittedDate: string;
+  submittedDate?: string;
+  submitteddate?: string; // Support database field name
   status: 'pending' | 'qualified' | 'disqualified' | 'shortlisted' | 'reviewed' | 'rejected' | 'awarded';
   score?: number;
   documents?: TenderDocument[];
   notes?: string;
+  vendor_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TenderStatistics {

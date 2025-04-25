@@ -18,13 +18,30 @@ export const useTenderBids = (tenderId: string) => {
       const { data, error } = await supabase
         .from('bids')
         .select('*')
-        .eq('tenderId', tenderId);
+        .eq('tenderid', tenderId);
         
       if (error) {
         throw error;
       }
       
-      setBids(data || []);
+      // Map database fields to our interface
+      const formattedBids: Bid[] = data?.map(bid => ({
+        id: bid.id,
+        tenderId: bid.tenderid,
+        vendorName: bid.vendorname,
+        vendorEmail: bid.vendoremail,
+        amount: bid.amount,
+        proposal: bid.proposal,
+        submittedDate: bid.submitteddate,
+        status: bid.status as Bid['status'],
+        score: bid.score,
+        notes: bid.notes,
+        vendor_id: bid.vendor_id,
+        created_at: bid.created_at,
+        updated_at: bid.updated_at
+      })) || [];
+      
+      setBids(formattedBids);
     } catch (err: any) {
       console.error('Error fetching bids:', err);
       setError(err.message || 'Failed to load bids');
@@ -71,7 +88,7 @@ export const useTenderBids = (tenderId: string) => {
         const { error: updateError } = await supabase
           .from('bids')
           .update({ status: 'rejected' })
-          .eq('tenderId', tenderId)
+          .eq('tenderid', tenderId)
           .neq('id', bidId)
           .eq('status', 'awarded');
         

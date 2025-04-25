@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ export const useTenderForm = (tenderId?: string) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   const form = useForm<TenderFormValues>({
     resolver: zodResolver(tenderFormSchema),
@@ -44,34 +45,46 @@ export const useTenderForm = (tenderId?: string) => {
           budget: Number(data.budget)
         });
       }
-    } catch (error) {
+      setInitialLoadDone(true);
+    } catch (error: any) {
       console.error('Error loading tender:', error);
       toast({
         title: 'Error',
         description: 'Failed to load tender details',
         variant: 'destructive'
       });
+      setInitialLoadDone(true);
     }
   };
 
   // If tenderId is provided, load the tender data
-  if (tenderId) {
-    loadTender(tenderId);
-  }
+  useEffect(() => {
+    if (tenderId) {
+      loadTender(tenderId);
+    } else {
+      setInitialLoadDone(true);
+    }
+  }, [tenderId]);
 
   const onSubmit = async (data: TenderFormValues) => {
     setIsSubmitting(true);
     
     try {
-      const { user } = await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (userError || !userData.user) {
         throw new Error('User not authenticated');
       }
 
+      // Convert date to ISO string for database
       const tenderData = {
-        ...data,
-        created_by: user.id
+        created_by: userData.user.id,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        budget: data.budget,
+        deadline: data.deadline.toISOString(),
+        status: data.status
       };
 
       let result;
@@ -116,6 +129,7 @@ export const useTenderForm = (tenderId?: string) => {
   return {
     form,
     isSubmitting,
+    initialLoadDone,
     onSubmit: form.handleSubmit(onSubmit)
   };
 };
