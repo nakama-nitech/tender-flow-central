@@ -1,15 +1,15 @@
-import { useEffect } from 'react';
+
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
-import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { useRoleBasedRedirection } from '@/hooks/useRoleBasedRedirection';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   
   const { 
     isLoading: authLoading, 
@@ -30,74 +30,104 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     checkAdminByEmail
   } = useProfileManagement(user, setError);
 
-  const {
-    checkRequiredRole,
-    checkRole,
-    hasRequiredRole,
-    isAdmin,
-  } = useRoleAccess(userRole, requiredRole);
-
+  // Determine if user meets the role requirements
+  const hasRequiredRole = !requiredRole || userRole === requiredRole;
+  
   // Special case for admins - they can access supplier paths
+  const isAdmin = () => userRole === 'admin';
   const canAccessCurrentPath = isAdmin() || hasRequiredRole;
+  
+  // Check if user is on an auth page
+  const isOnAuthPage = location.pathname === '/auth' || location.pathname === '/select-role';
+  
+  // Profile loading in progress
+  const isLoadingProfile = user && !profileLoaded && loadingAttempts < 5;
+  
+  // Overall loading state
+  const isLoading = authLoading || isProfileLoading || isLoadingProfile || isCheckingAccess;
 
   useEffect(() => {
+    let mounted = true;
+    
     const checkAuthAndRedirect = async () => {
-      if (!authLoading && !isProfileLoading) {
+      // Skip any redirection while loading
+      if (authLoading || isProfileLoading) return;
+      
+      // If there's a user but profile isn't loaded yet, try to load it
+      if (user && !profileLoaded && !isProfileLoading && loadingAttempts < 5) {
+        await loadUserProfile();
+        return;
+      }
+      
+      // Once loading is done, we can make routing decisions
+      if (mounted) {
+        setIsCheckingAccess(false);
+        
         // If no user is logged in and we're not on the auth page
-        if (!user && !location.pathname.startsWith('/auth')) {
-          navigate('/auth');
+        if (!user && !isOnAuthPage) {
+          navigate('/auth', { replace: true });
           return;
         }
-
+        
         // If user is logged in but no role is set
         if (user && !userRole && profileLoaded) {
-          navigate('/select-role');
-          return;
-        }
-
-        // If user is logged in and has a role, but is on the wrong path
-        if (user && userRole && !canAccessCurrentPath) {
-          if (userRole === 'admin') {
-            navigate('/admin');
-          } else {
-            navigate('/supplier/dashboard');
+          if (!location.pathname.startsWith('/select-role')) {
+            navigate('/select-role', { replace: true });
           }
           return;
         }
+        
+        // If user is logged in and has a role, but is on the wrong path or auth page
+        if (user && userRole) {
+          if (isOnAuthPage) {
+            // Redirect from auth pages to appropriate dashboard
+            if (userRole === 'admin') {
+              navigate('/admin', { replace: true });
+            } else {
+              navigate('/supplier/dashboard', { replace: true });
+            }
+            return;
+          } else if (!canAccessCurrentPath) {
+            // Redirect from inaccessible routes based on role
+            if (userRole === 'admin') {
+              navigate('/admin', { replace: true });
+            } else {
+              navigate('/supplier/dashboard', { replace: true });
+            }
+            return;
+          }
+        }
       }
     };
-
+    
     checkAuthAndRedirect();
-  }, [user, userRole, authLoading, isProfileLoading, profileLoaded, location.pathname, navigate, canAccessCurrentPath]);
-
-  useEffect(() => {
-    if (user && !profileLoaded && !isProfileLoading && loadingAttempts < 5) {
-      loadUserProfile();
-    }
-  }, [user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile]);
-
-  useEffect(() => {
-    if (user && userRole && !authLoading && profileLoaded) {
-      const welcomeMessage = isAdmin() 
-        ? 'Welcome back, Administrator!' 
-        : 'Welcome to your supplier dashboard!';
-      
-      toast({
-        title: "Login Successful",
-        description: `${welcomeMessage} (${user.email})`,
-      });
-    }
-  }, [user, userRole, authLoading, profileLoaded]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, [
+    user, 
+    userRole, 
+    authLoading, 
+    isProfileLoading, 
+    profileLoaded, 
+    canAccessCurrentPath, 
+    navigate, 
+    location.pathname, 
+    isOnAuthPage,
+    loadingAttempts,
+    loadUserProfile
+  ]);
 
   return { 
-    isLoading: authLoading || (user && !profileLoaded && loadingAttempts < 5), 
+    isLoading, 
     error, 
     user,
     session,
     userRole, 
     handleRetry, 
     handleSignOut, 
-    checkRole,
-    isAdmin
+    isAdmin,
+    canAccessCurrentPath
   };
 };

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,7 @@ import AdminTenderList from "./pages/admin/AdminTenderList";
 import AdminTenderBids from "./pages/admin/AdminTenderBids";
 import AdminSupplierList from "./pages/admin/AdminSupplierList";
 import AdminSupplierDetails from "./pages/admin/AdminSupplierDetails";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +33,15 @@ const queryClient = new QueryClient({
   },
 });
 
+const LoadingScreen = () => (
+  <div className="flex min-h-screen items-center justify-center">
+    <div className="flex flex-col items-center space-y-4">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <p className="text-lg font-medium text-muted-foreground">Loading your account...</p>
+    </div>
+  </div>
+);
+
 const ProtectedRoute = ({ 
   children, 
   requiredRole 
@@ -38,10 +49,10 @@ const ProtectedRoute = ({
   children: React.ReactNode;
   requiredRole?: 'admin' | 'supplier';
 }) => {
-  const { isLoading, user, userRole } = useAuth(requiredRole);
+  const { isLoading, user, userRole, canAccessCurrentPath } = useAuth(requiredRole);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen />;
   }
 
   if (!user) {
@@ -52,8 +63,8 @@ const ProtectedRoute = ({
     return <Navigate to="/select-role" replace />;
   }
 
-  if (requiredRole && userRole !== requiredRole && userRole !== 'admin') {
-    return <Navigate to={userRole === 'supplier' ? "/supplier/dashboard" : "/admin"} replace />;
+  if (!canAccessCurrentPath) {
+    return <Navigate to={userRole === 'admin' ? "/admin" : "/supplier/dashboard"} replace />;
   }
 
   return <>{children}</>;
