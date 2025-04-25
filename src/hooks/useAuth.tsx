@@ -5,9 +5,11 @@ import { useSessionState } from '@/hooks/useSessionState';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useRoleBasedRedirection } from '@/hooks/useRoleBasedRedirection';
+import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Use the session state hook
   const { 
@@ -59,6 +61,20 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
       loadUserProfile();
     }
   }, [user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile]);
+
+  // Handle successful login notification
+  useEffect(() => {
+    if (user && userRole && !authLoading && profileLoaded) {
+      const welcomeMessage = isAdmin() 
+        ? 'Welcome back, Administrator!' 
+        : 'Welcome to your supplier dashboard!';
+      
+      toast({
+        title: "Login Successful",
+        description: `${welcomeMessage} (${user.email})`,
+      });
+    }
+  }, [user, userRole, authLoading, profileLoaded]);
 
   return { 
     isLoading: authLoading || (user && !profileLoaded && loadingAttempts < 5), 

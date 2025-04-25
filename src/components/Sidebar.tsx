@@ -1,10 +1,11 @@
 import React from 'react';
-import { Home, FileText, Users, Settings, Menu, X, PlusCircle, Store } from 'lucide-react';
+import { Home, FileText, Users, Settings, Menu, X, PlusCircle, Store, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, handleSignOut } = useAuth();
   
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/admin' },
@@ -30,14 +32,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: 'settings', name: 'Settings', icon: Settings, path: '/admin/settings' }
   ];
 
-  const handleLogout = async () => {
+  const onLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await handleSignOut();
       toast({
         title: "Logged out successfully",
         description: "You have been logged out of your account",
       });
-      navigate('/');
+      navigate('/auth');
     } catch (error) {
       toast({
         title: "Error logging out",
@@ -102,21 +104,25 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
         
         <div className="p-4 border-t border-sidebar-border">
-          <div className={cn("flex items-center", !isOpen && "md:hidden")}>
+          <div className={cn("flex items-center mb-4", !isOpen && "md:hidden")}>
             <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <span className="text-sm font-medium">AD</span>
+              <span className="text-sm font-medium">
+                {user?.email?.charAt(0).toUpperCase()}
+              </span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium">Admin</p>
-              <p className="text-xs text-sidebar-foreground/70">admin@example.com</p>
+              <p className="text-sm font-medium truncate max-w-[150px]">
+                {user?.email}
+              </p>
             </div>
           </div>
           <Button 
             variant="outline" 
-            className="w-full mt-4 justify-start" 
-            onClick={handleLogout}
+            className="w-full justify-start" 
+            onClick={onLogout}
           >
-            Sign Out
+            <LogOut className="mr-2 h-4 w-4" />
+            <span className={cn(!isOpen && "md:hidden")}>Sign Out</span>
           </Button>
         </div>
       </aside>
