@@ -50,46 +50,85 @@ export const useProfileManagement = (
     setIsProfileLoading(true);
     
     try {
+      // Check if user should be admin by email
       const isAdminByEmail = await checkAdminByEmail();
-      
+
+      // Get role using the RPC function instead of direct query
       const { data: roleData, error: roleError } = await supabase
         .rpc('get_profile_role', { user_id: user.id });
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error("Role query error:", roleError);
+        throw roleError;
+      }
       
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      if (profileError) throw profileError;
-      
-      if (profileData) {
-        const profile = {
-          ...profileData,
-          role: roleData,
-          id: user.id
-        };
+      // If we have a role, we can consider the profile loaded
+      if (roleData) {
+        console.log("User role from database:", roleData);
         
-        if (isAdminByEmail && profile.role !== 'admin') {
-          console.log("User should be admin but has role:", profile.role);
-          window.location.reload();
-          return null;
+        // We'll still attempt to create/update the profile if it doesn't exist or is incomplete
+        try {
+          const { error: upsertError } = await supabase.rpc('upsert_profile', {
+            user_id: user.id,
+            user_role: isAdminByEmail ? 'admin' : roleData,
+            first_name: '',
+            last_name: ''
+          });
+          
+          if (upsertError) {
+            console.warn("Error ensuring profile exists:", upsertError);
+          }
+        } catch (e) {
+          console.warn("Error in profile upsert:", e);
+          // Non-critical error, continue
         }
         
         setProfileLoaded(true);
-        setUserRole(profile.role);
+        setUserRole(isAdminByEmail ? 'admin' : roleData);
         
         toast({
           title: "Profile loaded",
-          description: `Welcome ${profile.role === 'admin' ? 'Administrator' : 'Supplier'}!`,
+          description: `Welcome ${roleData === 'admin' ? 'Administrator' : 'Supplier'}!`,
         });
         
-        return profile;
+        return {
+          id: user.id,
+          role: isAdminByEmail ? 'admin' : roleData, 
+          first_name: '',
+          last_name: ''
+        };
+      } else {
+        // No role found, try to create a default profile
+        const defaultRole = isAdminByEmail ? 'admin' : 'supplier';
+        console.log("Creating default profile with role:", defaultRole);
+        
+        const { error: createError } = await supabase.rpc('upsert_profile', {
+          user_id: user.id,
+          user_role: defaultRole,
+          first_name: '',
+          last_name: ''
+        });
+        
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          throw createError;
+        }
+        
+        setProfileLoaded(true);
+        setUserRole(defaultRole);
+        
+        toast({
+          title: "Profile created",
+          description: `Welcome ${defaultRole === 'admin' ? 'Administrator' : 'Supplier'}!`,
+        });
+        
+        return {
+          id: user.id,
+          role: defaultRole,
+          first_name: '',
+          last_name: ''
+        };
       }
-      
-      return null;
     } catch (error: any) {
       console.error("Error loading profile:", error);
       if (loadingAttempts < 5) {

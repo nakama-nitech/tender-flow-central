@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -43,32 +42,6 @@ const RoleSelector = () => {
         if (user.email && adminEmails.includes(user.email)) {
           console.log("User email is in admin list");
           setHasAdminPermission(true);
-          
-          // Set admin role in user metadata
-          const { error: updateError } = await supabase.auth.updateUser({
-            data: { role: 'admin' }
-          });
-          
-          if (updateError) {
-            console.error("Error updating user metadata:", updateError);
-          } else {
-            console.log("Updated user metadata with admin role");
-            
-            // Also update profile in database to ensure consistency
-            const { error: profileError } = await supabase.rpc('upsert_profile', {
-              user_id: user.id,
-              user_role: 'admin',
-              first_name: '',
-              last_name: ''
-            });
-            
-            if (profileError) {
-              console.error("Error updating profile with admin role:", profileError);
-            } else {
-              console.log("Updated profile with admin role");
-            }
-          }
-          
           return;
         }
       } catch (error) {
@@ -128,20 +101,26 @@ const RoleSelector = () => {
         return;
       }
 
-      // Update the user's profile in the database
+      // Update the user's role in the database
       if (user?.id) {
         console.log(`Updating user profile to role: ${role}`);
         
-        // First update user metadata
-        const { error: metadataError } = await supabase.auth.updateUser({
-          data: { role: role }
-        });
-        
-        if (metadataError) {
-          console.error("Error updating user metadata:", metadataError);
+        try {
+          // First update user metadata
+          const { error: metadataError } = await supabase.auth.updateUser({
+            data: { role: role }
+          });
+          
+          if (metadataError) {
+            console.error("Error updating user metadata:", metadataError);
+            throw metadataError;
+          }
+        } catch (err) {
+          console.error("Failed to update user metadata:", err);
+          // Continue anyway as the RPC might still work
         }
         
-        // Then update profile in database using RPC to avoid recursion
+        // Use the RPC function to update the profile safely
         const { error } = await supabase.rpc('upsert_profile', {
           user_id: user.id,
           user_role: role,
