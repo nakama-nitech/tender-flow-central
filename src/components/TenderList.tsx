@@ -1,18 +1,11 @@
-
 import React, { useState } from 'react';
-import { Search, Filter, Plus, Calendar, DollarSign, Tag, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tender, TenderCategory, TenderStatus } from '@/types/tender';
-import { format } from 'date-fns';
+import { Plus } from 'lucide-react';
+import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
+import { TenderSearchBar } from './tender/list/TenderSearchBar';
+import { TenderFiltersBar } from './tender/list/TenderFiltersBar';
+import { TenderCard } from '@/components/admin/tenders/TenderCard';
+import { EmptyTenderState } from '@/components/admin/tenders/EmptyTenderState';
 
 // Mock data for tenders
 const mockTenders: Tender[] = [
@@ -124,7 +117,7 @@ const TenderList: React.FC<TenderListProps> = ({ onNewTender, onViewDetails, onM
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<TenderCategory[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<TenderStatus[]>([]);
-  
+
   // Filter tenders based on search term and selected filters
   const filteredTenders = mockTenders.filter((tender) => {
     const matchesSearch = 
@@ -158,19 +151,6 @@ const TenderList: React.FC<TenderListProps> = ({ onNewTender, onViewDetails, onM
     );
   };
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -187,163 +167,31 @@ const TenderList: React.FC<TenderListProps> = ({ onNewTender, onViewDetails, onM
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search tenders..." 
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Tag className="h-4 w-4" />
-                <span className="hidden sm:inline">Categories</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuCheckboxItem
-                checked={selectedCategories.includes('construction')}
-                onCheckedChange={() => toggleCategory('construction')}
-              >
-                Construction
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedCategories.includes('services')}
-                onCheckedChange={() => toggleCategory('services')}
-              >
-                Services
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedCategories.includes('goods')}
-                onCheckedChange={() => toggleCategory('goods')}
-              >
-                Goods
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedCategories.includes('consulting')}
-                onCheckedChange={() => toggleCategory('consulting')}
-              >
-                Consulting
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedCategories.includes('other')}
-                onCheckedChange={() => toggleCategory('other')}
-              >
-                Other
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">Status</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuCheckboxItem
-                checked={selectedStatuses.includes('draft')}
-                onCheckedChange={() => toggleStatus('draft')}
-              >
-                Draft
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedStatuses.includes('published')}
-                onCheckedChange={() => toggleStatus('published')}
-              >
-                Published
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedStatuses.includes('under_evaluation')}
-                onCheckedChange={() => toggleStatus('under_evaluation')}
-              >
-                Under Evaluation
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedStatuses.includes('awarded')}
-                onCheckedChange={() => toggleStatus('awarded')}
-              >
-                Awarded
-              </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem
-                checked={selectedStatuses.includes('closed')}
-                onCheckedChange={() => toggleStatus('closed')}
-              >
-                Closed
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <TenderSearchBar 
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
+        <TenderFiltersBar
+          selectedCategories={selectedCategories}
+          selectedStatuses={selectedStatuses}
+          onCategoryToggle={toggleCategory}
+          onStatusToggle={toggleStatus}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredTenders.map((tender) => (
-          <Card key={tender.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <CardTitle>{tender.title}</CardTitle>
-                {getStatusBadge(tender.status)}
-              </div>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                {tender.description}
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Deadline: {formatDate(tender.deadline)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Budget: {formatCurrency(tender.budget)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                  <div>{getCategoryBadge(tender.category)}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Created: {formatDate(tender.createdAt)}</span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between pt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onViewDetails(tender.id)}
-              >
-                View Details
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => onManageBids(tender.id)}
-              >
-                Manage Bids
-              </Button>
-            </CardFooter>
-          </Card>
+          <TenderCard
+            key={tender.id}
+            tender={tender}
+            onEdit={onViewDetails}
+            onViewBids={onManageBids}
+          />
         ))}
       </div>
       
       {filteredTenders.length === 0 && (
-        <div className="border rounded-lg p-8 text-center">
-          <h3 className="text-lg font-medium mb-2">No tenders found</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your search or filter criteria
-          </p>
-          <Button onClick={onNewTender}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Tender
-          </Button>
-        </div>
+        <EmptyTenderState onNewTender={onNewTender} />
       )}
     </div>
   );

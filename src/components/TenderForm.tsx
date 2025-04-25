@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Save, Loader2 } from 'lucide-react';
+import { TenderFormHeader } from './tender/form/TenderFormHeader';
+import { DocumentUpload } from './tender/form/DocumentUpload';
+import { useTenderForm } from '@/hooks/admin/useTenderForm';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -18,9 +24,8 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, Save, X, Upload, Loader2, Plus } from 'lucide-react';
+import { CalendarIcon, X, Plus } from 'lucide-react';
 import { 
-  Form, 
   FormControl, 
   FormDescription, 
   FormField, 
@@ -28,11 +33,7 @@ import {
   FormLabel, 
   FormMessage 
 } from '@/components/ui/form';
-import { useTenderForm } from '@/hooks/admin/useTenderForm';
 import { TenderCategory } from '@/types/tender';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface TenderFormProps {
   onCancel: () => void;
@@ -41,15 +42,18 @@ interface TenderFormProps {
 
 const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
   const { form, isSubmitting, initialLoadDone, onSubmit } = useTenderForm(tenderId);
+  const [formError, setFormError] = useState<string | null>(null);
   const [customCategory, setCustomCategory] = useState<string>('');
   const [showCustomCategory, setShowCustomCategory] = useState<boolean>(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    setFormError(null);
-    // The form will be handled by the onSubmit function passed from useTenderForm
-  };
+  if (!initialLoadDone) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading tender data...</span>
+      </div>
+    );
+  }
 
   const handleAddCustomCategory = () => {
     if (customCategory.trim()) {
@@ -62,64 +66,9 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    try {
-      const file = files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${tenderId || 'new'}/${fileName}`;
-
-      // Upload the file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('tender-documents')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      toast({
-        title: "Success",
-        description: "Document uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error('Error uploading document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload document: " + error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  if (!initialLoadDone) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading tender data...</span>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">
-            {tenderId ? 'Edit Tender' : 'Create New Tender'}
-          </h2>
-          <p className="text-muted-foreground">
-            {tenderId 
-              ? 'Update tender details and requirements' 
-              : 'Create a new tender notice or request for proposal'}
-          </p>
-        </div>
-        <Button variant="ghost" onClick={onCancel}>
-          <X className="h-4 w-4 mr-2" />
-          Cancel
-        </Button>
-      </div>
+      <TenderFormHeader isEditing={!!tenderId} onCancel={onCancel} />
 
       {formError && (
         <Alert variant="destructive">
@@ -291,68 +240,9 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
                     </FormItem>
                   )}
                 />
-                
-                <div className="space-y-2">
-                  <FormLabel>Documents</FormLabel>
-                  <div className="border border-dashed rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      id="document-upload"
-                      className="hidden"
-                      onChange={handleFileUpload}
-                      accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx"
-                    />
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drag and drop files here, or click to browse
-                    </p>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => document.getElementById('document-upload')?.click()}
-                    >
-                      Browse Files
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Supported formats: PDF, DOCX, XLSX, PPT (Max 10MB per file)
-                  </p>
-                </div>
-                
-                {tenderId && (
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="published">Published</SelectItem>
-                            <SelectItem value="under_evaluation">Under Evaluation</SelectItem>
-                            <SelectItem value="awarded">Awarded</SelectItem>
-                            <SelectItem value="closed">Closed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Change the tender status to control its visibility and processing stage
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
               </div>
+              
+              <DocumentUpload tenderId={tenderId} />
               
               <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" onClick={onCancel}>
