@@ -44,6 +44,7 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
   const [customCategory, setCustomCategory] = useState<string>('');
   const [showCustomCategory, setShowCustomCategory] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     setFormError(null);
