@@ -18,6 +18,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import RoleSelector from "./pages/RoleSelector";
 import AdminTenderCreate from "./pages/admin/AdminTenderCreate";
 import AdminTenderList from "./pages/admin/AdminTenderList";
+import AdminTenderBids from "./pages/admin/AdminTenderBids";
 import AdminSupplierList from "./pages/admin/AdminSupplierList";
 import AdminSupplierDetails from "./pages/admin/AdminSupplierDetails";
 
@@ -49,6 +50,8 @@ const App = () => (
             <Route index element={<AdminTenderList />} />
             <Route path="tenders" element={<AdminTenderList />} />
             <Route path="create-tender" element={<AdminTenderCreate />} />
+            <Route path="edit-tender/:tenderId" element={<AdminTenderCreate />} />
+            <Route path="tender-bids/:tenderId" element={<AdminTenderBids />} />
             <Route path="suppliers" element={<AdminSupplierList />} />
             <Route path="suppliers/:supplierId" element={<AdminSupplierDetails />} />
           </Route>

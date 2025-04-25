@@ -1,11 +1,12 @@
 
 import React from 'react';
 import TenderForm from '@/components/TenderForm';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const AdminTenderCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { tenderId } = useParams<{ tenderId?: string }>();
   useAdminAuth(); // This ensures only admins can access this page
 
   const handleCancel = () => {
@@ -13,7 +14,10 @@ const AdminTenderCreate: React.FC = () => {
   };
 
   return (
-    <TenderForm onCancel={handleCancel} />
+    <TenderForm 
+      onCancel={handleCancel} 
+      tenderId={tenderId}
+    />
   );
 };
 

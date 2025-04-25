@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Calendar, DollarSign, Clock, Plus, FileText } from 'lucide-react';
+import { Search, Filter, Calendar, DollarSign, Clock, Plus, FileText, Pencil, Eye } from 'lucide-react';
 import { 
   Select, 
   SelectContent, 
@@ -23,40 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
 import { format } from 'date-fns';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-
-// Mock data for tenders - in a real app, this would come from the backend
-const mockTenders: Tender[] = [
-  {
-    id: '1',
-    title: 'Office Building Renovation',
-    description: 'Complete renovation of a 3-story office building including electrical, plumbing, and HVAC systems.',
-    category: 'construction',
-    budget: 750000,
-    deadline: '2025-05-20T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    title: 'IT Infrastructure Upgrade',
-    description: 'Supply and installation of network equipment, servers, and workstations for headquarters.',
-    category: 'goods',
-    budget: 250000,
-    deadline: '2025-04-28T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-18T14:15:00Z'
-  },
-  {
-    id: '3',
-    title: 'Annual Financial Audit',
-    description: 'Professional services for annual financial audit and compliance review.',
-    category: 'services',
-    budget: 45000,
-    deadline: '2025-05-15T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-20T09:45:00Z'
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
 
 // Category badge helper function
 const getCategoryBadge = (category: TenderCategory) => {
@@ -83,9 +50,38 @@ const AdminTenderList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<TenderCategory[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch tenders from Supabase
+  useEffect(() => {
+    const fetchTenders = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase.from('tenders').select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        setTenders(data || []);
+      } catch (err: any) {
+        console.error('Error fetching tenders:', err);
+        toast({
+          title: 'Error',
+          description: err.message || 'Failed to load tenders',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTenders();
+  }, [toast]);
   
   // Filter tenders based on search term and selected filters
-  const filteredTenders = mockTenders.filter((tender) => {
+  const filteredTenders = tenders.filter((tender) => {
     const matchesSearch = 
       tender.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
       tender.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -241,11 +237,22 @@ const AdminTenderList: React.FC = () => {
                   </div>
                   
                   <div className="pt-3 flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <FileText className="h-4 w-4 mr-2" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => navigate(`/admin/edit-tender/${tender.id}`)}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                    <Button size="sm" variant="default" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      variant="default" 
+                      className="flex-1"
+                      onClick={() => navigate(`/admin/tender-bids/${tender.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
                       View Bids
                     </Button>
                   </div>
@@ -256,7 +263,7 @@ const AdminTenderList: React.FC = () => {
         })}
       </div>
       
-      {filteredTenders.length === 0 && (
+      {filteredTenders.length === 0 && !isLoading && (
         <div className="border rounded-lg p-8 text-center">
           <h3 className="text-lg font-medium mb-2">No tenders found</h3>
           <p className="text-muted-foreground mb-4">
@@ -266,6 +273,12 @@ const AdminTenderList: React.FC = () => {
             <Plus className="h-4 w-4 mr-2" />
             Create New Tender
           </Button>
+        </div>
+      )}
+      
+      {isLoading && (
+        <div className="flex justify-center items-center h-64">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
       )}
     </div>
