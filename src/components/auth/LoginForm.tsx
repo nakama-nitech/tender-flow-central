@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -33,30 +32,13 @@ export const LoginForm = () => {
       
       console.log("Login successful, session:", data.session);
       
-      const { data: roleData, error: roleError } = await supabase
-        .rpc('get_profile_role', { user_id: data.user.id });
-      
-      if (roleError && roleError.code !== 'PGRST116') {
-        console.error("Error fetching role:", roleError);
-        toast({
-          title: "Profile error",
-          description: "There was an issue loading your profile. You'll be directed to select a role.",
-          variant: "destructive",
-        });
-        navigate('/select-role');
-        return;
-      }
-      
       toast({
         title: "Logged in successfully",
-        description: "Welcome back to TenderFlow",
+        description: "Redirecting you to your dashboard...",
       });
       
-      if (roleData === 'admin') {
-        navigate('/select-role');
-      } else {
-        navigate('/select-role');
-      }
+      navigate('/redirect');
+      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

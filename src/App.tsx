@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
+import { RedirectHandler } from "./components/auth/RedirectHandler";
 import SupplierDashboard from "./pages/supplier/SupplierDashboard";
 import TenderDiscovery from "./pages/supplier/TenderDiscovery";
 import TenderDetails from "./pages/supplier/TenderDetails";
@@ -15,7 +16,6 @@ import BidStatus from "./pages/supplier/BidStatus";
 import BidsList from "./pages/supplier/BidsList";
 import SupplierLayout from "./layouts/SupplierLayout";
 import AdminLayout from "./layouts/AdminLayout";
-import RoleSelector from "./pages/RoleSelector";
 import AdminTenderCreate from "./pages/admin/AdminTenderCreate";
 import AdminTenderList from "./pages/admin/AdminTenderList";
 import AdminTenderBids from "./pages/admin/AdminTenderBids";
@@ -42,8 +42,8 @@ const App = () => (
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
           
-          {/* Role Selection Route */}
-          <Route path="/select-role" element={<RoleSelector />} />
+          {/* Redirect Handler */}
+          <Route path="/redirect" element={<RedirectHandler />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>

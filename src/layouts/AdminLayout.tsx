@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -57,7 +56,7 @@ const AdminLayout = () => {
     <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">
       <Sidebar 
         isOpen={sidebarOpen} 
-        toggleSidebar={toggleSidebar} 
+        toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
         activePage={activePage}
         setActivePage={setActivePage}
       />
@@ -69,15 +68,20 @@ const AdminLayout = () => {
         )}
       >
         <div className="w-full mx-auto max-w-7xl bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="gap-2"
+            >
+              Sign Out
+            </Button>
+          </div>
           <Outlet />
         </div>
       </main>
     </div>
   );
-  
-  function toggleSidebar() {
-    setSidebarOpen(!sidebarOpen);
-  }
 };
 
 export default AdminLayout;

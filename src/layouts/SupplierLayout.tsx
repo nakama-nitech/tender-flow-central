@@ -1,29 +1,16 @@
-
-import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, Navigate } from 'react-router-dom';
 import SupplierSidebar from '@/components/SupplierSidebar';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { useSupplierAuth } from '@/hooks/useSupplierAuth';
 
 const SupplierLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
-  const location = useLocation();
-  const { isLoading, error, handleRetry, handleSignOut } = useAuth('supplier');
-
-  useEffect(() => {
-    // Set active page based on current path
-    const path = location.pathname;
-    if (path.includes('dashboard')) setActivePage('dashboard');
-    else if (path.includes('tenders')) setActivePage('tenders');
-    else if (path.includes('my-bids')) setActivePage('my-bids');
-    else if (path.includes('bid-status')) setActivePage('bid-status');
-    else if (path.includes('notifications')) setActivePage('notifications');
-    else if (path.includes('settings')) setActivePage('settings');
-  }, [location]);
+  const { isLoading, error, userRole, handleRetry, handleSignOut } = useSupplierAuth();
 
   if (isLoading) {
     return (
@@ -60,11 +47,16 @@ const SupplierLayout = () => {
     );
   }
 
+  // If user is not a supplier, don't render supplier content
+  if (userRole && userRole !== 'supplier') {
+    return <Navigate to="/admin" replace />;
+  }
+
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">
       <SupplierSidebar 
         isOpen={sidebarOpen} 
-        toggleSidebar={toggleSidebar} 
+        toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
         activePage={activePage}
         setActivePage={setActivePage}
       />
@@ -75,16 +67,21 @@ const SupplierLayout = () => {
           sidebarOpen ? "md:ml-0" : "md:ml-0"
         )}
       >
-        <div className="w-full mx-auto max-w-7xl bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-white/50 p-6">
+        <div className="w-full mx-auto max-w-7xl bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-end mb-4">
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="gap-2"
+            >
+              Sign Out
+            </Button>
+          </div>
           <Outlet />
         </div>
       </main>
     </div>
   );
-  
-  function toggleSidebar() {
-    setSidebarOpen(!sidebarOpen);
-  }
 };
 
 export default SupplierLayout;
