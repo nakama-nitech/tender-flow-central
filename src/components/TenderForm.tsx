@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +31,8 @@ import {
 import { useTenderForm } from '@/hooks/admin/useTenderForm';
 import { TenderCategory } from '@/types/tender';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { supabase } from '@/lib/supabase';
+import { toast } from 'react-toastify';
 
 interface TenderFormProps {
   onCancel: () => void;
@@ -57,6 +58,37 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
       form.setValue('category', 'other' as TenderCategory);
       setShowCustomCategory(false);
       setCustomCategory('');
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const file = files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${tenderId || 'new'}/${fileName}`;
+
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('tender-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully",
+      });
+    } catch (error: any) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload document: " + error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -262,11 +294,23 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
                 <div className="space-y-2">
                   <FormLabel>Documents</FormLabel>
                   <div className="border border-dashed rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      id="document-upload"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx"
+                    />
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">
                       Drag and drop files here, or click to browse
                     </p>
-                    <Button type="button" variant="outline" size="sm">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('document-upload')?.click()}
+                    >
                       Browse Files
                     </Button>
                   </div>
