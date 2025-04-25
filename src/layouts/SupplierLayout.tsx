@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import SupplierSidebar from '@/components/SupplierSidebar';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,6 +11,12 @@ const SupplierLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
   const { isLoading, error, userRole, handleRetry, handleSignOut } = useSupplierAuth();
+  const navigate = useNavigate();
+
+  const onSignOut = async () => {
+    await handleSignOut();
+    navigate('/auth');
+  };
 
   if (isLoading) {
     return (
@@ -47,7 +53,6 @@ const SupplierLayout = () => {
     );
   }
 
-  // If user is not a supplier, don't render supplier content
   if (userRole && userRole !== 'supplier') {
     return <Navigate to="/admin" replace />;
   }
@@ -70,7 +75,7 @@ const SupplierLayout = () => {
         <div className="w-full mx-auto max-w-7xl bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-end mb-4">
             <Button
-              onClick={handleSignOut}
+              onClick={onSignOut}
               variant="outline"
               className="gap-2"
             >

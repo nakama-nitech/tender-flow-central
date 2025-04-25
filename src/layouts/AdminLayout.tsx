@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,6 +11,12 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
   const { isLoading, error, userRole, handleRetry, handleSignOut } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const onSignOut = async () => {
+    await handleSignOut();
+    navigate('/auth');
+  };
 
   if (isLoading) {
     return (
@@ -47,7 +53,6 @@ const AdminLayout = () => {
     );
   }
 
-  // If user is not an admin, don't render admin content
   if (userRole && userRole !== 'admin') {
     return <Navigate to="/supplier/dashboard" replace />;
   }
@@ -70,7 +75,7 @@ const AdminLayout = () => {
         <div className="w-full mx-auto max-w-7xl bg-white rounded-lg shadow-sm p-6">
           <div className="flex justify-end mb-4">
             <Button
-              onClick={handleSignOut}
+              onClick={onSignOut}
               variant="outline"
               className="gap-2"
             >

@@ -73,6 +73,9 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         title: "Login Successful",
         description: `${welcomeMessage} (${user.email})`,
       });
+
+      // Redirect to the handler component
+      navigate('/redirect');
     }
   }, [user, userRole, authLoading, profileLoaded]);
 
