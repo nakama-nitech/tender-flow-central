@@ -9,6 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bids: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          proposal: string | null
+          score: number | null
+          status: string
+          submitteddate: string
+          tenderid: string
+          updated_at: string
+          vendor_id: string
+          vendoremail: string | null
+          vendorname: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          proposal?: string | null
+          score?: number | null
+          status?: string
+          submitteddate?: string
+          tenderid: string
+          updated_at?: string
+          vendor_id: string
+          vendoremail?: string | null
+          vendorname: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          proposal?: string | null
+          score?: number | null
+          status?: string
+          submitteddate?: string
+          tenderid?: string
+          updated_at?: string
+          vendor_id?: string
+          vendoremail?: string | null
+          vendorname?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_tenderid_fkey"
+            columns: ["tenderid"]
+            isOneToOne: false
+            referencedRelation: "tenders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -219,6 +275,45 @@ export type Database = {
           },
         ]
       }
+      tenders: {
+        Row: {
+          budget: number
+          category: Database["public"]["Enums"]["tender_category"]
+          created_at: string
+          created_by: string
+          deadline: string
+          description: string
+          id: string
+          status: Database["public"]["Enums"]["tender_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          budget: number
+          category: Database["public"]["Enums"]["tender_category"]
+          created_at?: string
+          created_by: string
+          deadline: string
+          description: string
+          id?: string
+          status?: Database["public"]["Enums"]["tender_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: number
+          category?: Database["public"]["Enums"]["tender_category"]
+          created_at?: string
+          created_by?: string
+          deadline?: string
+          description?: string
+          id?: string
+          status?: Database["public"]["Enums"]["tender_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -243,6 +338,18 @@ export type Database = {
       }
     }
     Enums: {
+      tender_category:
+        | "construction"
+        | "services"
+        | "goods"
+        | "consulting"
+        | "other"
+      tender_status:
+        | "draft"
+        | "published"
+        | "under_evaluation"
+        | "awarded"
+        | "closed"
       user_role: "admin" | "supplier"
     }
     CompositeTypes: {
@@ -359,6 +466,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      tender_category: [
+        "construction",
+        "services",
+        "goods",
+        "consulting",
+        "other",
+      ],
+      tender_status: [
+        "draft",
+        "published",
+        "under_evaluation",
+        "awarded",
+        "closed",
+      ],
       user_role: ["admin", "supplier"],
     },
   },

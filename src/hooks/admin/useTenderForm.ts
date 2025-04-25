@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { TenderFormValues, tenderFormSchema } from '@/types/tenderForm';
-import { v4 as uuidv4 } from 'uuid';
 
 export const useTenderForm = (tenderId?: string) => {
   const navigate = useNavigate();
