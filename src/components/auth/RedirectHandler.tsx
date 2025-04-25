@@ -10,14 +10,23 @@ export const RedirectHandler = () => {
   const { isLoading, error, userRole } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && userRole) {
-      if (userRole === 'admin') {
-        navigate('/admin');
+    console.log("Auth state in redirect:", { isLoading, error, userRole });
+    
+    if (!isLoading) {
+      if (userRole) {
+        console.log(`Redirecting to ${userRole === 'admin' ? '/admin' : '/supplier/dashboard'}`);
+        if (userRole === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/supplier/dashboard');
+        }
       } else {
-        navigate('/supplier/dashboard');
+        // Add fallback to prevent being stuck
+        console.log("No user role found, redirecting to login");
+        navigate('/login');
       }
     }
-  }, [isLoading, userRole, navigate]);
+  }, [isLoading, userRole, navigate, error]);
 
   if (isLoading) {
     return (
