@@ -50,7 +50,7 @@ export const useTenderForm = (tenderId?: string) => {
       console.error('Error loading tender:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load tender details',
+        description: 'Failed to load tender details: ' + (error.message || 'Unknown error'),
         variant: 'destructive'
       });
       setInitialLoadDone(true);
@@ -70,15 +70,17 @@ export const useTenderForm = (tenderId?: string) => {
     setIsSubmitting(true);
     
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (userError || !userData.user) {
+      if (sessionError || !sessionData.session) {
         throw new Error('User not authenticated');
       }
 
+      const userId = sessionData.session.user.id;
+
       // Convert date to ISO string for database
       const tenderData = {
-        created_by: userData.user.id,
+        created_by: userId,
         title: data.title,
         description: data.description,
         category: data.category,
@@ -116,9 +118,20 @@ export const useTenderForm = (tenderId?: string) => {
       navigate('/admin/tenders');
     } catch (error: any) {
       console.error('Error saving tender:', error);
+      
+      // Improved error message
+      let errorMessage = 'Failed to save tender';
+      if (error.message) {
+        if (error.message.includes('row-level security policy')) {
+          errorMessage = 'Permission denied: You do not have permission to create or update this tender. Please ensure you are logged in as an admin.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save tender',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {

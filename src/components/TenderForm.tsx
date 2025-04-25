@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, Save, X, Upload, Loader2 } from 'lucide-react';
+import { CalendarIcon, Save, X, Upload, Loader2, Plus } from 'lucide-react';
 import { 
   Form, 
   FormControl, 
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/form';
 import { useTenderForm } from '@/hooks/admin/useTenderForm';
 import { TenderCategory } from '@/types/tender';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface TenderFormProps {
   onCancel: () => void;
@@ -38,7 +39,35 @@ interface TenderFormProps {
 }
 
 const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
-  const { form, isSubmitting, onSubmit } = useTenderForm(tenderId);
+  const { form, isSubmitting, initialLoadDone, onSubmit } = useTenderForm(tenderId);
+  const [customCategory, setCustomCategory] = useState<string>('');
+  const [showCustomCategory, setShowCustomCategory] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    setFormError(null);
+    // The form will be handled by the onSubmit function passed from useTenderForm
+  };
+
+  const handleAddCustomCategory = () => {
+    if (customCategory.trim()) {
+      // Since we can't dynamically add to the enum in the database,
+      // this is a simplified demonstration. In a real implementation,
+      // you would update the database enum.
+      form.setValue('category', 'other' as TenderCategory);
+      setShowCustomCategory(false);
+      setCustomCategory('');
+    }
+  };
+
+  if (!initialLoadDone) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading tender data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,6 +87,13 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
           Cancel
         </Button>
       </div>
+
+      {formError && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardContent className="pt-6">
@@ -85,23 +121,57 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="construction">Construction</SelectItem>
-                            <SelectItem value="services">Services</SelectItem>
-                            <SelectItem value="goods">Goods</SelectItem>
-                            <SelectItem value="consulting">Consulting</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex space-x-2">
+                          <Select 
+                            onValueChange={(value) => {
+                              if (value === 'add-new') {
+                                setShowCustomCategory(true);
+                              } else {
+                                field.onChange(value);
+                              }
+                            }} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="construction">Construction</SelectItem>
+                              <SelectItem value="services">Services</SelectItem>
+                              <SelectItem value="goods">Goods</SelectItem>
+                              <SelectItem value="consulting">Consulting</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="add-new">+ Add New Category</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {showCustomCategory && (
+                            <div className="flex flex-1 space-x-2">
+                              <Input 
+                                value={customCategory}
+                                onChange={(e) => setCustomCategory(e.target.value)}
+                                placeholder="Enter new category"
+                              />
+                              <Button type="button" size="sm" onClick={handleAddCustomCategory}>
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setShowCustomCategory(false)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <FormDescription>
+                          {showCustomCategory && "Note: Custom categories will be categorized as 'Other' in the system."}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -162,6 +232,7 @@ const TenderForm: React.FC<TenderFormProps> = ({ onCancel, tenderId }) => {
                             type="number" 
                             placeholder="Enter budget amount" 
                             {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />

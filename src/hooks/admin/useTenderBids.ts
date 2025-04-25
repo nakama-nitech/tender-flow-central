@@ -24,22 +24,32 @@ export const useTenderBids = (tenderId: string) => {
         throw error;
       }
       
+      if (!data || data.length === 0) {
+        setBids([]);
+        setError("No bids found for this tender");
+        return;
+      }
+      
       // Map database fields to our interface
-      const formattedBids: Bid[] = data?.map(bid => ({
+      const formattedBids: Bid[] = data.map(bid => ({
         id: bid.id,
         tenderId: bid.tenderid,
+        tenderid: bid.tenderid, // Support both formats
         vendorName: bid.vendorname,
+        vendorname: bid.vendorname, // Support both formats
         vendorEmail: bid.vendoremail,
+        vendoremail: bid.vendoremail, // Support both formats
         amount: bid.amount,
         proposal: bid.proposal,
         submittedDate: bid.submitteddate,
+        submitteddate: bid.submitteddate, // Support both formats
         status: bid.status as Bid['status'],
         score: bid.score,
         notes: bid.notes,
         vendor_id: bid.vendor_id,
         created_at: bid.created_at,
         updated_at: bid.updated_at
-      })) || [];
+      }));
       
       setBids(formattedBids);
     } catch (err: any) {
