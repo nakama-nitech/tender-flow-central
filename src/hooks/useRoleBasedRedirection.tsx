@@ -28,16 +28,19 @@ export const useRoleBasedRedirection = ({
   useEffect(() => {
     // Only perform redirects if auth is complete and we've attempted to load the profile
     const shouldCheckAccess = !authLoading && (profileLoaded || loadingAttempts >= 5);
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === '/auth' || currentPath === '/login' || currentPath === '/signup';
+
     
-    if (shouldCheckAccess) {
-      // If a specific role is required but the user doesn't have it
+    if (shouldCheckAccess && !isAuthPage) {
+      // Your existing redirect logic
       if (user && userRole && requiredRole && !canAccessCurrentPath) {
         console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
         setError(`You need ${requiredRole} permissions to access this area.`);
         navigate('/select-role');
       }
       
-      // If authentication fails and we have a required role, redirect to auth
+      // Only redirect to auth if not already on an auth page
       if (!user && requiredRole) {
         navigate('/auth');
       }
