@@ -1,10 +1,10 @@
-
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export const useSessionState = () => {
+// Add options parameter with default value
+export const useSessionState = (options = { checkOnLoad: true }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -96,16 +96,25 @@ export const useSessionState = () => {
       }
     );
     
-    // Add delay before checking auth to ensure session is fully established
-    const timer = setTimeout(() => {
-      checkSession();
-    }, 300);
-    
-    return () => {
-      clearTimeout(timer);
-      subscription.unsubscribe();
-    };
-  }, []);
+    // Only check session if options.checkOnLoad is true
+    if (options.checkOnLoad) {
+      // Add delay before checking auth to ensure session is fully established
+      const timer = setTimeout(() => {
+        checkSession();
+      }, 300);
+      
+      return () => {
+        clearTimeout(timer);
+        subscription.unsubscribe();
+      };
+    } else {
+      // Skip automatic session check (useful for login/signup pages)
+      setAuthLoading(false);
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [options.checkOnLoad]);
 
   return {
     isLoading: authLoading,

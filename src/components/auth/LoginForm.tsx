@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -8,12 +7,15 @@ import { Label } from '@/components/ui/label';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useSessionState } from '@/hooks/useSessionState';
 
 export const LoginForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // Use session state with checkOnLoad: false to prevent automatic session checking
+  const { isLoading, error, user } = useSessionState({ checkOnLoad: false });
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: '',
