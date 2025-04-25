@@ -40,14 +40,10 @@ interface RPCFunctions {
 declare module '@supabase/supabase-js' {
   interface SupabaseClient<Database> {
     rpc<
-      FunctionName extends keyof Database['public']['Functions'] | keyof RPCFunctions
+      FunctionName extends keyof RPCFunctions
     >(
       fn: FunctionName,
-      args?: FunctionName extends keyof Database['public']['Functions']
-        ? Parameters<Database['public']['Functions'][FunctionName]>[0]
-        : FunctionName extends keyof RPCFunctions
-        ? Parameters<RPCFunctions[FunctionName]>[0]
-        : never
+      args?: Parameters<RPCFunctions[FunctionName]>[0]
     ): Promise<{ data: any; error: any }>;
   }
 }
