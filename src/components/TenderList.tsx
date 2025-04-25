@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
 import { TenderSearchBar } from './tender/list/TenderSearchBar';

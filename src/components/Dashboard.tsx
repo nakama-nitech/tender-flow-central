@@ -3,10 +3,10 @@ import React from 'react';
 import { TenderStatistics } from '@/types/tender';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { DashboardStatsGrid } from './dashboard/DashboardStatsGrid';
-import { PerformanceChart } from './dashboard/PerformanceChart';
-import { RecentActivity } from './dashboard/RecentActivity';
-import { CategoryDistribution } from './dashboard/CategoryDistribution';
-import { UpcomingDeadlines } from './dashboard/UpcomingDeadlines';
+import PerformanceChart from './dashboard/PerformanceChart';
+import RecentActivity from './dashboard/RecentActivity';
+import CategoryDistribution from './dashboard/CategoryDistribution';
+import UpcomingDeadlines from './dashboard/UpcomingDeadlines';
 
 const statsData: TenderStatistics = {
   totalTenders: 36,
