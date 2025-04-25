@@ -25,7 +25,7 @@ interface CountryLocations {
 }
 
 const AuthPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -61,6 +61,7 @@ const AuthPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
   const [registerFormErrors, setRegisterFormErrors] = useState<{[key: string]: string}>({});
+  const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   
   const countryLocations: CountryLocations = {
     'Kenya': [
@@ -140,7 +141,6 @@ const AuthPage: React.FC = () => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        // Get user role
         const { data: profileData } = await supabase
           .from('profiles')
           .select('role')
@@ -172,7 +172,6 @@ const AuthPage: React.FC = () => {
       
       console.log("Login successful, session:", data.session);
       
-      // Get user role using RPC to avoid recursion
       const { data: roleData, error: roleError } = await supabase
         .rpc('get_profile_role', { user_id: data.user.id });
       
@@ -192,11 +191,9 @@ const AuthPage: React.FC = () => {
         description: "Welcome back to TenderFlow",
       });
       
-      // Redirect based on role
       if (roleData === 'admin') {
         navigate('/select-role');
       } else {
-        // Default to role selection if no clear role
         navigate('/select-role');
       }
     } catch (error: any) {
@@ -232,6 +229,32 @@ const AuthPage: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
   
+  const checkEmailExists = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false
+        }
+      });
+      
+      if (!error || error.status !== 400) {
+        setEmailAlreadyExists(true);
+        setRegisterFormErrors({
+          ...registerFormErrors,
+          email: "This email is already registered. Please log in instead."
+        });
+        return true;
+      }
+      
+      setEmailAlreadyExists(false);
+      return false;
+    } catch (error) {
+      console.error("Error checking email:", error);
+      return false;
+    }
+  };
+  
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -247,11 +270,26 @@ const AuthPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      const emailExists = await checkEmailExists(registerForm.email);
+      if (emailExists) {
+        setLoginForm({...loginForm, email: registerForm.email});
+        setSearchParams(params => {
+          params.set('tab', 'login');
+          return params;
+        });
+        setIsSubmitting(false);
+        toast({
+          title: "Account already exists",
+          description: "Please login with your existing account",
+          variant: "default",
+        });
+        return;
+      }
+      
       const nameParts = registerForm.contactName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      // Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: registerForm.email,
         password: registerForm.password,
@@ -270,65 +308,59 @@ const AuthPage: React.FC = () => {
       
       console.log("User registered successfully:", authData.user.id);
       
-      // Create supplier record
-      const { error: supplierError } = await supabase
-        .from('suppliers')
-        .insert({
-          id: authData.user.id,
-          company_type_id: parseInt(registerForm.companyType),
-          company_name: registerForm.companyName,
-          location: registerForm.location,
-          country: registerForm.country,
-          phone_number: registerForm.phoneNumber,
-          kra_pin: registerForm.kraPin,
-          physical_address: registerForm.physicalAddress,
-          website_url: registerForm.websiteUrl,
-        });
-        
+      const { error: supplierError } = await supabase.rpc('create_supplier', {
+        supplier_id: authData.user.id,
+        company_type_id_input: parseInt(registerForm.companyType),
+        company_name_input: registerForm.companyName,
+        location_input: registerForm.location,
+        country_input: registerForm.country,
+        phone_number_input: registerForm.phoneNumber,
+        kra_pin_input: registerForm.kraPin,
+        physical_address_input: registerForm.physicalAddress || null,
+        website_url_input: registerForm.websiteUrl || null
+      });
+      
       if (supplierError) {
         console.error("Supplier creation error:", supplierError);
         throw supplierError;
       }
       
-      // Add supplier categories
       if (registerForm.categoriesOfInterest.length > 0) {
-        const supplierCategories = registerForm.categoriesOfInterest.map(categoryId => ({
-          supplier_id: authData.user.id,
-          category_id: parseInt(categoryId)
-        }));
-        
-        const { error: categoriesError } = await supabase
-          .from('supplier_categories')
-          .insert(supplierCategories);
+        for (const categoryId of registerForm.categoriesOfInterest) {
+          const { error: categoryError } = await supabase.rpc('add_supplier_category', {
+            supplier_id_input: authData.user.id,
+            category_id_input: parseInt(categoryId)
+          });
           
-        if (categoriesError) {
-          console.error("Categories error:", categoriesError);
-          throw categoriesError;
+          if (categoryError) {
+            console.error("Category error:", categoryError);
+          }
         }
       }
       
-      // Add supplier locations
       if (registerForm.supplyLocations.length > 0) {
-        const supplierLocations = registerForm.supplyLocations
-          .map(location => {
-            const locationId = typeof location === 'string' ? 
-              (isNaN(parseInt(location)) ? null : parseInt(location)) : 
-              location;
-              
-            return locationId !== null ? {
-              supplier_id: authData.user.id,
-              location_id: locationId as number
-            } : null;
-          })
-          .filter((item): item is { supplier_id: string; location_id: number } => item !== null);
-        
-        const { error: locationsError } = await supabase
-          .from('supplier_locations')
-          .insert(supplierLocations);
+        for (const location of registerForm.supplyLocations) {
+          let locationId;
+          const existingLocation = locations.find(loc => loc.name === location);
           
-        if (locationsError) {
-          console.error("Locations error:", locationsError);
-          throw locationsError;
+          if (existingLocation) {
+            locationId = existingLocation.id;
+          } else {
+            locationId = typeof location === 'string' && !isNaN(parseInt(location)) 
+              ? parseInt(location) 
+              : null;
+          }
+          
+          if (locationId !== null) {
+            const { error: locationError } = await supabase.rpc('add_supplier_location', {
+              supplier_id_input: authData.user.id,
+              location_id_input: locationId
+            });
+            
+            if (locationError) {
+              console.error("Location error:", locationError);
+            }
+          }
         }
       }
       
@@ -337,19 +369,41 @@ const AuthPage: React.FC = () => {
         description: "Your account has been created. You can now log in.",
       });
       
-      // Switch to login tab
       setIsSubmitting(false);
-      const searchParams = new URLSearchParams();
-      searchParams.set('tab', 'login');
-      navigate({ search: searchParams.toString() });
+      setSearchParams(params => {
+        params.set('tab', 'login');
+        return params;
+      });
       
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast({
-        title: "Registration failed",
-        description: error.message || "There was an error creating your account",
-        variant: "destructive",
-      });
+      
+      if (error.code === "user_already_exists") {
+        setEmailAlreadyExists(true);
+        setRegisterFormErrors({
+          ...registerFormErrors,
+          email: "This email is already registered. Please log in instead."
+        });
+        
+        setLoginForm({...loginForm, email: registerForm.email});
+        setSearchParams(params => {
+          params.set('tab', 'login');
+          return params;
+        });
+        
+        toast({
+          title: "Account already exists",
+          description: "Please login with your existing account",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Registration failed",
+          description: error.message || "There was an error creating your account",
+          variant: "destructive",
+        });
+      }
+      
       setIsSubmitting(false);
     }
   };
@@ -510,11 +564,38 @@ const AuthPage: React.FC = () => {
                           onChange={(e) => {
                             setRegisterForm({...registerForm, email: e.target.value});
                             setRegisterFormErrors({...registerFormErrors, email: ''});
+                            setEmailAlreadyExists(false);
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value) {
+                              checkEmailExists(e.target.value);
+                            }
                           }}
                           required
-                          className={`border-primary/20 ${registerFormErrors.email ? 'border-red-500' : ''}`}
+                          className={`border-primary/20 ${registerFormErrors.email || emailAlreadyExists ? 'border-red-500' : ''}`}
                         />
                         {getFieldError('email')}
+                        {emailAlreadyExists && !registerFormErrors.email && (
+                          <div className="flex items-center mt-1">
+                            <p className="text-xs text-blue-600">
+                              Email already registered. 
+                              <Button 
+                                type="button" 
+                                variant="link" 
+                                className="p-0 h-auto ml-1 text-xs"
+                                onClick={() => {
+                                  setLoginForm({...loginForm, email: registerForm.email});
+                                  setSearchParams(params => {
+                                    params.set('tab', 'login');
+                                    return params;
+                                  });
+                                }}
+                              >
+                                Login instead?
+                              </Button>
+                            </p>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-2">
@@ -825,7 +906,7 @@ const AuthPage: React.FC = () => {
                           Sign In
                         </Button>
                       </div>
-                      <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">
+                      <Button type="submit" disabled={isSubmitting || emailAlreadyExists} className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">
                         {isSubmitting ? (
                           <>
                             <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>

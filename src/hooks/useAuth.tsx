@@ -67,8 +67,31 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         // Check if user should be admin by email
         const isAdminByEmail = await checkAdminByEmail();
         
-        // Load the user profile
-        const profile = await loadUserProfile();
+        // Load the user profile using RPC instead of direct query
+        const { data: roleData, error: roleError } = await supabase
+          .rpc('get_profile_role', { user_id: user.id });
+
+        if (roleError) {
+          throw roleError;
+        }
+        
+        // Fetch additional profile data (avoiding recursion issues)
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) {
+          throw profileError;
+        }
+        
+        // Combine profile data with role
+        const profile = {
+          ...profileData,
+          role: roleData,
+          id: user.id
+        };
         
         // If user should be admin but profile doesn't have admin role, update it
         if (isAdminByEmail && profile && profile.role !== 'admin') {
