@@ -31,8 +31,8 @@ import {
 import { useTenderForm } from '@/hooks/admin/useTenderForm';
 import { TenderCategory } from '@/types/tender';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { supabase } from '@/lib/supabase';
-import { toast } from 'react-toastify';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface TenderFormProps {
   onCancel: () => void;
