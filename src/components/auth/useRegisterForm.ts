@@ -23,8 +23,14 @@ const initialFormState: RegisterFormState = {
   agreeToTerms: false
 };
 
-export const useRegisterForm = (setSearchParams: (params: URLSearchParams) => void) => {
+interface LoginFormState {
+  email: string;
+  password: string;
+}
+
+export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>) => {
   const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
+  const [loginForm, setLoginForm] = useState<LoginFormState>({ email: '', password: '' });
   const [registerFormErrors, setRegisterFormErrors] = useState<RegisterFormErrors>({});
   const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,9 +102,10 @@ export const useRegisterForm = (setSearchParams: (params: URLSearchParams) => vo
       const emailExists = await checkEmailExists(registerForm.email);
       if (emailExists) {
         setLoginForm({...loginForm, email: registerForm.email});
-        setSearchParams(params => {
-          params.set('tab', 'login');
-          return params;
+        setSearchParams((params) => {
+          const newParams = new URLSearchParams(params);
+          newParams.set('tab', 'login');
+          return newParams;
         });
         setIsSubmitting(false);
         toast({
@@ -167,9 +174,10 @@ export const useRegisterForm = (setSearchParams: (params: URLSearchParams) => vo
       });
       
       setIsSubmitting(false);
-      setSearchParams(params => {
-        params.set('tab', 'login');
-        return params;
+      setSearchParams((params) => {
+        const newParams = new URLSearchParams(params);
+        newParams.set('tab', 'login');
+        return newParams;
       });
       
     } catch (error: any) {
@@ -182,9 +190,11 @@ export const useRegisterForm = (setSearchParams: (params: URLSearchParams) => vo
           email: "This email is already registered. Please log in instead."
         });
         
-        setSearchParams(params => {
-          params.set('tab', 'login');
-          return params;
+        setLoginForm({...loginForm, email: registerForm.email});
+        setSearchParams((params) => {
+          const newParams = new URLSearchParams(params);
+          newParams.set('tab', 'login');
+          return newParams;
         });
         
         toast({
@@ -213,6 +223,8 @@ export const useRegisterForm = (setSearchParams: (params: URLSearchParams) => vo
     setEmailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists
+    checkEmailExists,
+    loginForm,
+    setLoginForm
   };
 };
