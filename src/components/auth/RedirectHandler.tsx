@@ -23,7 +23,7 @@ export const RedirectHandler = () => {
       } else {
         // Add fallback to prevent being stuck
         console.log("No user role found, redirecting to login");
-        navigate('/login');
+        navigate('/auth');
       }
     }
   }, [isLoading, userRole, navigate, error]);
