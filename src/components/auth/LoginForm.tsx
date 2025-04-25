@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,29 +18,23 @@ export const LoginForm = () => {
     email: '',
     password: '',
   });
-  const [loadingRole, setLoadingRole] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
       
-      if (authError) throw authError;
+      if (error) throw error;
       
-      setLoadingRole(true);
-      toast({
-        title: "Login successful",
-        description: "Redirecting to your dashboard...",
-      });
+      console.log("Login successful, session:", data.session);
       
-      // Get role using the RPC function
       const { data: roleData, error: roleError } = await supabase
-        .rpc('get_profile_role', { user_id: authData.user.id });
+        .rpc('get_profile_role', { user_id: data.user.id });
       
       if (roleError && roleError.code !== 'PGRST116') {
         console.error("Error fetching role:", roleError);
@@ -53,14 +47,16 @@ export const LoginForm = () => {
         return;
       }
       
+      toast({
+        title: "Logged in successfully",
+        description: "Welcome back to TenderFlow",
+      });
+      
       if (roleData === 'admin') {
-        navigate('/admin');
-      } else if (roleData === 'supplier') {
-        navigate('/supplier/dashboard');
+        navigate('/select-role');
       } else {
         navigate('/select-role');
       }
-      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -70,7 +66,6 @@ export const LoginForm = () => {
       });
     } finally {
       setIsSubmitting(false);
-      setLoadingRole(false);
     }
   };
 
@@ -87,7 +82,6 @@ export const LoginForm = () => {
             onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
             required
             className="border-primary/20 focus:border-primary"
-            disabled={isSubmitting || loadingRole}
           />
         </div>
         
@@ -107,13 +101,11 @@ export const LoginForm = () => {
               onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
               required
               className="border-primary/20 focus:border-primary pr-10"
-              disabled={isSubmitting || loadingRole}
             />
             <button 
               type="button"
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
               onClick={() => setShowPassword(!showPassword)}
-              disabled={isSubmitting || loadingRole}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -129,12 +121,12 @@ export const LoginForm = () => {
         <Button 
           type="submit" 
           className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700" 
-          disabled={isSubmitting || loadingRole}
+          disabled={isSubmitting}
         >
-          {isSubmitting || loadingRole ? (
+          {isSubmitting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isSubmitting ? "Logging in..." : "Loading profile..."}
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+              Logging in...
             </>
           ) : "Login"}
         </Button>
