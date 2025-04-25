@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -24,39 +23,34 @@ export const LoginForm = () => {
     setIsSubmitting(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
       
-      if (error) throw error;
-      
-      console.log("Login successful, session:", data.session);
+      if (authError) throw authError;
       
       const { data: roleData, error: roleError } = await supabase
-        .rpc('get_profile_role', { user_id: data.user.id });
+        .rpc('get_profile_role', { user_id: authData.user.id });
       
-      if (roleError && roleError.code !== 'PGRST116') {
+      if (roleError) {
         console.error("Error fetching role:", roleError);
-        toast({
-          title: "Profile error",
-          description: "There was an issue loading your profile. You'll be directed to select a role.",
-          variant: "destructive",
-        });
-        navigate('/select-role');
-        return;
+        throw new Error("Failed to fetch user role");
       }
-      
-      toast({
-        title: "Logged in successfully",
-        description: "Welcome back to TenderFlow",
-      });
-      
+
       if (roleData === 'admin') {
-        navigate('/select-role');
+        navigate('/admin');
+      } else if (roleData === 'supplier') {
+        navigate('/supplier/dashboard');
       } else {
         navigate('/select-role');
       }
+
+      toast({
+        title: "Logged in successfully",
+        description: `Welcome back, ${roleData === 'admin' ? 'Administrator' : 'Supplier'}!`,
+      });
+      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

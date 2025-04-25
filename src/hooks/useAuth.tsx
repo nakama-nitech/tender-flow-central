@@ -1,6 +1,5 @@
-
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -9,9 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
-  // Use the session state hook
   const { 
     isLoading: authLoading, 
     error, 
@@ -22,7 +21,6 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     handleSignOut 
   } = useSessionState();
 
-  // Use the profile management hook
   const {
     userRole,
     loadUserProfile,
@@ -32,7 +30,6 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     checkAdminByEmail
   } = useProfileManagement(user, setError);
 
-  // Use the role access hook
   const {
     checkRequiredRole,
     checkRole,
@@ -43,26 +40,42 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   // Special case for admins - they can access supplier paths
   const canAccessCurrentPath = isAdmin() || hasRequiredRole;
 
-  // Use the role-based redirection hook
-  useRoleBasedRedirection({
-    user,
-    userRole,
-    requiredRole,
-    authLoading,
-    profileLoaded,
-    loadingAttempts,
-    canAccessCurrentPath,
-    setError
-  });
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      if (!authLoading && !isProfileLoading) {
+        // If no user is logged in and we're not on the auth page
+        if (!user && !location.pathname.startsWith('/auth')) {
+          navigate('/auth');
+          return;
+        }
 
-  // Load profile when user changes
+        // If user is logged in but no role is set
+        if (user && !userRole && profileLoaded) {
+          navigate('/select-role');
+          return;
+        }
+
+        // If user is logged in and has a role, but is on the wrong path
+        if (user && userRole && !canAccessCurrentPath) {
+          if (userRole === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/supplier/dashboard');
+          }
+          return;
+        }
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [user, userRole, authLoading, isProfileLoading, profileLoaded, location.pathname, navigate, canAccessCurrentPath]);
+
   useEffect(() => {
     if (user && !profileLoaded && !isProfileLoading && loadingAttempts < 5) {
       loadUserProfile();
     }
   }, [user, profileLoaded, isProfileLoading, loadingAttempts, loadUserProfile]);
 
-  // Handle successful login notification
   useEffect(() => {
     if (user && userRole && !authLoading && profileLoaded) {
       const welcomeMessage = isAdmin() 

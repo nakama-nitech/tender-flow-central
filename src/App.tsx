@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
@@ -25,11 +25,39 @@ import AdminSupplierDetails from "./pages/admin/AdminSupplierDetails";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 3, // Increased from 2 to 3 for better reliability
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 3,
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
+
+const ProtectedRoute = ({ 
+  children, 
+  requiredRole 
+}: { 
+  children: React.ReactNode;
+  requiredRole?: 'admin' | 'supplier';
+}) => {
+  const { isLoading, user, userRole } = useAuth(requiredRole);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (!userRole) {
+    return <Navigate to="/select-role" replace />;
+  }
+
+  if (requiredRole && userRole !== requiredRole && userRole !== 'admin') {
+    return <Navigate to={userRole === 'supplier' ? "/supplier/dashboard" : "/admin"} replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,12 +69,14 @@ const App = () => (
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
-          
-          {/* Role Selection Route */}
           <Route path="/select-role" element={<RoleSelector />} />
           
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
             <Route index element={<AdminTenderList />} />
             <Route path="tenders" element={<AdminTenderList />} />
             <Route path="create-tender" element={<AdminTenderCreate />} />
@@ -57,7 +87,11 @@ const App = () => (
           </Route>
           
           {/* Supplier Routes */}
-          <Route path="/supplier" element={<SupplierLayout />}>
+          <Route path="/supplier" element={
+            <ProtectedRoute requiredRole="supplier">
+              <SupplierLayout />
+            </ProtectedRoute>
+          }>
             <Route path="dashboard" element={<SupplierDashboard />} />
             <Route path="tenders" element={<TenderDiscovery />} />
             <Route path="tender-details/:tenderId" element={<TenderDetails />} />
