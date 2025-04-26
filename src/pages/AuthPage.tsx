@@ -1,68 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Globe, Phone, Building, Briefcase, ShieldCheck, Eye, EyeOff, Flag, MapPin } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Globe, Phone, Building, Briefcase, ShieldCheck, Eye, EyeOff, Flag, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { useRegisterForm } from '@/components/auth/useRegisterForm';
+import { CompanyType, Category } from '@/components/auth/RegisterFormTypes';
 
-type CompanyType = Database['public']['Tables']['company_types']['Row'];
-type Category = Database['public']['Tables']['categories']['Row'];
-type Location = Database['public']['Tables']['locations']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
-type Supplier = Database['public']['Tables']['suppliers']['Row'];
-
-interface CountryLocations {
-  [key: string]: string[];
-}
-
-const AuthPage: React.FC = () => {
+const AuthPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: '',
-  });
-  
-  const [registerForm, setRegisterForm] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    companyType: '',
-    companyName: '',
-    location: '',
-    country: 'Kenya',
-    contactName: '',
-    phoneNumber: '',
-    kraPin: '',
-    physicalAddress: '',
-    websiteUrl: '',
-    categoriesOfInterest: [] as string[],
-    supplyLocations: [] as string[],
-    agreeToTerms: false
-  });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [companyTypes, setCompanyTypes] = useState<CompanyType[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [companyTypes, setCompanyTypes] = useState<CompanyType[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
-  const [registerFormErrors, setRegisterFormErrors] = useState<{[key: string]: string}>({});
-  const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
-  
+
+  const {
+    registerForm,
+    setRegisterForm,
+    registerFormErrors,
+    setRegisterFormErrors,
+    emailAlreadyExists,
+    isSubmitting,
+    handleRegisterSubmit,
+    checkEmailExists,
+    loginForm,
+    setLoginForm
+  } = useRegisterForm(setSearchParams);
+
   const countryLocations: CountryLocations = {
     'Kenya': [
       'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Nyeri', 'Kakamega', 'Kisii', 
@@ -91,7 +65,7 @@ const AuthPage: React.FC = () => {
       setAvailableLocations(countryLocations[registerForm.country] || []);
     }
   }, [registerForm.country]);
-  
+
   useEffect(() => {
     const fetchReferenceData = async () => {
       const { data: companyTypesData, error: companyTypesError } = await supabase
@@ -119,24 +93,11 @@ const AuthPage: React.FC = () => {
       } else {
         setCategories(categoriesData || []);
       }
-      
-      const { data: locationsData, error: locationsError } = await supabase
-        .from('locations')
-        .select('id, name') as { 
-          data: Location[] | null; 
-          error: any 
-        };
-        
-      if (locationsError) {
-        console.error('Error fetching locations:', locationsError);
-      } else {
-        setLocations(locationsData || []);
-      }
     };
     
     fetchReferenceData();
   }, []);
-  
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
@@ -157,263 +118,19 @@ const AuthPage: React.FC = () => {
     
     checkAuth();
   }, [navigate]);
-  
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginForm.email,
-        password: loginForm.password,
-      });
-      
-      if (error) throw error;
-      
-      console.log("Login successful, session:", data.session);
-      
-      const { data: roleData, error: roleError } = await supabase
-        .rpc('get_profile_role', { user_id: data.user.id });
-      
-      if (roleError && roleError.code !== 'PGRST116') {
-        console.error("Error fetching role:", roleError);
-        toast({
-          title: "Profile error",
-          description: "There was an issue loading your profile. You'll be directed to select a role.",
-          variant: "destructive",
-        });
-        navigate('/select-role');
-        return;
-      }
-      
-      toast({
-        title: "Logged in successfully",
-        description: "Welcome back to TenderFlow",
-      });
-      
-      if (roleData === 'admin') {
-        navigate('/select-role');
-      } else {
-        navigate('/select-role');
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+
+  const getFieldError = (field: string) => {
+    return registerFormErrors[field] ? (
+      <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
+    ) : null;
   };
-  
-  const validateRegisterForm = () => {
-    const errors: {[key: string]: string} = {};
-    
-    if (!registerForm.email) errors.email = "Email is required";
-    if (!registerForm.password) errors.password = "Password is required";
-    if (registerForm.password.length < 6) errors.password = "Password must be at least 6 characters";
-    if (!registerForm.confirmPassword) errors.confirmPassword = "Please confirm your password";
-    if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = "Passwords don't match";
-    if (!registerForm.companyType) errors.companyType = "Company type is required";
-    if (!registerForm.companyName) errors.companyName = "Company name is required";
-    if (!registerForm.location) errors.location = "Location is required";
-    if (!registerForm.contactName) errors.contactName = "Contact name is required";
-    if (!registerForm.phoneNumber) errors.phoneNumber = "Phone number is required";
-    if (!registerForm.kraPin) errors.kraPin = "Tax PIN is required";
-    if (registerForm.categoriesOfInterest.length === 0) errors.categoriesOfInterest = "Please select at least one category";
-    if (!registerForm.agreeToTerms) errors.agreeToTerms = "You must agree to the terms and conditions";
-    
-    setRegisterFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-  
-  const checkEmailExists = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: false
-        }
-      });
-      
-      if (!error || error.status !== 400) {
-        setEmailAlreadyExists(true);
-        setRegisterFormErrors({
-          ...registerFormErrors,
-          email: "This email is already registered. Please log in instead."
-        });
-        return true;
-      }
-      
-      setEmailAlreadyExists(false);
-      return false;
-    } catch (error) {
-      console.error("Error checking email:", error);
-      return false;
-    }
-  };
-  
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateRegisterForm()) {
-      toast({
-        title: "Form validation failed",
-        description: "Please check the form for errors and try again",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      const emailExists = await checkEmailExists(registerForm.email);
-      if (emailExists) {
-        setLoginForm({...loginForm, email: registerForm.email});
-        setSearchParams(params => {
-          params.set('tab', 'login');
-          return params;
-        });
-        setIsSubmitting(false);
-        toast({
-          title: "Account already exists",
-          description: "Please login with your existing account",
-          variant: "default",
-        });
-        return;
-      }
-      
-      const nameParts = registerForm.contactName.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: registerForm.email,
-        password: registerForm.password,
-        options: {
-          data: {
-            role: 'supplier',
-            first_name: firstName,
-            last_name: lastName
-          }
-        }
-      });
-      
-      if (authError) throw authError;
-      
-      if (!authData.user) throw new Error("User registration failed");
-      
-      console.log("User registered successfully:", authData.user.id);
-      
-      const { error: supplierError } = await supabase.rpc('create_supplier', {
-        supplier_id: authData.user.id,
-        company_type_id_input: parseInt(registerForm.companyType),
-        company_name_input: registerForm.companyName,
-        location_input: registerForm.location,
-        country_input: registerForm.country,
-        phone_number_input: registerForm.phoneNumber,
-        kra_pin_input: registerForm.kraPin,
-        physical_address_input: registerForm.physicalAddress || null,
-        website_url_input: registerForm.websiteUrl || null
-      });
-      
-      if (supplierError) {
-        console.error("Supplier creation error:", supplierError);
-        throw supplierError;
-      }
-      
-      if (registerForm.categoriesOfInterest.length > 0) {
-        for (const categoryId of registerForm.categoriesOfInterest) {
-          const { error: categoryError } = await supabase.rpc('add_supplier_category', {
-            supplier_id_input: authData.user.id,
-            category_id_input: parseInt(categoryId)
-          });
-          
-          if (categoryError) {
-            console.error("Category error:", categoryError);
-          }
-        }
-      }
-      
-      if (registerForm.supplyLocations.length > 0) {
-        for (const location of registerForm.supplyLocations) {
-          let locationId;
-          const existingLocation = locations.find(loc => loc.name === location);
-          
-          if (existingLocation) {
-            locationId = existingLocation.id;
-          } else {
-            locationId = typeof location === 'string' && !isNaN(parseInt(location)) 
-              ? parseInt(location) 
-              : null;
-          }
-          
-          if (locationId !== null) {
-            const { error: locationError } = await supabase.rpc('add_supplier_location', {
-              supplier_id_input: authData.user.id,
-              location_id_input: locationId
-            });
-            
-            if (locationError) {
-              console.error("Location error:", locationError);
-            }
-          }
-        }
-      }
-      
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created. You can now log in.",
-      });
-      
-      setIsSubmitting(false);
-      setSearchParams(params => {
-        params.set('tab', 'login');
-        return params;
-      });
-      
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      
-      if (error.code === "user_already_exists") {
-        setEmailAlreadyExists(true);
-        setRegisterFormErrors({
-          ...registerFormErrors,
-          email: "This email is already registered. Please log in instead."
-        });
-        
-        setLoginForm({...loginForm, email: registerForm.email});
-        setSearchParams(params => {
-          params.set('tab', 'login');
-          return params;
-        });
-        
-        toast({
-          title: "Account already exists",
-          description: "Please login with your existing account",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Registration failed",
-          description: error.message || "There was an error creating your account",
-          variant: "destructive",
-        });
-      }
-      
-      setIsSubmitting(false);
-    }
-  };
-  
+
   const defaultCompanyTypes = [
     { id: 1, name: 'Sole Proprietor' },
     { id: 2, name: 'Limited Company' },
     { id: 3, name: 'Partnership' }
   ];
-  
+
   const defaultCategories = [
     { id: 1, name: 'Construction & Building' },
     { id: 2, name: 'Medical Supplies' },
@@ -425,16 +142,10 @@ const AuthPage: React.FC = () => {
     { id: 8, name: 'Cleaning Services' },
     { id: 9, name: 'Consultancy Services' }
   ];
-  
+
   const displayCompanyTypes = companyTypes.length > 0 ? companyTypes : defaultCompanyTypes;
   const displayCategories = categories.length > 0 ? categories : defaultCategories;
-  
-  const getFieldError = (field: string) => {
-    return registerFormErrors[field] ? (
-      <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
-    ) : null;
-  };
-  
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-indigo-100">
       <header className="py-4 px-6 md:px-10 flex justify-between items-center border-b bg-white shadow-sm">
@@ -461,64 +172,7 @@ const AuthPage: React.FC = () => {
               </TabsList>
               
               <TabsContent value="login">
-                <form onSubmit={handleLoginSubmit}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="supplier@example.com" 
-                        value={loginForm.email}
-                        onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-                        required
-                        className="border-primary/20 focus:border-primary"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="password">Password</Label>
-                        <a href="#" className="text-xs text-primary hover:underline">
-                          Forgot password?
-                        </a>
-                      </div>
-                      <div className="relative">
-                        <Input 
-                          id="password" 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          value={loginForm.password}
-                          onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                          required
-                          className="border-primary/20 focus:border-primary pr-10"
-                        />
-                        <button 
-                          type="button"
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </CardContent>
-                  
-                  <CardFooter className="flex flex-col">
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <>
-                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                          Logging in...
-                        </>
-                      ) : "Login"}
-                    </Button>
-                  </CardFooter>
-                </form>
+                <LoginForm />
               </TabsContent>
               
               <TabsContent value="register">
