@@ -7,26 +7,31 @@ import { AlertCircle } from 'lucide-react';
 
 export const RedirectHandler = () => {
   const navigate = useNavigate();
-  const { isLoading, error, userRole } = useAuth();
+  const { isLoading, error, user, userRole } = useAuth();
 
   useEffect(() => {
-    console.log("Auth state in redirect:", { isLoading, error, userRole });
+    console.log("Auth state in redirect:", { isLoading, error, user, userRole });
     
     if (!isLoading) {
-      if (userRole) {
-        console.log(`Redirecting to ${userRole === 'admin' ? '/admin' : '/supplier/dashboard'}`);
+      if (user) {
         if (userRole === 'admin') {
+          console.log('Redirecting to admin dashboard');
           navigate('/admin');
-        } else {
+        } else if (userRole === 'supplier') {
+          console.log('Redirecting to supplier dashboard');
           navigate('/supplier/dashboard');
+        } else {
+          // Edge case: user exists but no role assigned yet
+          console.log('User exists but no role, waiting for profile load');
+          // We'll wait for the profile to load in this case
         }
-      } else {
-        // Add fallback to prevent being stuck
-        console.log("No user role found, redirecting to login");
+      } else if (!user && !error) {
+        // No authenticated user, redirect to auth
+        console.log("No authenticated user, redirecting to login");
         navigate('/auth');
       }
     }
-  }, [isLoading, userRole, navigate, error]);
+  }, [isLoading, user, userRole, navigate, error]);
 
   if (isLoading) {
     return (
@@ -47,5 +52,13 @@ export const RedirectHandler = () => {
     );
   }
 
-  return null;
+  // Show a loading state while we figure out where to redirect
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="text-center">
+        <div className="h-12 w-12 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="mt-4 text-lg text-gray-700">Preparing your dashboard...</p>
+      </div>
+    </div>
+  );
 };

@@ -69,7 +69,9 @@ const App = () => (
           {/* Redirects */}
           <Route path="/admin/*" element={<Navigate to="/admin" />} />
           <Route path="/supplier" element={<Navigate to="/supplier/dashboard" />} />
-          <Route path="/select-role" element={<Navigate to="/redirect" />} />
+          
+          {/* Replace /select-role with /redirect */}
+          <Route path="/select-role" element={<Navigate to="/redirect" replace />} />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />

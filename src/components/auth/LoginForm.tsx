@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -40,6 +41,7 @@ export const LoginForm = () => {
         description: "Redirecting you to your dashboard...",
       });
       
+      // Always redirect to /redirect which will handle role-based routing
       navigate('/redirect');
       
     } catch (error: any) {

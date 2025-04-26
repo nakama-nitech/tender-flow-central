@@ -30,14 +30,19 @@ export const useRoleBasedRedirection = ({
     const shouldCheckAccess = !authLoading && (profileLoaded || loadingAttempts >= 5);
     const currentPath = window.location.pathname;
     const isAuthPage = currentPath === '/auth' || currentPath === '/login' || currentPath === '/signup';
-
+    const isRedirectPage = currentPath === '/redirect';
+    
+    // Skip redirections if we're on the redirect handler page
+    if (isRedirectPage) {
+      return;
+    }
     
     if (shouldCheckAccess && !isAuthPage) {
       // Your existing redirect logic
       if (user && userRole && requiredRole && !canAccessCurrentPath) {
         console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
         setError(`You need ${requiredRole} permissions to access this area.`);
-        navigate('/select-role');
+        navigate('/redirect');
       }
       
       // Only redirect to auth if not already on an auth page

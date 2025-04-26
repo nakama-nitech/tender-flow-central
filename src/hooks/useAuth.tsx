@@ -1,6 +1,5 @@
 
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -8,7 +7,6 @@ import { useRoleBasedRedirection } from '@/hooks/useRoleBasedRedirection';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   
   // Use the session state hook
@@ -74,10 +72,10 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         description: `${welcomeMessage} (${user.email})`,
       });
       
-      // Removing automatic redirection to /redirect
+      // Removing automatic redirection
       // Let the RedirectHandler component manage redirection
     }
-  }, [user, userRole, authLoading, profileLoaded]);
+  }, [user, userRole, authLoading, profileLoaded, toast, isAdmin]);
 
   return { 
     isLoading: authLoading || (user && !profileLoaded && loadingAttempts < 5), 
