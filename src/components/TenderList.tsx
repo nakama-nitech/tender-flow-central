@@ -1,11 +1,9 @@
 
 import React, { useState } from 'react';
-import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
-import { TenderSearchBar } from './tender/list/TenderSearchBar';
-import { TenderFiltersBar } from './tender/list/TenderFiltersBar';
+import { TenderCategory, TenderStatus } from '@/types/tender';
 import { TenderListHeader } from './tender/list/TenderListHeader';
-import { TenderCard } from '@/components/admin/tenders/TenderCard';
-import { EmptyTenderState } from '@/components/admin/tenders/EmptyTenderState';
+import { TenderListFilters } from './tender/list/TenderListFilters';
+import { TenderGrid } from './tender/list/TenderGrid';
 import { mockTenders } from '@/data/mockTenders';
 
 interface TenderListProps {
@@ -59,34 +57,22 @@ const TenderList: React.FC<TenderListProps> = ({
   return (
     <div className="space-y-4">
       <TenderListHeader onNewTender={onNewTender} />
-
-      <div className="flex flex-col sm:flex-row gap-4">
-        <TenderSearchBar 
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
-        <TenderFiltersBar
-          selectedCategories={selectedCategories}
-          selectedStatuses={selectedStatuses}
-          onCategoryToggle={toggleCategory}
-          onStatusToggle={toggleStatus}
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filteredTenders.map((tender) => (
-          <TenderCard
-            key={tender.id}
-            tender={tender}
-            onEdit={onViewDetails}
-            onViewBids={onManageBids}
-          />
-        ))}
-      </div>
       
-      {filteredTenders.length === 0 && (
-        <EmptyTenderState onNewTender={onNewTender} />
-      )}
+      <TenderListFilters
+        searchTerm={searchTerm}
+        selectedCategories={selectedCategories}
+        selectedStatuses={selectedStatuses}
+        onSearchChange={setSearchTerm}
+        onCategoryToggle={toggleCategory}
+        onStatusToggle={toggleStatus}
+      />
+
+      <TenderGrid
+        tenders={filteredTenders}
+        onNewTender={onNewTender}
+        onViewDetails={onViewDetails}
+        onManageBids={onManageBids}
+      />
     </div>
   );
 };
