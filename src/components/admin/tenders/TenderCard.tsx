@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import { Calendar, DollarSign, Filter, Clock, Eye, Pencil, Draft, Send } from 'lucide-react';
+import { Calendar, DollarSign, Filter, Clock, Eye, Pencil, FileEdit, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -146,7 +146,7 @@ export const TenderCard: React.FC<TenderCardProps> = ({ tender, onEdit, onViewBi
             </>
           ) : (
             <>
-              <Draft className="h-4 w-4 mr-2" />
+              <FileEdit className="h-4 w-4 mr-2" />
               To Draft
             </>
           )}
