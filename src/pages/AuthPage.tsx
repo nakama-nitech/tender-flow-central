@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { ArrowLeft, Globe, Phone, Building, Briefcase, ShieldCheck, Eye, EyeOff,
 import { supabase } from '@/integrations/supabase/client';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useRegisterForm } from '@/components/auth/useRegisterForm';
-import { CompanyType, Category } from '@/components/auth/RegisterFormTypes';
+import { CompanyType, Category, CountryLocations } from '@/components/auth/RegisterFormTypes';
 
 const AuthPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,6 +30,7 @@ const AuthPage = () => {
     registerFormErrors,
     setRegisterFormErrors,
     emailAlreadyExists,
+    setEmailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
     checkEmailExists,
