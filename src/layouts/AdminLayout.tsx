@@ -76,8 +76,8 @@ const AdminLayout = () => {
           <div className="flex justify-end mb-4">
             <Button
               onClick={onSignOut}
-              variant="outline"
-              className="gap-2"
+              variant="ghost"
+              className="text-black hover:bg-gray-100"
             >
               Sign Out
             </Button>

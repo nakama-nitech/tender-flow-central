@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
@@ -62,20 +61,15 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
 
   // Handle successful login notification
   useEffect(() => {
-    if (user && userRole && !authLoading && profileLoaded) {
-      const welcomeMessage = isAdmin() 
-        ? 'Welcome back, Administrator!' 
-        : 'Welcome to your supplier dashboard!';
+    if (user && userRole && !authLoading && profileLoaded && window.location.pathname === '/redirect') {
+      const welcomeMessage = `Welcome back${user.email ? `, ${user.email}` : ''}!`;
       
       toast({
         title: "Login Successful",
-        description: `${welcomeMessage} (${user.email})`,
+        description: welcomeMessage,
       });
-      
-      // Removing automatic redirection
-      // Let the RedirectHandler component manage redirection
     }
-  }, [user, userRole, authLoading, profileLoaded, toast, isAdmin]);
+  }, [user, userRole, authLoading, profileLoaded, toast]);
 
   return { 
     isLoading: authLoading || (user && !profileLoaded && loadingAttempts < 5), 

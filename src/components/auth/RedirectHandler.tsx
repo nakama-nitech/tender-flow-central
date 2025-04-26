@@ -3,31 +3,21 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export const RedirectHandler = () => {
   const navigate = useNavigate();
   const { isLoading, error, user, userRole } = useAuth();
 
   useEffect(() => {
-    console.log("Auth state in redirect:", { isLoading, error, user, userRole });
-    
     if (!isLoading) {
       if (user) {
         if (userRole === 'admin') {
-          console.log('Redirecting to admin dashboard');
           navigate('/admin');
         } else if (userRole === 'supplier') {
-          console.log('Redirecting to supplier dashboard');
           navigate('/supplier/dashboard');
-        } else {
-          // Edge case: user exists but no role assigned yet
-          console.log('User exists but no role, waiting for profile load');
-          // We'll wait for the profile to load in this case
         }
       } else if (!user && !error) {
-        // No authenticated user, redirect to auth
-        console.log("No authenticated user, redirecting to login");
         navigate('/auth');
       }
     }
@@ -35,8 +25,9 @@ export const RedirectHandler = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-gray-700 animate-pulse">Preparing your dashboard...</p>
       </div>
     );
   }
@@ -44,7 +35,7 @@ export const RedirectHandler = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -52,13 +43,10 @@ export const RedirectHandler = () => {
     );
   }
 
-  // Show a loading state while we figure out where to redirect
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="text-center">
-        <div className="h-12 w-12 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        <p className="mt-4 text-lg text-gray-700">Preparing your dashboard...</p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+      <p className="text-lg text-gray-700 animate-pulse">Redirecting you to your dashboard...</p>
     </div>
   );
 };
