@@ -1,12 +1,23 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, FileText, Clock, ChevronRight, Calendar, Search, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatDate, formatCurrency, getCategoryBadge } from '@/components/tender/utils/tenderUtils';
+import { useTenderDiscovery } from '@/hooks/tender/useTenderDiscovery';
 
 const SupplierDashboard: React.FC = () => {
+  const { tenders: allTenders } = useTenderDiscovery();
+  
+  // Filter new tenders (added in the last 7 days)
+  const newTenders = allTenders.filter(tender => {
+    const tenderDate = new Date(tender.created_at);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return tenderDate >= sevenDaysAgo;
+  }).slice(0, 3); // Show only the 3 most recent
+
   return (
     <div className="space-y-6">
       <div>
@@ -115,8 +126,49 @@ const SupplierDashboard: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Upcoming Deadlines + My Active Bids */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Upcoming Deadlines + My Active Bids + New Tenders */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* New Tenders Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>New Tenders</span>
+              <Link to="/supplier/tenders">
+                <Button variant="ghost" size="sm" className="gap-1">
+                  View All <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </CardTitle>
+            <CardDescription>Recently published opportunities</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {newTenders.map((tender) => (
+              <div key={tender.id} className="border rounded-lg p-3">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-sm">{tender.title}</h4>
+                  {getCategoryBadge(tender.category)}
+                </div>
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                  {tender.description}
+                </p>
+                <div className="text-xs flex justify-between">
+                  <span>{formatCurrency(tender.budget)}</span>
+                  <Link to={`/supplier/tender-details/${tender.id}`}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-auto p-0 text-xs text-primary hover:text-primary/80 font-medium"
+                    >
+                      View details
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Deadlines */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -182,6 +234,7 @@ const SupplierDashboard: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* My Active Bids */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">

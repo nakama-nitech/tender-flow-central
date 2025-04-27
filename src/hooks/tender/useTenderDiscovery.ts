@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tender, TenderCategory } from '@/types/tender';
@@ -94,6 +93,26 @@ export const useTenderDiscovery = () => {
     });
   };
 
+  const isInUserCart = (tenderId: string) => {
+    return cart.includes(tenderId);
+  };
+
+  const removeFromCart = (tenderId: string) => {
+    setCart(prev => prev.filter(id => id !== tenderId));
+    toast({
+      title: "Removed from cart",
+      description: "Tender has been removed from your cart",
+    });
+  };
+
+  const clearCart = () => {
+    setCart([]);
+    toast({
+      title: "Cart cleared",
+      description: "All items have been removed from your cart",
+    });
+  };
+
   return {
     searchTerm,
     setSearchTerm,
@@ -104,6 +123,9 @@ export const useTenderDiscovery = () => {
     filteredTenders,
     loading,
     cart,
+    isInUserCart,
+    removeFromCart,
+    clearCart,
     handleNotificationToggle,
     addToCart,
   };
