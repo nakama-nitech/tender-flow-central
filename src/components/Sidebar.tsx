@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { Home, FileText, Users, Settings, Menu, X, PlusCircle, Store, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -47,6 +47,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  // Function to switch to supplier dashboard
+  const switchToSupplier = () => {
+    navigate('/supplier/dashboard');
   };
 
   return (
@@ -116,6 +121,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               </p>
             </div>
           </div>
+
+          {/* Add supplier dashboard switch button */}
+          <Button 
+            variant="outline" 
+            className="w-full justify-start mb-2" 
+            onClick={switchToSupplier}
+          >
+            <Store className="mr-2 h-4 w-4" />
+            <span className={cn(!isOpen && "md:hidden")}>Supplier View</span>
+          </Button>
+          
           <Button 
             variant="outline" 
             className="w-full justify-start" 

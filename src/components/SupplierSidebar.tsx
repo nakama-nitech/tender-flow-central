@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Home, FileText, Send, Clock, Bell, Settings, Menu, X, FileSearch, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,7 +22,7 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, handleSignOut } = useAuth('supplier');
+  const { user, handleSignOut, isAdmin } = useAuth('supplier');
   
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/supplier/dashboard' },
@@ -47,6 +48,11 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  // Function to switch to admin dashboard if user has admin privileges
+  const switchToAdmin = () => {
+    navigate('/admin');
   };
 
   return (
@@ -116,6 +122,19 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
               </p>
             </div>
           </div>
+          
+          {/* Add admin dashboard switch button if the user is an admin */}
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              className="w-full justify-start mb-2" 
+              onClick={switchToAdmin}
+            >
+              <Home className="mr-2 h-4 w-4" />
+              <span className={cn(!isOpen && "md:hidden")}>Admin Dashboard</span>
+            </Button>
+          )}
+          
           <Button 
             variant="outline" 
             className="w-full justify-start" 

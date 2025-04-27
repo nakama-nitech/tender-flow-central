@@ -58,22 +58,33 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     return Object.keys(errors).length === 0;
   };
 
+  // Fixed email check function - now properly detects if an email exists
   const checkEmailExists = async (email: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      // First check if user exists by trying to sign in
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
-        options: {
-          shouldCreateUser: false
-        }
+        password: "this-is-an-intentionally-wrong-password-to-check-existence"
       });
       
-      if (!error || error.status !== 400) {
+      // If no error or error code is not invalid_credentials, account doesn't exist
+      // We're looking specifically for the invalid_credentials error which means the account exists
+      if (error?.message?.includes('Invalid login credentials')) {
+        console.log("Email exists check: Email found in database", email);
         setEmailAlreadyExists(true);
         setRegisterFormErrors({
           ...registerFormErrors,
           email: "This email is already registered. Please log in instead."
         });
         return true;
+      }
+      
+      // Clear any previous email error if we're setting it to false
+      if (registerFormErrors.email === "This email is already registered. Please log in instead.") {
+        setRegisterFormErrors({
+          ...registerFormErrors,
+          email: undefined
+        });
       }
       
       setEmailAlreadyExists(false);
@@ -183,7 +194,8 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     } catch (error: any) {
       console.error("Registration error:", error);
       
-      if (error.code === "user_already_exists") {
+      // Handle the error appropriately
+      if (error.code === "user_already_exists" || error.message?.includes("already been registered")) {
         setEmailAlreadyExists(true);
         setRegisterFormErrors({
           ...registerFormErrors,
