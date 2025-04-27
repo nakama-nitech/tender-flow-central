@@ -54,9 +54,10 @@ const AdminLayout = () => {
     );
   }
 
-  if (userRole && userRole !== 'admin') {
-    return <Navigate to="/supplier/dashboard" replace />;
-  }
+  // Remove this redirect to allow admins to use supplier view
+  // if (userRole && userRole !== 'admin') {
+  //   return <Navigate to="/supplier/dashboard" replace />;
+  // }
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">
@@ -74,7 +75,8 @@ const AdminLayout = () => {
         )}
       >
         <div className="w-full mx-auto max-w-7xl bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between mb-4 items-center">
+            <h1 className="text-xl font-bold">SupplierPro Africa Admin</h1>
             <Button
               onClick={onSignOut}
               variant="ghost"

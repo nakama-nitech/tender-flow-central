@@ -67,17 +67,17 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed md:sticky top-0 left-0 h-screen bg-sidebar text-sidebar-foreground z-30 transition-all duration-300 flex flex-col",
+          "fixed md:sticky top-0 left-0 h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white z-30 transition-all duration-300 flex flex-col",
           isOpen ? "w-64" : "w-0 md:w-16 overflow-hidden"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
-          <h1 className={cn("font-bold text-xl", !isOpen && "md:hidden")}>AdminPanel</h1>
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
+          <h1 className={cn("font-bold text-xl", !isOpen && "md:hidden")}>SupplierPro Africa</h1>
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={toggleSidebar} 
-            className="text-sidebar-foreground hover:bg-sidebar-accent"
+            className="text-white hover:bg-gray-700"
           >
             {isOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>
@@ -90,8 +90,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    activePage === item.id && "bg-sidebar-accent text-sidebar-accent-foreground"
+                    "w-full justify-start text-white hover:bg-gray-700 hover:text-white",
+                    activePage === item.id && "bg-gray-700 text-white"
                   )}
                   onClick={() => {
                     setActivePage(item.id);
@@ -108,9 +108,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ul>
         </nav>
         
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-gray-700">
           <div className={cn("flex items-center mb-4", !isOpen && "md:hidden")}>
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
               <span className="text-sm font-medium">
                 {user?.email?.charAt(0).toUpperCase()}
               </span>
@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Add supplier dashboard switch button */}
           <Button 
             variant="secondary" 
-            className="w-full justify-start mb-2 bg-blue-100 text-blue-800 hover:bg-blue-200" 
+            className="w-full justify-start mb-2 bg-blue-600 text-white hover:bg-blue-700" 
             onClick={switchToSupplier}
           >
             <Store className="mr-2 h-4 w-4" />
@@ -134,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           
           <Button 
             variant="secondary" 
-            className="w-full justify-start bg-gray-100 text-gray-800 hover:bg-gray-200" 
+            className="w-full justify-start bg-gray-600 text-white hover:bg-gray-700" 
             onClick={onLogout}
           >
             <LogOut className="mr-2 h-4 w-4" />

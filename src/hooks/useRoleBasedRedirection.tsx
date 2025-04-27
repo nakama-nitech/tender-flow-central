@@ -31,6 +31,8 @@ export const useRoleBasedRedirection = ({
     const currentPath = window.location.pathname;
     const isAuthPage = currentPath === '/auth' || currentPath === '/login' || currentPath === '/signup';
     const isRedirectPage = currentPath === '/redirect';
+    const isSupplierPath = currentPath.startsWith('/supplier');
+    const isAdminPath = currentPath.startsWith('/admin');
     
     // Skip redirections if we're on the redirect handler page
     if (isRedirectPage) {
@@ -38,16 +40,32 @@ export const useRoleBasedRedirection = ({
     }
     
     if (shouldCheckAccess && !isAuthPage) {
-      // Your existing redirect logic
+      // Explicitly handle the case when a user is accessing a path they don't have permission for
       if (user && userRole && requiredRole && !canAccessCurrentPath) {
-        console.log(`Required role: ${requiredRole}, User role: ${userRole}`);
+        console.log(`Access denied: Required role: ${requiredRole}, User role: ${userRole}`);
         setError(`You need ${requiredRole} permissions to access this area.`);
         navigate('/redirect');
+        return;
       }
       
-      // Only redirect to auth if not already on an auth page
+      // Only redirect to auth if not already on an auth page and we need authentication
       if (!user && requiredRole) {
         navigate('/auth');
+        return;
+      }
+      
+      // Fix for admin and supplier view switching - don't redirect when explicitly navigating
+      // This allows admins to view the supplier dashboard without redirection
+      if (user && userRole === 'admin' && isSupplierPath) {
+        // Let admins access supplier paths without redirection
+        return;
+      }
+      
+      if (user && userRole === 'supplier' && isAdminPath) {
+        // Suppliers should not be able to access admin paths
+        console.log("Supplier attempting to access admin path, redirecting to supplier dashboard");
+        navigate('/supplier/dashboard');
+        return;
       }
     }
   }, [

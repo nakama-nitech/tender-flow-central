@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -35,7 +35,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useTenderBids } from '@/hooks/admin/useTenderBids';
 import { Bid } from '@/types/tender';
 import { format } from 'date-fns';
-import { ArrowLeft, Award, Check, FileText, MoreHorizontal, Star, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Award, Check, FileText, MoreHorizontal, Star, X, Loader2, Eye } from 'lucide-react';
 
 // Helper function to get status badge
 const getBidStatusBadge = (status: Bid['status']) => {
@@ -63,13 +63,20 @@ const AdminTenderBids: React.FC = () => {
   useAdminAuth(); // This ensures only admins can access this page
   const navigate = useNavigate();
   const { tenderId } = useParams<{ tenderId: string }>();
-  const { bids, isLoading, error, updateBidStatus } = useTenderBids(tenderId!);
+  const { bids, isLoading, error, updateBidStatus, tender } = useTenderBids(tenderId!);
   const [processingBid, setProcessingBid] = useState<string | null>(null);
+  const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   
   const handleStatusChange = async (bidId: string, status: Bid['status']) => {
     setProcessingBid(bidId);
     await updateBidStatus(bidId, status);
     setProcessingBid(null);
+  };
+
+  const viewBidDetails = (bid: Bid) => {
+    setSelectedBid(bid);
+    setShowDetails(true);
   };
   
   if (isLoading) {
@@ -90,6 +97,15 @@ const AdminTenderBids: React.FC = () => {
       </div>
     );
   }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
   
   return (
     <div className="space-y-6">
@@ -105,14 +121,39 @@ const AdminTenderBids: React.FC = () => {
           </Button>
           <h2 className="text-3xl font-bold tracking-tight">Bid Management</h2>
           <p className="text-muted-foreground">
-            Review and manage bids for this tender
+            Review and manage bids for {tender?.title}
           </p>
         </div>
       </div>
       
+      {/* Tender summary card */}
+      {tender && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="pt-4">
+            <div className="flex flex-col md:flex-row md:justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-lg">{tender.title}</h3>
+                <p className="text-muted-foreground line-clamp-2 text-sm">{tender.description}</p>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Budget</p>
+                  <p className="font-semibold">{formatCurrency(tender.budget)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Deadline</p>
+                  <p className="font-semibold">{format(new Date(tender.deadline), 'MMM d, yyyy')}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Submitted Bids ({bids.length})</CardTitle>
+          <CardDescription>Review and manage all supplier bids for this tender</CardDescription>
         </CardHeader>
         <CardContent>
           {bids.length > 0 ? (
@@ -157,9 +198,9 @@ const AdminTenderBids: React.FC = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem 
-                              onClick={() => navigate(`/admin/bid/${bid.id}`)}
+                              onClick={() => viewBidDetails(bid)}
                             >
-                              <FileText className="mr-2 h-4 w-4" />
+                              <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -221,6 +262,48 @@ const AdminTenderBids: React.FC = () => {
           )}
         </CardContent>
       </Card>
+      
+      {/* Bid Details Dialog */}
+      {selectedBid && (
+        <AlertDialog open={showDetails} onOpenChange={setShowDetails}>
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Bid Details</AlertDialogTitle>
+              <AlertDialogDescription className="text-foreground">
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Vendor</p>
+                    <p>{selectedBid.vendorName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Contact</p>
+                    <p>{selectedBid.vendorEmail}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Bid Amount</p>
+                    <p className="font-semibold">${selectedBid.amount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <div>{getBidStatusBadge(selectedBid.status)}</div>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium text-muted-foreground">Notes</p>
+                    <p className="border rounded-md p-2 mt-1 bg-slate-50">{selectedBid.notes || 'No notes provided'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium text-muted-foreground">Proposal</p>
+                    <p className="border rounded-md p-2 mt-1 bg-slate-50">{selectedBid.proposal || 'No detailed proposal provided'}</p>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Close</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };

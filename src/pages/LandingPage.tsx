@@ -1,182 +1,220 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ChevronRight, FileText, Clock, CheckSquare, MessageSquare, Bell, ShieldCheck, BarChart3, Award, Briefcase } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CheckCircle2, FileSearch, Award, Clock, Users } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="py-6 px-6 md:px-10 flex justify-between items-center border-b bg-white/95 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center">
-          <h1 className="text-2xl font-bold text-primary">TenderFlow</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link to="/auth">
-            <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10">Login</Button>
-          </Link>
-          <Link to="/auth?tab=register">
-            <Button className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">Register</Button>
-          </Link>
+    <div className="min-h-screen flex flex-col">
+      {/* Hero Section */}
+      <header className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+        <div className="container mx-auto px-4 py-8 md:py-16">
+          <nav className="flex justify-between items-center mb-16">
+            <h1 className="text-3xl font-bold">SupplierPro Africa</h1>
+            <div className="flex gap-4">
+              <Link to="/auth">
+                <Button variant="outline" className="text-white border-white hover:bg-white/10">
+                  Login
+                </Button>
+              </Link>
+            </div>
+          </nav>
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="md:w-1/2">
+              <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
+                Africa's Premier <span className="text-amber-400">Tender Management</span> Platform
+              </h2>
+              <p className="text-xl mb-8 text-blue-100">
+                Connect suppliers with opportunities across Africa. Streamlined tender discovery, bidding and management for businesses and organizations.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/auth?signup=true">
+                  <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
+                    Register as Supplier
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                    Login to Your Account
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="md:w-1/2 flex justify-center">
+              <div className="w-80 h-80 bg-white/10 rounded-full flex items-center justify-center">
+                <div className="w-64 h-64 bg-white/20 rounded-full flex items-center justify-center">
+                  <div className="w-48 h-48 bg-blue-600 rounded-full flex items-center justify-center">
+                    <FileSearch size={80} className="text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
       
-      {/* Hero Section */}
-      <section className="py-20 px-6 md:px-10 bg-[url('https://images.unsplash.com/photo-1493397212122-2b85dda8106b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div className="bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-xl">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">Streamline Your Tendering Process</h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Discover opportunities, prepare bids, and track submissions all in one place. TenderFlow makes the bidding process simpler and more efficient for suppliers.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/auth?tab=register">
-                <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">
-                  Get Started <ChevronRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="#features">
-                <Button variant="outline" size="lg" className="border-primary/50 text-primary hover:bg-primary/10">Learn More</Button>
-              </Link>
-            </div>
-          </div>
-          <div className="hidden md:block">
-            <div className="aspect-video rounded-lg shadow-lg overflow-hidden border-4 border-white">
-              <img 
-                src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" 
-                alt="Modern laptop with data analysis"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      
       {/* Features Section */}
-      <section id="features" className="py-20 px-6 md:px-10 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">Features for Suppliers</h2>
-          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-16">
-            Everything you need to identify, prepare, and submit competitive bids
-          </p>
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Why Choose SupplierPro Africa?</h2>
           
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="pt-6">
-                <Bell className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-medium mb-2">Tender Discovery</h3>
-                <p className="text-muted-foreground">
-                  Get notified about new tenders that match your business profile and capabilities.
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="bg-blue-100 text-blue-800 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <FileSearch size={24} />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Easy Tender Discovery</h3>
+              <p className="text-gray-600">
+                Find relevant business opportunities across Africa with our advanced filtering and notification system.
+              </p>
+            </div>
             
-            <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="pt-6">
-                <FileText className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-medium mb-2">Document Management</h3>
-                <p className="text-muted-foreground">
-                  Download tender documents and upload your proposals in a secure environment.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="bg-amber-100 text-amber-800 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Clock size={24} />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Efficient Bid Management</h3>
+              <p className="text-gray-600">
+                Save time with streamlined bid submission, tracking, and management tools.
+              </p>
+            </div>
             
-            <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="pt-6">
-                <CheckSquare className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-medium mb-2">Bid Preparation</h3>
-                <p className="text-muted-foreground">
-                  Comprehensive tools to help you prepare high-quality, competitive bids.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="pt-6">
-                <MessageSquare className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-medium mb-2">Clarification Management</h3>
-                <p className="text-muted-foreground">
-                  Ask questions and receive clarifications directly through the platform.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="pt-6">
-                <Clock className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-medium mb-2">Status Tracking</h3>
-                <p className="text-muted-foreground">
-                  Monitor the status of your submitted bids in real-time.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-indigo-50">
-              <CardContent className="pt-6">
-                <Award className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-medium mb-2">Online Submission</h3>
-                <p className="text-muted-foreground">
-                  Submit your bids securely through our online portal without paperwork.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="bg-green-100 text-green-800 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Award size={24} />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Increased Win Rate</h3>
+              <p className="text-gray-600">
+                Get insights and analytics to help improve your proposals and increase your success rate.
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-12 text-center">
+            <Link to="/auth?signup=true">
+              <Button size="lg" className="bg-blue-700 hover:bg-blue-800">
+                Get Started Today
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
       
-      {/* Stats Section */}
-      <section className="py-16 px-6 md:px-10 bg-gradient-to-r from-primary/10 to-indigo-600/10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <BarChart3 className="h-8 w-8 mx-auto text-primary mb-2" />
-              <h3 className="text-3xl font-bold text-primary">1,200+</h3>
-              <p className="text-muted-foreground">Tenders Posted</p>
+      {/* Testimonials Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Trusted Across Africa</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-blue-50 p-6 rounded-lg">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                  <Users size={24} className="text-blue-700" />
+                </div>
+                <div>
+                  <p className="font-semibold">Kenya Construction Ltd</p>
+                  <p className="text-sm text-gray-500">Nairobi, Kenya</p>
+                </div>
+              </div>
+              <p className="text-gray-700">
+                "SupplierPro Africa has transformed how we find and bid for construction tenders. Our business has grown 40% since joining."
+              </p>
             </div>
-            <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <Briefcase className="h-8 w-8 mx-auto text-primary mb-2" />
-              <h3 className="text-3xl font-bold text-primary">650+</h3>
-              <p className="text-muted-foreground">Registered Suppliers</p>
+            
+            <div className="bg-amber-50 p-6 rounded-lg">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+                  <Users size={24} className="text-amber-700" />
+                </div>
+                <div>
+                  <p className="font-semibold">GreenTech Solutions</p>
+                  <p className="text-sm text-gray-500">Lagos, Nigeria</p>
+                </div>
+              </div>
+              <p className="text-gray-700">
+                "The platform's efficiency has helped us win multiple government contracts for solar installations across West Africa."
+              </p>
             </div>
-            <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <ShieldCheck className="h-8 w-8 mx-auto text-primary mb-2" />
-              <h3 className="text-3xl font-bold text-primary">98%</h3>
-              <p className="text-muted-foreground">Success Rate</p>
-            </div>
-            <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <Award className="h-8 w-8 mx-auto text-primary mb-2" />
-              <h3 className="text-3xl font-bold text-primary">850+</h3>
-              <p className="text-muted-foreground">Contracts Awarded</p>
+            
+            <div className="bg-green-50 p-6 rounded-lg lg:col-span-1 md:col-span-2 lg:col-span-1">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                  <Users size={24} className="text-green-700" />
+                </div>
+                <div>
+                  <p className="font-semibold">MediSupply SA</p>
+                  <p className="text-sm text-gray-500">Johannesburg, South Africa</p>
+                </div>
+              </div>
+              <p className="text-gray-700">
+                "As a healthcare supplier, we've expanded our reach to multiple countries through the tender opportunities on SupplierPro Africa."
+              </p>
             </div>
           </div>
         </div>
       </section>
       
       {/* CTA Section */}
-      <section className="py-20 px-6 md:px-10 bg-white">
-        <div className="max-w-7xl mx-auto bg-gradient-to-r from-primary/20 to-indigo-600/20 rounded-lg p-8 md:p-12 text-center shadow-lg">
-          <h2 className="text-3xl font-bold mb-4 text-gray-800">Ready to Streamline Your Bidding Process?</h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of suppliers who are winning more contracts with TenderFlow.
+      <section className="py-16 bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-6">Ready to Grow Your Business?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">
+            Join thousands of African businesses finding success through SupplierPro Africa's tender management platform.
           </p>
-          <Link to="/auth?tab=register">
-            <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">
-              Register Now <ChevronRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/auth?signup=true">
+              <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
+                Register as Supplier
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                Login
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
       
       {/* Footer */}
-      <footer className="py-8 px-6 md:px-10 border-t bg-gradient-to-r from-gray-50 to-blue-50">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-muted-foreground">&copy; 2025 TenderFlow. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="text-muted-foreground hover:text-primary">Terms</a>
-            <a href="#" className="text-muted-foreground hover:text-primary">Privacy</a>
-            <a href="#" className="text-muted-foreground hover:text-primary">Contact</a>
+      <footer className="bg-gray-900 text-gray-400 py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-white text-lg font-semibold mb-4">SupplierPro Africa</h3>
+              <p className="mb-4">Connecting African businesses with opportunities.</p>
+            </div>
+            <div>
+              <h4 className="text-white text-md font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">How It Works</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">FAQs</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white text-md font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="hover:text-white transition-colors">Tender Guide</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Bid Templates</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Success Stories</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white text-md font-semibold mb-4">Contact</h4>
+              <ul className="space-y-2">
+                <li>support@supplierpro.africa</li>
+                <li>+254 700 000 000</li>
+                <li>Nairobi, Kenya</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p>&copy; 2025 SupplierPro Africa. All rights reserved.</p>
           </div>
         </div>
       </footer>

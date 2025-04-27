@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import SupplierSidebar from '@/components/SupplierSidebar';
@@ -53,9 +54,10 @@ const SupplierLayout = () => {
     );
   }
 
-  if (userRole && userRole !== 'supplier') {
-    return <Navigate to="/admin" replace />;
-  }
+  // Allow admins to view supplier dashboard - remove this redirect
+  // if (userRole && userRole !== 'supplier' && userRole !== 'admin') {
+  //   return <Navigate to="/admin" replace />;
+  // }
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">

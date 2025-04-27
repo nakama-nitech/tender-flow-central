@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useProfileManagement } from '@/hooks/useProfileManagement';
@@ -38,9 +39,11 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   } = useRoleAccess(userRole, requiredRole);
 
   // Special case for admins - they can access supplier paths
-  const canAccessCurrentPath = isAdmin() || hasRequiredRole;
+  // This is key for allowing admins to view supplier dashboard
+  const canAccessCurrentPath = isAdmin() || hasRequiredRole || 
+    (userRole === 'admin' && requiredRole === 'supplier');
 
-  // Use the role-based redirection hook
+  // Use the role-based redirection hook with the fixed access check
   useRoleBasedRedirection({
     user,
     userRole,
