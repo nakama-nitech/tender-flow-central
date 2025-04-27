@@ -160,7 +160,7 @@ const Cart: React.FC = () => {
       toast({
         title: "Bids submitted successfully!",
         description: "Your bids have been submitted for review",
-        variant: "success"
+        variant: "default" // Changed from "success" to "default" to fix the type error
       });
       
       // Clear cart and redirect to bid status page
