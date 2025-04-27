@@ -21,7 +21,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
 // Category badge helper function
@@ -134,8 +134,18 @@ const TenderDiscovery: React.FC = () => {
     });
   };
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
+  // Safe date formatting function
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'No date';
+    
+    try {
+      const date = parseISO(dateString);
+      if (!isValid(date)) return 'Invalid date';
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Invalid date';
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -254,9 +264,18 @@ const TenderDiscovery: React.FC = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {filteredTenders.map((tender) => {
-            const deadline = new Date(tender.deadline);
-            const daysLeft = Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-            const isUrgent = daysLeft <= 7;
+            let daysLeft = 0;
+            let isUrgent = false;
+            
+            try {
+              const deadline = parseISO(tender.deadline);
+              if (isValid(deadline)) {
+                daysLeft = Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                isUrgent = daysLeft <= 7;
+              }
+            } catch (error) {
+              console.error('Error calculating days left:', error);
+            }
             
             return (
               <Card key={tender.id} className="hover:shadow-md transition-shadow">
@@ -282,7 +301,11 @@ const TenderDiscovery: React.FC = () => {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <div className="text-sm flex justify-between w-full">
                         <span>Deadline: {formatDate(tender.deadline)}</span>
-                        <span className={`font-medium ${isUrgent ? 'text-red-600' : 'text-amber-600'}`}>{daysLeft} days left</span>
+                        {daysLeft > 0 && (
+                          <span className={`font-medium ${isUrgent ? 'text-red-600' : 'text-amber-600'}`}>
+                            {daysLeft} days left
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -295,7 +318,9 @@ const TenderDiscovery: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Posted: {formatDate(tender.createdAt)}</span>
+                      <span className="text-sm">
+                        Posted: {formatDate(tender.createdAt || tender.created_at)}
+                      </span>
                     </div>
                     
                     <div className="pt-3 flex justify-between">
