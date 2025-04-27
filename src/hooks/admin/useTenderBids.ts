@@ -2,19 +2,60 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Bid } from '@/types/tender';
+import { Bid, Tender } from '@/types/tender';
 
 export const useTenderBids = (tenderId: string) => {
   const [bids, setBids] = useState<Bid[]>([]);
+  const [tender, setTender] = useState<Tender | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const fetchTender = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tenders')
+        .select('*')
+        .eq('id', tenderId)
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (!data) {
+        setError("Tender not found");
+        return;
+      }
+      
+      // Map database fields to our interface
+      const formattedTender: Tender = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        budget: data.budget,
+        deadline: data.deadline,
+        status: data.status,
+        createdAt: data.created_at,
+        created_by: data.created_by
+      };
+      
+      setTender(formattedTender);
+    } catch (err: any) {
+      console.error('Error fetching tender:', err);
+      setError(err.message || 'Failed to load tender');
+    }
+  };
 
   const fetchBids = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
+      // First fetch the tender
+      await fetchTender();
+      
       const { data, error } = await supabase
         .from('bids')
         .select('*')
@@ -26,7 +67,6 @@ export const useTenderBids = (tenderId: string) => {
       
       if (!data || data.length === 0) {
         setBids([]);
-        setError("No bids found for this tender");
         return;
       }
       
@@ -136,6 +176,7 @@ export const useTenderBids = (tenderId: string) => {
   
   return {
     bids,
+    tender, // Now returning the tender data
     isLoading,
     error,
     refreshBids: fetchBids,

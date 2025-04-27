@@ -63,7 +63,7 @@ const AdminTenderBids: React.FC = () => {
   useAdminAuth(); // This ensures only admins can access this page
   const navigate = useNavigate();
   const { tenderId } = useParams<{ tenderId: string }>();
-  const { bids, isLoading, error, updateBidStatus, tender } = useTenderBids(tenderId!);
+  const { bids, isLoading, error, updateBidStatus, tender, refreshBids } = useTenderBids(tenderId!);
   const [processingBid, setProcessingBid] = useState<string | null>(null);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [showDetails, setShowDetails] = useState(false);
