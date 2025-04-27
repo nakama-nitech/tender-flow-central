@@ -126,8 +126,8 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
           {/* Add admin dashboard switch button if the user is an admin */}
           {isAdmin && (
             <Button 
-              variant="outline" 
-              className="w-full justify-start mb-2" 
+              variant="secondary" 
+              className="w-full justify-start mb-2 bg-blue-100 text-blue-800 hover:bg-blue-200" 
               onClick={switchToAdmin}
             >
               <Home className="mr-2 h-4 w-4" />
@@ -136,8 +136,8 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
           )}
           
           <Button 
-            variant="outline" 
-            className="w-full justify-start" 
+            variant="secondary" 
+            className="w-full justify-start bg-gray-100 text-gray-800 hover:bg-gray-200" 
             onClick={onLogout}
           >
             <LogOut className="mr-2 h-4 w-4" />

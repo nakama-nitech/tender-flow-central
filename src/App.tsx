@@ -14,6 +14,7 @@ import TenderDetails from "./pages/supplier/TenderDetails";
 import BidPreparation from "./pages/supplier/BidPreparation";
 import BidStatus from "./pages/supplier/BidStatus";
 import BidsList from "./pages/supplier/BidsList";
+import Cart from "./pages/supplier/Cart";
 import SupplierLayout from "./layouts/SupplierLayout";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminTenderCreate from "./pages/admin/AdminTenderCreate";
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="prepare-bid/:tenderId" element={<BidPreparation />} />
             <Route path="bid-status/:bidId" element={<BidStatus />} />
             <Route path="my-bids" element={<BidsList />} />
+            <Route path="cart" element={<Cart />} />
           </Route>
           
           {/* Redirects */}

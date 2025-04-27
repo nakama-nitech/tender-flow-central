@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Calendar, DollarSign, Clock, Bell, FileText } from 'lucide-react';
+import { Search, Filter, Calendar, DollarSign, Clock, Bell, FileText, ShoppingCart } from 'lucide-react';
 import { 
   Select, 
   SelectContent, 
@@ -22,60 +22,7 @@ import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
 import { format } from 'date-fns';
-
-// Mock data for tenders
-const mockTenders: Tender[] = [
-  {
-    id: '1',
-    title: 'Office Building Renovation',
-    description: 'Complete renovation of a 3-story office building including electrical, plumbing, and HVAC systems.',
-    category: 'construction',
-    budget: 750000,
-    deadline: '2025-05-20T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    title: 'IT Infrastructure Upgrade',
-    description: 'Supply and installation of network equipment, servers, and workstations for headquarters.',
-    category: 'goods',
-    budget: 250000,
-    deadline: '2025-04-28T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-18T14:15:00Z'
-  },
-  {
-    id: '3',
-    title: 'Annual Financial Audit',
-    description: 'Professional services for annual financial audit and compliance review.',
-    category: 'services',
-    budget: 45000,
-    deadline: '2025-05-15T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-20T09:45:00Z'
-  },
-  {
-    id: '4',
-    title: 'Marketing Strategy Consulting',
-    description: 'Development of comprehensive marketing strategy and digital presence enhancement.',
-    category: 'consulting',
-    budget: 85000,
-    deadline: '2025-04-25T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-22T11:20:00Z'
-  },
-  {
-    id: '5',
-    title: 'Office Furniture Procurement',
-    description: 'Supply of ergonomic office furniture for 100 workstations.',
-    category: 'goods',
-    budget: 120000,
-    deadline: '2025-05-10T23:59:59Z',
-    status: 'published',
-    createdAt: '2025-03-25T16:10:00Z'
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
 
 // Category badge helper function
 const getCategoryBadge = (category: TenderCategory) => {
@@ -100,9 +47,45 @@ const TenderDiscovery: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<TenderCategory[]>([]);
   const [budgetRange, setBudgetRange] = useState<string>('all');
+  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cart, setCart] = useState<string[]>([]);
+  
+  // Fetch tenders from the database
+  useEffect(() => {
+    const fetchTenders = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tenders')
+          .select('*')
+          .eq('status', 'published');
+          
+        if (error) {
+          console.error('Error fetching tenders:', error);
+          toast({
+            title: "Error loading tenders",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (data) {
+          setTenders(data);
+        }
+      } catch (error) {
+        console.error('Error fetching tenders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTenders();
+  }, [toast]);
   
   // Filter tenders based on search term and selected filters
-  const filteredTenders = mockTenders.filter((tender) => {
+  const filteredTenders = tenders.filter((tender) => {
     const matchesSearch = 
       tender.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
       tender.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -135,6 +118,22 @@ const TenderDiscovery: React.FC = () => {
     });
   };
 
+  const addToCart = (tenderId: string) => {
+    if (cart.includes(tenderId)) {
+      toast({
+        title: "Already in cart",
+        description: "This tender is already in your cart",
+      });
+      return;
+    }
+    
+    setCart(prev => [...prev, tenderId]);
+    toast({
+      title: "Added to cart",
+      description: "Tender has been added to your cart",
+    });
+  };
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM d, yyyy');
   };
@@ -150,11 +149,25 @@ const TenderDiscovery: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Discover Tenders</h2>
-        <p className="text-muted-foreground">
-          Find opportunities that match your business capabilities
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Discover Tenders</h2>
+          <p className="text-muted-foreground">
+            Find opportunities that match your business capabilities
+          </p>
+        </div>
+        
+        <Link to="/supplier/cart">
+          <Button variant="outline" className="relative">
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Cart
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {cart.length}
+              </span>
+            )}
+          </Button>
+        </Link>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -218,73 +231,99 @@ const TenderDiscovery: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {filteredTenders.map((tender) => {
-          const deadline = new Date(tender.deadline);
-          const daysLeft = Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-          const isUrgent = daysLeft <= 7;
-          
-          return (
-            <Card key={tender.id} className="hover:shadow-md transition-shadow">
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-72 animate-pulse">
               <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{tender.title}</CardTitle>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => handleNotificationToggle(tender.id)}
-                    title="Get notifications"
-                  >
-                    <Bell className="h-4 w-4" />
-                  </Button>
-                </div>
+                <div className="h-6 bg-gray-200 rounded mb-2 w-3/4"></div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                  {tender.description}
-                </p>
+                <div className="h-4 bg-gray-200 rounded mb-4 w-full"></div>
+                <div className="h-4 bg-gray-200 rounded mb-4 w-5/6"></div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div className="text-sm flex justify-between w-full">
-                      <span>Deadline: {formatDate(tender.deadline)}</span>
-                      <span className={`font-medium ${isUrgent ? 'text-red-600' : 'text-amber-600'}`}>{daysLeft} days left</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Budget: {formatCurrency(tender.budget)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <div>{getCategoryBadge(tender.category)}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Posted: {formatDate(tender.createdAt)}</span>
-                  </div>
-                  
-                  <div className="pt-3 flex justify-between">
-                    <Link to={`/supplier/tender-details/${tender.id}`}>
-                      <Button variant="outline" size="sm">
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </Link>
-                    <Link to={`/supplier/prepare-bid/${tender.id}`}>
-                      <Button size="sm">
-                        Submit Bid
-                      </Button>
-                    </Link>
-                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-4/5"></div>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {filteredTenders.map((tender) => {
+            const deadline = new Date(tender.deadline);
+            const daysLeft = Math.ceil((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            const isUrgent = daysLeft <= 7;
+            
+            return (
+              <Card key={tender.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{tender.title}</CardTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleNotificationToggle(tender.id)}
+                      title="Get notifications"
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                    {tender.description}
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div className="text-sm flex justify-between w-full">
+                        <span>Deadline: {formatDate(tender.deadline)}</span>
+                        <span className={`font-medium ${isUrgent ? 'text-red-600' : 'text-amber-600'}`}>{daysLeft} days left</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Budget: {formatCurrency(tender.budget)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <div>{getCategoryBadge(tender.category)}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Posted: {formatDate(tender.createdAt)}</span>
+                    </div>
+                    
+                    <div className="pt-3 flex justify-between">
+                      <Link to={`/supplier/tender-details/${tender.id}`}>
+                        <Button variant="outline" size="sm">
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button 
+                        size="sm" 
+                        variant={cart.includes(tender.id) ? "secondary" : "default"}
+                        onClick={() => addToCart(tender.id)}
+                        disabled={cart.includes(tender.id)}
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        {cart.includes(tender.id) ? "Added" : "Add to Cart"}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
       
-      {filteredTenders.length === 0 && (
+      {!loading && filteredTenders.length === 0 && (
         <div className="border rounded-lg p-8 text-center">
           <h3 className="text-lg font-medium mb-2">No tenders found</h3>
           <p className="text-muted-foreground mb-4">
