@@ -35,7 +35,7 @@ export const useRegisterSubmit = (
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: window.location.origin + '/redirect'
         }
       });
       
