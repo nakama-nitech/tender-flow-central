@@ -76,18 +76,12 @@ export const useRegisterSubmit = (
         description: "Your account has been created. You can now log in.",
       });
       
-      // Set login form with the email for convenience
-      setLoginForm({ email: registerForm.email, password: '' });
-      
       // Switch to login tab after successful registration
       setSearchParams((params) => {
         const newParams = new URLSearchParams(params);
         newParams.set('tab', 'login');
         return newParams;
       });
-      
-      // Redirect user to auth page with login tab selected
-      navigate('/auth?tab=login');
       
     } catch (error: any) {
       console.error("Registration error:", error);

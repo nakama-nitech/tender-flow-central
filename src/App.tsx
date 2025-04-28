@@ -7,8 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
-import AboutPage from "./pages/AboutPage";
-import ContactPage from "./pages/ContactPage";
 import { RedirectHandler } from "./components/auth/RedirectHandler";
 import SupplierDashboard from "./pages/supplier/SupplierDashboard";
 import TenderDiscovery from "./pages/supplier/TenderDiscovery";
@@ -44,8 +42,6 @@ const App = () => (
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
           
           {/* Redirect Handler */}
           <Route path="/redirect" element={<RedirectHandler />} />
@@ -75,9 +71,6 @@ const App = () => (
           {/* Redirects */}
           <Route path="/admin/*" element={<Navigate to="/admin" />} />
           <Route path="/supplier" element={<Navigate to="/supplier/dashboard" />} />
-          
-          {/* For backward compatibility, redirect /dashboard to the appropriate route */}
-          <Route path="/dashboard" element={<RedirectHandler />} />
           
           {/* Replace /select-role with /redirect */}
           <Route path="/select-role" element={<Navigate to="/redirect" replace />} />
