@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -85,7 +84,10 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
                   variant="link" 
                   className="p-0 h-auto ml-1 text-xs"
                   onClick={() => {
-                    setLoginForm({...setLoginForm, email: registerForm.email});
+                    setLoginForm({
+                      email: registerForm.email,
+                      password: '' // Add the required password property with an empty string
+                    });
                     setSearchParams(params => {
                       params.set('tab', 'login');
                       return params;
