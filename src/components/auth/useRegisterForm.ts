@@ -59,42 +59,6 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
   };
 
   // Fixed email check function - now properly detects if an email exists
-  const checkEmailExists = async (email: string) => {
-    try {
-      // First check if user exists by trying to sign in
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: "this-is-an-intentionally-wrong-password-to-check-existence"
-      });
-      
-      // If no error or error code is not invalid_credentials, account doesn't exist
-      // We're looking specifically for the invalid_credentials error which means the account exists
-      if (error?.message?.includes('Invalid login credentials')) {
-        console.log("Email exists check: Email found in database", email);
-        setEmailAlreadyExists(true);
-        setRegisterFormErrors({
-          ...registerFormErrors,
-          email: "This email is already registered. Please log in instead."
-        });
-        return true;
-      }
-      
-      // Clear any previous email error if we're setting it to false
-      if (registerFormErrors.email === "This email is already registered. Please log in instead.") {
-        setRegisterFormErrors({
-          ...registerFormErrors,
-          email: undefined
-        });
-      }
-      
-      setEmailAlreadyExists(false);
-      return false;
-    } catch (error) {
-      console.error("Error checking email:", error);
-      return false;
-    }
-  };
-
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -119,14 +83,10 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
           return newParams;
         });
         setIsSubmitting(false);
-        toast({
-          title: "Account already exists",
-          description: "Please login with your existing account",
-          variant: "default",
-        });
         return;
       }
       
+      // Email doesn't exist, proceed with registration
       const nameParts = registerForm.contactName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -139,7 +99,8 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
             role: 'supplier',
             first_name: firstName,
             last_name: lastName
-          }
+          },
+          emailRedirectTo: window.location.origin // Add redirect URL for email confirmation
         }
       });
       
@@ -149,6 +110,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
       
       console.log("User registered successfully:", authData.user.id);
       
+      // Rest of your code for creating supplier info...
       const { error: supplierError } = await supabase.rpc('create_supplier', {
         supplier_id: authData.user.id,
         company_type_id_input: parseInt(registerForm.companyType),
@@ -166,6 +128,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
         throw supplierError;
       }
       
+      // Add categories
       if (registerForm.categoriesOfInterest.length > 0) {
         for (const categoryId of registerForm.categoriesOfInterest) {
           const { error: categoryError } = await supabase.rpc('add_supplier_category', {
