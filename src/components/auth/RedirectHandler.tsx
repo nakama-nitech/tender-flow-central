@@ -4,49 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 export const RedirectHandler = () => {
   const navigate = useNavigate();
   const { isLoading, error, user, userRole } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        // Log redirection attempt for debugging
-        console.log("RedirectHandler: Redirecting authenticated user with role:", userRole);
-        
-        // If user is authenticated, redirect based on role
         if (userRole === 'admin') {
           navigate('/admin');
-          toast({
-            title: "Welcome back, Admin",
-            description: "You have been redirected to the admin dashboard",
-          });
         } else if (userRole === 'supplier') {
-          // Ensure supplier is redirected to the supplier dashboard
           navigate('/supplier/dashboard');
-          toast({
-            title: "Welcome back, Supplier",
-            description: "You have been redirected to the supplier dashboard",
-          });
-        } else {
-          // If role is not recognized, default to supplier dashboard
-          console.warn("Unknown user role:", userRole, "defaulting to supplier dashboard");
-          navigate('/supplier/dashboard');
-          toast({
-            title: "Welcome",
-            description: "You have been logged in successfully",
-          });
         }
       } else if (!user && !error) {
-        // If no user and no error, redirect to auth page
-        console.log("RedirectHandler: No user found, redirecting to auth page");
         navigate('/auth');
       }
     }
-  }, [isLoading, user, userRole, navigate, error, toast]);
+  }, [isLoading, user, userRole, navigate, error]);
 
   if (isLoading) {
     return (
