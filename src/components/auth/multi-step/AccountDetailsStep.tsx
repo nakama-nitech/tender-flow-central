@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -45,14 +46,14 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="text-lg font-medium flex items-center">
+      <div className="text-lg font-medium flex items-center text-primary-700">
         <Briefcase className="h-5 w-5 mr-2 text-primary" />
         <span>Account Details</span>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+          <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
           <Input 
             id="email" 
             type="email" 
@@ -86,7 +87,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
                   onClick={() => {
                     setLoginForm({
                       email: registerForm.email,
-                      password: '' // Add the required password property with an empty string
+                      password: '' // Add the required password property
                     });
                     setSearchParams(params => {
                       params.set('tab', 'login');
@@ -102,7 +103,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+          <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
           <div className="relative">
             <Input 
               id="password" 
@@ -133,7 +134,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+          <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
           <div className="relative">
             <Input 
               id="confirmPassword" 
@@ -165,7 +166,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="categoriesOfInterest" className="flex items-center">
             <Briefcase className="h-4 w-4 mr-2 text-primary" />
-            Categories of Interest <span className="text-red-500">*</span>
+            Categories of Interest <span className="text-destructive">*</span>
           </Label>
           <Select
             value={registerForm.categoriesOfInterest.join(',')}
@@ -178,7 +179,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
             <SelectTrigger className={`border-primary/20 ${registerFormErrors.categoriesOfInterest ? 'border-red-500' : ''}`}>
               <SelectValue placeholder="Select categories of interest" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border border-gray-200 z-50">
               {categories.map(category => (
                 <SelectItem key={category.id} value={category.id.toString()}>
                   {category.name}
@@ -250,7 +251,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
               <a href="#" className="text-primary hover:underline mx-1">
                 Privacy Policy
               </a>
-              <span className="text-red-500"> *</span>
+              <span className="text-destructive"> *</span>
             </label>
           </div>
           {getFieldError('agreeToTerms')}
