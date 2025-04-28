@@ -1,13 +1,32 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useRequiredRoleValidation } from "@/hooks/useRequiredRoleValidation";
 import SupplierSidebar from "@/components/SupplierSidebar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
 const SupplierLayout: React.FC = () => {
-  // Validate that the user has supplier role
-  const { isLoading, hasAccess } = useRequiredRoleValidation("supplier");
+  // Add state for sidebar
+  const [isOpen, setIsOpen] = useState(true);
+  const [activePage, setActivePage] = useState("dashboard");
+  
+  // Use the correct properties from useRequiredRoleValidation
+  const { hasRequiredRole, checkRequiredRole } = useRequiredRoleValidation("supplier");
+  
+  // Add a loading state since it's expected in the UI
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Simulate loading check
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsOpen(!isOpen);
+  };
 
   if (isLoading) {
     return (
@@ -17,7 +36,7 @@ const SupplierLayout: React.FC = () => {
     );
   }
 
-  if (!hasAccess) {
+  if (!hasRequiredRole) {
     return (
       <div className="flex flex-col h-screen items-center justify-center p-8 text-center">
         <div className="bg-card p-8 rounded-lg max-w-md shadow-lg">
@@ -40,7 +59,12 @@ const SupplierLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      <SupplierSidebar />
+      <SupplierSidebar 
+        isOpen={isOpen}
+        toggleSidebar={toggleSidebar}
+        activePage={activePage}
+        setActivePage={setActivePage}
+      />
       <div className="flex flex-col flex-1 overflow-hidden">
         <header className="bg-card border-b border-border h-16 flex items-center justify-between px-6 sticky top-0 z-10">
           <h1 className="text-xl font-semibold">Supplier Pro Africa</h1>
