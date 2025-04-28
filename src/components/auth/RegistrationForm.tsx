@@ -90,7 +90,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               onChange={(e) => {
                 setRegisterForm({...registerForm, email: e.target.value});
                 setRegisterFormErrors({...registerFormErrors, email: ''});
-                setEmailAlreadyExists(false);
+                // Clear the emailAlreadyExists flag when the user edits the email field
+                if (emailAlreadyExists) {
+                  setEmailAlreadyExists(false);
+                }
               }}
               onBlur={(e) => {
                 if (e.target.value) {
@@ -433,7 +436,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               Sign In
             </Button>
           </div>
-          <Button type="submit" disabled={isSubmitting || emailAlreadyExists} className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700"
+          >
             {isSubmitting ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>

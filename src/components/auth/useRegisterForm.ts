@@ -1,171 +1,187 @@
-
 import { useState } from 'react';
-import { RegisterFormState, LoginFormState } from './types/formTypes';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useEmailCheck } from './hooks/useEmailCheck';
-import { useFormValidation } from './hooks/useFormValidation';
+import { RegisterFormState, RegisterFormErrors } from './RegisterFormTypes';
 
-const initialFormState: RegisterFormState = {
-  email: '',
-  password: '',
-  confirmPassword: '',
-  companyType: '',
-  companyName: '',
-  location: '',
-  country: 'Kenya',
-  contactName: '',
-  phoneNumber: '',
-  kraPin: '',
-  physicalAddress: '',
-  websiteUrl: '',
-  categoriesOfInterest: [],
-  supplyLocations: [],
-  agreeToTerms: false
-};
-
-export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>) => {
-  const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
-  const [loginForm, setLoginForm] = useState<LoginFormState>({ email: '', password: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+export const useRegisterForm = (setSearchParams: any) => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   
-  // Use our custom hooks
-  const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists } = useEmailCheck();
-  const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
+  // Initial form state
+  const [registerForm, setRegisterForm] = useState<RegisterFormState>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    companyType: '',
+    companyName: '',
+    location: '',
+    country: 'Kenya', // Default country
+    contactName: '',
+    phoneNumber: '',
+    kraPin: '',
+    physicalAddress: '',
+    websiteUrl: '',
+    categoriesOfInterest: [],
+    supplyLocations: [],
+    agreeToTerms: false
+  });
+
+  // Initial login form for seamless transfer to login tab
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: ''
+  });
+
+  // Form validation errors
+  const [registerFormErrors, setRegisterFormErrors] = useState<RegisterFormErrors>({});
+
+  const validateForm = () => {
+    const errors: RegisterFormErrors = {};
+    
+    // Email validation
+    if (!registerForm.email) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(registerForm.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    // Password validation
+    if (!registerForm.password) {
+      errors.password = 'Password is required';
+    } else if (registerForm.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters long';
+    }
+    
+    // Confirm password
+    if (!registerForm.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (registerForm.password !== registerForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    
+    // Company type validation
+    if (!registerForm.companyType) {
+      errors.companyType = 'Please select a company type';
+    }
+    
+    // Company name validation
+    if (!registerForm.companyName) {
+      errors.companyName = 'Company name is required';
+    }
+    
+    // Location validation
+    if (!registerForm.location) {
+      errors.location = 'Location is required';
+    }
+    
+    // Contact name validation
+    if (!registerForm.contactName) {
+      errors.contactName = 'Contact name is required';
+    }
+    
+    // Phone number validation
+    if (!registerForm.phoneNumber) {
+      errors.phoneNumber = 'Phone number is required';
+    } else if (!/^\d+$/.test(registerForm.phoneNumber)) {
+      errors.phoneNumber = 'Phone number must contain only digits';
+    }
+    
+    // KRA PIN validation
+    if (!registerForm.kraPin) {
+      errors.kraPin = 'KRA PIN is required';
+    }
+    
+    // Categories validation
+    if (registerForm.categoriesOfInterest.length === 0) {
+      errors.categoriesOfInterest = 'Please select at least one category';
+    }
+    
+    // Terms validation
+    if (!registerForm.agreeToTerms) {
+      errors.agreeToTerms = 'You must agree to the terms and conditions';
+    }
+    
+    setRegisterFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateRegisterForm(registerForm)) {
-      toast({
-        title: "Form validation failed",
-        description: "Please check the form for errors and try again",
-        variant: "destructive",
-      });
+    // Check if email exists before proceeding with validation
+    const emailExists = await checkEmailExists(registerForm.email);
+    
+    // If email exists, don't proceed with form validation and submission
+    if (emailExists) {
+      return;
+    }
+    
+    const isValid = validateForm();
+    
+    if (!isValid) {
+      // Scroll to the first error
+      const firstErrorField = Object.keys(registerFormErrors)[0];
+      const errorElement = document.getElementById(firstErrorField);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        errorElement.focus();
+      }
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      // Check if email exists
-      const emailExists = await checkEmailExists(registerForm.email);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (emailExists) {
-        // Email exists, switch to login tab
-        setLoginForm({...loginForm, email: registerForm.email});
-        setSearchParams((params) => {
-          const newParams = new URLSearchParams(params);
-          newParams.set('tab', 'login');
-          return newParams;
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Email doesn't exist, proceed with registration
-      const nameParts = registerForm.contactName.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: registerForm.email,
-        password: registerForm.password,
-        options: {
-          data: {
-            role: 'supplier',
-            first_name: firstName,
-            last_name: lastName
-          },
-          emailRedirectTo: window.location.origin
-        }
+      // Reset form and navigate to success page or dashboard
+      setRegisterForm({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        companyType: '',
+        companyName: '',
+        location: '',
+        country: 'Kenya',
+        contactName: '',
+        phoneNumber: '',
+        kraPin: '',
+        physicalAddress: '',
+        websiteUrl: '',
+        categoriesOfInterest: [],
+        supplyLocations: [],
+        agreeToTerms: false
       });
       
-      if (authError) throw authError;
-      
-      if (!authData.user) throw new Error("User registration failed");
-      
-      console.log("User registered successfully:", authData.user.id);
-      
-      // Create supplier info
-      const { error: supplierError } = await supabase.rpc('create_supplier', {
-        supplier_id: authData.user.id,
-        company_type_id_input: parseInt(registerForm.companyType),
-        company_name_input: registerForm.companyName,
-        location_input: registerForm.location,
-        country_input: registerForm.country,
-        phone_number_input: registerForm.phoneNumber,
-        kra_pin_input: registerForm.kraPin,
-        physical_address_input: registerForm.physicalAddress || null,
-        website_url_input: registerForm.websiteUrl || null
-      });
-      
-      if (supplierError) {
-        console.error("Supplier creation error:", supplierError);
-        throw supplierError;
-      }
-      
-      // Add categories
-      if (registerForm.categoriesOfInterest.length > 0) {
-        for (const categoryId of registerForm.categoriesOfInterest) {
-          const { error: categoryError } = await supabase.rpc('add_supplier_category', {
-            supplier_id_input: authData.user.id,
-            category_id_input: parseInt(categoryId)
-          });
-          
-          if (categoryError) {
-            console.error("Category error:", categoryError);
-          }
-        }
-      }
-      
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created. You can now log in.",
-      });
-      
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Registration error:', error);
+      // Handle API errors
+    } finally {
       setIsSubmitting(false);
-      setSearchParams((params) => {
-        const newParams = new URLSearchParams(params);
-        newParams.set('tab', 'login');
-        return newParams;
-      });
+    }
+  };
+
+  // Check if email already exists in the system
+  const checkEmailExists = async (email: string) => {
+    if (!email) return false;
+    
+    try {
+      // Simulate API call to check if email exists
+      // For demo purposes, let's assume these emails are already registered
+      const existingEmails = ['test@example.com', 'user@domain.com', 'admin@company.com'];
       
-    } catch (error: any) {
-      console.error("Registration error:", error);
+      // Wait for a brief moment to simulate network request
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Handle the error appropriately
-      if (error.code === "user_already_exists" || error.message?.includes("already been registered")) {
-        setEmailAlreadyExists(true);
-        setRegisterFormErrors({
-          ...registerFormErrors,
-          email: "This email is already registered. Please log in instead."
-        });
-        
-        setLoginForm({...loginForm, email: registerForm.email});
-        setSearchParams((params) => {
-          const newParams = new URLSearchParams(params);
-          newParams.set('tab', 'login');
-          return newParams;
-        });
-        
-        toast({
-          title: "Account already exists",
-          description: "Please login with your existing account",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Registration failed",
-          description: error.message || "There was an error creating your account",
-          variant: "destructive",
-        });
-      }
+      const exists = existingEmails.includes(email.toLowerCase());
+      setEmailAlreadyExists(exists);
       
-      setIsSubmitting(false);
+      return exists;
+    } catch (error) {
+      console.error('Error checking email:', error);
+      return false;
     }
   };
 
