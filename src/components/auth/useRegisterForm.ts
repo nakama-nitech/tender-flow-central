@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { RegisterFormState, RegisterFormErrors } from './RegisterFormTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,7 +58,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     return Object.keys(errors).length === 0;
   };
 
-  // Add the missing checkEmailExists function
+  // Ensure checkEmailExists is properly defined as a useCallback function
   const checkEmailExists = useCallback(async (email: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithOtp({
@@ -65,7 +66,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
         options: { shouldCreateUser: false }
       });
       
-      // If there's no error with code "user_not_found", it means the email exists
+      // If there's an error with code "user_not_found", it means the email doesn't exist
       if (error && error.message.includes("user not found")) {
         console.log("Email doesn't exist in the system");
         setEmailAlreadyExists(false);
@@ -81,7 +82,6 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     }
   }, []);
 
-  // Fixed email check function - now properly detects if an email exists
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -97,6 +97,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     setIsSubmitting(true);
     
     try {
+      // Use the checkEmailExists function directly
       const emailExists = await checkEmailExists(registerForm.email);
       if (emailExists) {
         setLoginForm({...loginForm, email: registerForm.email});
@@ -221,7 +222,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     setEmailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists,
+    checkEmailExists, // Ensure this is properly exported
     loginForm,
     setLoginForm
   };
