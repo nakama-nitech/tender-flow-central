@@ -35,7 +35,7 @@ export const useRegisterSubmit = (
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: window.location.origin + '/redirect'
         }
       });
       
@@ -73,10 +73,10 @@ export const useRegisterSubmit = (
       
       toast({
         title: "Registration successful",
-        description: "Your account has been created. You can now log in.",
+        description: "Please log in with your new account credentials.",
       });
       
-      // Set login form with the email for convenience
+      // Pre-populate the login form with the user's email to make login easier
       setLoginForm({ email: registerForm.email, password: '' });
       
       // Switch to login tab after successful registration
@@ -85,9 +85,6 @@ export const useRegisterSubmit = (
         newParams.set('tab', 'login');
         return newParams;
       });
-      
-      // Redirect user to auth page with login tab selected
-      navigate('/auth?tab=login');
       
     } catch (error: any) {
       console.error("Registration error:", error);

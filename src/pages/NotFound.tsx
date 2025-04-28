@@ -2,68 +2,46 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Home, ArrowLeft } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, userRole } = useAuth();
 
   useEffect(() => {
-    // Log the 404 error
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
+  }, [location.pathname]);
 
-    // Check if the user is trying to access /dashboard 
-    // This is a common error after registration, so let's handle it
-    if (location.pathname === "/dashboard" && user) {
-      if (userRole === "supplier") {
-        navigate("/supplier/dashboard");
-      } else if (userRole === "admin") {
-        navigate("/admin");
-      }
-    }
-  }, [location.pathname, user, userRole, navigate]);
-
-  const handleGoHome = () => {
-    // If user is authenticated, redirect to appropriate dashboard
-    if (user) {
-      if (userRole === "supplier") {
-        navigate("/supplier/dashboard");
-      } else if (userRole === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
-    } else {
-      navigate("/");
-    }
-  };
+  const goToHome = () => navigate("/");
+  const goBack = () => navigate(-1);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-xl">
-        <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-4" />
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-6">
-          Oops! The page you're looking for cannot be found
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 className="text-6xl font-bold mb-4 text-gray-800">404</h1>
+        <p className="text-xl text-gray-600 mb-6">Oops! Page not found</p>
+        <p className="text-gray-500 mb-8">
+          The page you are looking for might have been removed or is temporarily unavailable.
         </p>
-        <div className="space-y-2">
-          <Button onClick={handleGoHome} className="w-full">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            onClick={goToHome}
+            className="flex items-center gap-2"
+          >
+            <Home size={16} />
             Return to Home
           </Button>
-          {user && (
-            <Button 
-              variant="outline" 
-              onClick={() => navigate(userRole === "admin" ? "/admin" : "/supplier/dashboard")} 
-              className="w-full"
-            >
-              Go to Dashboard
-            </Button>
-          )}
+          <Button 
+            variant="outline"
+            onClick={goBack}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} />
+            Go Back
+          </Button>
         </div>
       </div>
     </div>
