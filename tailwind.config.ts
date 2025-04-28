@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -26,42 +25,32 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#9b87f5",
-          foreground: "#ffffff",
-          50: "#f5f2ff",
-          100: "#ede6fe",
-          200: "#d9cafd",
-          300: "#c2adfc",
-          400: "#ab90fa",
-          500: "#9b87f5",
-          600: "#7e69ab",
-          700: "#6E59A5",
-          800: "#473a6a",
-          900: "#1A1F2C",
+          DEFAULT: "hsl(221 83% 53%)",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "#1A1F2C",
-          foreground: "#ffffff",
+          DEFAULT: "hsl(217 19% 27%)",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "#ea384c",
-          foreground: "#ffffff",
+          DEFAULT: "hsl(0 84% 60%)",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "#E5DEFF",
-          foreground: "#8E9196",
+          DEFAULT: "hsl(217 33% 97%)",
+          foreground: "hsl(215 16% 47%)",
         },
         accent: {
-          DEFAULT: "#D6BCFA",
-          foreground: "#1A1F2C",
+          DEFAULT: "hsl(217 33% 17%)",
+          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "#ffffff",
-          foreground: "#1A1F2C",
+          DEFAULT: "hsl(0 0% 100%)",
+          foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "#ffffff",
-          foreground: "#1A1F2C",
+          DEFAULT: "hsl(0 0% 100%)",
+          foreground: "hsl(var(--card-foreground))",
         },
         category: {
           construction: {
@@ -107,22 +96,12 @@ export default {
         'pulse-slow': {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.6' },
-        },
-        'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        'slide-in': {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'pulse-slow': 'pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'fade-in': 'fade-in 0.3s ease-out',
-        'slide-in': 'slide-in 0.3s ease-out'
+        'pulse-slow': 'pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
       },
       typography: {
         DEFAULT: {

@@ -7,7 +7,6 @@ import CompanyDetailsStep from './CompanyDetailsStep';
 import ContactDetailsStep from './ContactDetailsStep';
 import AccountDetailsStep from './AccountDetailsStep';
 import { CompanyType, Category, CountryLocations } from '../RegisterFormTypes';
-import { cn } from '@/lib/utils';
 
 interface RegistrationStepsProps {
   registerForm: any;
@@ -152,15 +151,11 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
     <form onSubmit={handleSubmitForm} className="space-y-6">
       {/* Progress indicator */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
+        <div className="flex justify-between text-sm text-gray-500">
           <span>Step {currentStep + 1} of {STEPS.length}</span>
           <span>{STEPS[currentStep].name}</span>
         </div>
-        <Progress 
-          value={progressPercent} 
-          className="h-2 bg-gray-200"
-          // Remove the indicatorClassName prop as it doesn't exist on the Progress component
-        />
+        <Progress value={progressPercent} className="h-2" />
       </div>
       
       {/* Current step content */}
@@ -202,10 +197,10 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
       </div>
       
       {/* Navigation buttons */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4">
         <div className="flex items-center">
-          <span className="text-sm text-gray-600">You have an account?</span>
-          <Button variant="link" className="p-0 ml-1 text-primary" type="button" onClick={() => {
+          <span className="text-sm">You have an account?</span>
+          <Button variant="link" className="p-0 ml-1" type="button" onClick={() => {
             const searchParams = new URLSearchParams();
             searchParams.set('tab', 'login');
             setSearchParams(searchParams);
@@ -221,7 +216,6 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
               variant="outline"
               onClick={handleBack}
               disabled={isSubmitting}
-              className="border-primary/20 text-primary hover:bg-primary/5"
             >
               <ChevronLeft className="w-4 h-4 mr-1" /> Back
             </Button>
@@ -232,7 +226,6 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
               type="button"
               onClick={handleNext}
               disabled={isSubmitting}
-              className="bg-primary hover:bg-primary-600 text-white"
             >
               Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
@@ -240,7 +233,7 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
             <Button 
               type="submit"
               disabled={isSubmitting}
-              className="bg-gradient-to-r from-primary to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white"
+              className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700"
             >
               {isSubmitting ? (
                 <>
