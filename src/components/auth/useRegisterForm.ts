@@ -1,9 +1,11 @@
 
-import { useState, useCallback } from 'react';
-import { RegisterFormState, RegisterFormErrors } from './RegisterFormTypes';
+import { useState } from 'react';
+import { RegisterFormState, LoginFormState } from './types/formTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useEmailCheck } from './hooks/useEmailCheck';
+import { useFormValidation } from './hooks/useFormValidation';
 
 const initialFormState: RegisterFormState = {
   email: '',
@@ -23,69 +25,21 @@ const initialFormState: RegisterFormState = {
   agreeToTerms: false
 };
 
-interface LoginFormState {
-  email: string;
-  password: string;
-}
-
 export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>) => {
   const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
   const [loginForm, setLoginForm] = useState<LoginFormState>({ email: '', password: '' });
-  const [registerFormErrors, setRegisterFormErrors] = useState<RegisterFormErrors>({});
-  const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const validateRegisterForm = () => {
-    const errors: RegisterFormErrors = {};
-    
-    if (!registerForm.email) errors.email = "Email is required";
-    if (!registerForm.password) errors.password = "Password is required";
-    if (registerForm.password.length < 6) errors.password = "Password must be at least 6 characters";
-    if (!registerForm.confirmPassword) errors.confirmPassword = "Please confirm your password";
-    if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = "Passwords don't match";
-    if (!registerForm.companyType) errors.companyType = "Company type is required";
-    if (!registerForm.companyName) errors.companyName = "Company name is required";
-    if (!registerForm.location) errors.location = "Location is required";
-    if (!registerForm.contactName) errors.contactName = "Contact name is required";
-    if (!registerForm.phoneNumber) errors.phoneNumber = "Phone number is required";
-    if (!registerForm.kraPin) errors.kraPin = "Tax PIN is required";
-    if (registerForm.categoriesOfInterest.length === 0) errors.categoriesOfInterest = "Please select at least one category";
-    if (!registerForm.agreeToTerms) errors.agreeToTerms = "You must agree to the terms and conditions";
-    
-    setRegisterFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Ensure checkEmailExists is properly defined as a useCallback function
-  const checkEmailExists = useCallback(async (email: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false }
-      });
-      
-      // If there's an error with code "user_not_found", it means the email doesn't exist
-      if (error && error.message.includes("user not found")) {
-        console.log("Email doesn't exist in the system");
-        setEmailAlreadyExists(false);
-        return false;
-      } else {
-        console.log("Email already exists in the system");
-        setEmailAlreadyExists(true);
-        return true;
-      }
-    } catch (err) {
-      console.error("Error checking email:", err);
-      return false;
-    }
-  }, []);
+  
+  // Use our custom hooks
+  const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists } = useEmailCheck();
+  const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateRegisterForm()) {
+    if (!validateRegisterForm(registerForm)) {
       toast({
         title: "Form validation failed",
         description: "Please check the form for errors and try again",
@@ -97,9 +51,11 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     setIsSubmitting(true);
     
     try {
-      // Use the checkEmailExists function directly
+      // Check if email exists
       const emailExists = await checkEmailExists(registerForm.email);
+      
       if (emailExists) {
+        // Email exists, switch to login tab
         setLoginForm({...loginForm, email: registerForm.email});
         setSearchParams((params) => {
           const newParams = new URLSearchParams(params);
@@ -124,7 +80,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: window.location.origin // Add redirect URL for email confirmation
+          emailRedirectTo: window.location.origin
         }
       });
       
@@ -134,7 +90,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
       
       console.log("User registered successfully:", authData.user.id);
       
-      // Rest of your code for creating supplier info...
+      // Create supplier info
       const { error: supplierError } = await supabase.rpc('create_supplier', {
         supplier_id: authData.user.id,
         company_type_id_input: parseInt(registerForm.companyType),
@@ -222,7 +178,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     setEmailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists, // Ensure this is properly exported
+    checkEmailExists,
     loginForm,
     setLoginForm
   };
