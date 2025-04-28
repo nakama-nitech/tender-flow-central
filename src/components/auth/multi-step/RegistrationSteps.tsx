@@ -7,6 +7,7 @@ import CompanyDetailsStep from './CompanyDetailsStep';
 import ContactDetailsStep from './ContactDetailsStep';
 import AccountDetailsStep from './AccountDetailsStep';
 import { CompanyType, Category, CountryLocations } from '../RegisterFormTypes';
+import { cn } from '@/lib/utils';
 
 interface RegistrationStepsProps {
   registerForm: any;
@@ -155,7 +156,11 @@ const RegistrationSteps: React.FC<RegistrationStepsProps> = ({
           <span>Step {currentStep + 1} of {STEPS.length}</span>
           <span>{STEPS[currentStep].name}</span>
         </div>
-        <Progress value={progressPercent} className="h-2 bg-gray-200" indicatorClassName="bg-primary" />
+        <Progress 
+          value={progressPercent} 
+          className="h-2 bg-gray-200"
+          // Remove the indicatorClassName prop as it doesn't exist on the Progress component
+        />
       </div>
       
       {/* Current step content */}

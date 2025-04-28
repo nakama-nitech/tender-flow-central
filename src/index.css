@@ -65,6 +65,22 @@
   }
   
   .dropdown-content {
-    @apply bg-white border border-gray-200 shadow-lg rounded-md;
+    @apply bg-popover border border-border shadow-lg rounded-md;
+  }
+  
+  .dropdown-item {
+    @apply text-foreground hover:bg-accent/50 px-3 py-2 rounded-sm cursor-pointer;
+  }
+  
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border shadow-md rounded-lg;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-foreground mb-1;
+  }
+  
+  .form-input {
+    @apply bg-background border border-input rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/50;
   }
 }

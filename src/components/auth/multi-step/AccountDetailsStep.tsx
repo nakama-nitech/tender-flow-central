@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, MapPin, Briefcase, ShieldCheck } from 'lucide-react';
-import { Category, CountryLocations } from '../RegisterFormTypes';
+import { Category } from '../RegisterFormTypes';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface AccountDetailsStepProps {
   registerForm: any;
@@ -40,20 +41,20 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
 
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
-      <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
+      <p className="text-xs text-destructive mt-1">{registerFormErrors[field]}</p>
     ) : null;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="text-lg font-medium flex items-center text-primary-700">
         <Briefcase className="h-5 w-5 mr-2 text-primary" />
         <span>Account Details</span>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
+          <Label htmlFor="email" className="form-label">Email Address <span className="text-destructive">*</span></Label>
           <Input 
             id="email" 
             type="email" 
@@ -73,7 +74,10 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
               }
             }}
             required
-            className={`border-primary/20 ${registerFormErrors.email || emailAlreadyExists ? 'border-red-500' : ''}`}
+            className={cn(
+              "border-primary/20",
+              (registerFormErrors.email || emailAlreadyExists) ? "border-destructive" : ""
+            )}
           />
           {getFieldError('email')}
           {emailAlreadyExists && !registerFormErrors.email && (
@@ -87,7 +91,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
                   onClick={() => {
                     setLoginForm({
                       email: registerForm.email,
-                      password: '' // Add the required password property
+                      password: '' // Add empty password
                     });
                     setSearchParams(params => {
                       params.set('tab', 'login');
@@ -103,7 +107,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
+          <Label htmlFor="password" className="form-label">Password <span className="text-destructive">*</span></Label>
           <div className="relative">
             <Input 
               id="password" 
@@ -115,11 +119,14 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
                 setRegisterFormErrors({...registerFormErrors, password: ''});
               }}
               required
-              className={`border-primary/20 pr-10 ${registerFormErrors.password ? 'border-red-500' : ''}`}
+              className={cn(
+                "border-primary/20 pr-10",
+                registerFormErrors.password ? "border-destructive" : ""
+              )}
             />
             <button 
               type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
@@ -134,7 +141,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password <span className="text-destructive">*</span></Label>
+          <Label htmlFor="confirmPassword" className="form-label">Confirm Password <span className="text-destructive">*</span></Label>
           <div className="relative">
             <Input 
               id="confirmPassword" 
@@ -146,11 +153,14 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
                 setRegisterFormErrors({...registerFormErrors, confirmPassword: ''});
               }}
               required
-              className={`border-primary/20 pr-10 ${registerFormErrors.confirmPassword ? 'border-red-500' : ''}`}
+              className={cn(
+                "border-primary/20 pr-10",
+                registerFormErrors.confirmPassword ? "border-destructive" : ""
+              )}
             />
             <button 
               type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               {showConfirmPassword ? (
@@ -164,7 +174,7 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="categoriesOfInterest" className="flex items-center">
+          <Label htmlFor="categoriesOfInterest" className="flex items-center form-label">
             <Briefcase className="h-4 w-4 mr-2 text-primary" />
             Categories of Interest <span className="text-destructive">*</span>
           </Label>
@@ -176,10 +186,13 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
               setRegisterFormErrors({...registerFormErrors, categoriesOfInterest: ''});
             }}
           >
-            <SelectTrigger className={`border-primary/20 ${registerFormErrors.categoriesOfInterest ? 'border-red-500' : ''}`}>
+            <SelectTrigger className={cn(
+              "border-primary/20 bg-background",
+              registerFormErrors.categoriesOfInterest ? "border-destructive" : ""
+            )}>
               <SelectValue placeholder="Select categories of interest" />
             </SelectTrigger>
-            <SelectContent className="bg-white border border-gray-200 z-50">
+            <SelectContent className="bg-popover border border-border z-50">
               {categories.map(category => (
                 <SelectItem key={category.id} value={category.id.toString()}>
                   {category.name}
@@ -191,11 +204,11 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
         </div>
         
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="supplyLocations" className="flex items-center">
+          <Label htmlFor="supplyLocations" className="flex items-center form-label">
             <MapPin className="h-4 w-4 mr-2 text-primary" />
             Supply Locations in {registerForm.country}
           </Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border rounded-md border-primary/20 max-h-[150px] overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border rounded-md border-primary/20 bg-background max-h-[150px] overflow-y-auto">
             {availableLocations.map((location, index) => (
               <div key={index} className="flex items-center space-x-2">
                 <Checkbox
@@ -233,14 +246,17 @@ const AccountDetailsStep: React.FC<AccountDetailsStepProps> = ({
               id="terms" 
               checked={registerForm.agreeToTerms}
               onCheckedChange={(checked) => {
-                setRegisterForm({...registerForm, agreeToTerms: checked as boolean});
+                setRegisterForm({...registerForm, agreeToTerms: !!checked});
                 setRegisterFormErrors({...registerFormErrors, agreeToTerms: ''});
               }}
-              className={`border-primary/40 data-[state=checked]:bg-primary ${registerFormErrors.agreeToTerms ? 'border-red-500' : ''}`}
+              className={cn(
+                "border-primary/40 data-[state=checked]:bg-primary",
+                registerFormErrors.agreeToTerms ? "border-destructive" : ""
+              )}
             />
             <label
               htmlFor="terms"
-              className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
+              className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center flex-wrap"
             >
               <ShieldCheck className="h-3 w-3 mr-1 text-primary" />
               I agree to the{" "}

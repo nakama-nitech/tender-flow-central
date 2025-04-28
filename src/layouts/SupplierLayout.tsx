@@ -1,92 +1,60 @@
 
-import React, { useState } from 'react';
-import { Outlet, Navigate, useNavigate } from 'react-router-dom';
-import SupplierSidebar from '@/components/SupplierSidebar';
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useSupplierAuth } from '@/hooks/useSupplierAuth';
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { useRequiredRoleValidation } from "@/hooks/useRequiredRoleValidation";
+import SupplierSidebar from "@/components/SupplierSidebar";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
-const SupplierLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activePage, setActivePage] = useState('dashboard');
-  const { isLoading, error, userRole, handleRetry, handleSignOut } = useSupplierAuth();
-  const navigate = useNavigate();
-
-  const onSignOut = async () => {
-    await handleSignOut();
-    navigate('/auth');
-  };
+const SupplierLayout: React.FC = () => {
+  // Validate that the user has supplier role
+  const { isLoading, hasAccess } = useRequiredRoleValidation("supplier");
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin h-12 w-12 rounded-full border-t-2 border-primary border-t-primary"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (!hasAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="mt-2">{error}</AlertDescription>
-          </Alert>
-          <div className="flex justify-between mt-4">
-            <Button 
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+      <div className="flex flex-col h-screen items-center justify-center p-8 text-center">
+        <div className="bg-card p-8 rounded-lg max-w-md shadow-lg">
+          <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+          <p className="text-muted-foreground">
+            You don't have permission to access the supplier dashboard. Please log in with a supplier account.
+          </p>
+          <div className="mt-6">
+            <a
+              href="/auth?tab=login"
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
             >
-              Back to login
-            </Button>
-            <Button 
-              onClick={handleRetry}
-              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
-            >
-              Retry
-            </Button>
+              Go to Login
+            </a>
           </div>
         </div>
       </div>
     );
   }
-
-  // Allow admins to view supplier dashboard - remove this redirect
-  // if (userRole && userRole !== 'supplier' && userRole !== 'admin') {
-  //   return <Navigate to="/admin" replace />;
-  // }
 
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">
-      <SupplierSidebar 
-        isOpen={sidebarOpen} 
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-        activePage={activePage}
-        setActivePage={setActivePage}
-      />
-      
-      <main 
-        className={cn(
-          "flex-1 p-6 md:p-8 transition-all duration-300 overflow-auto",
-          sidebarOpen ? "md:ml-0" : "md:ml-0"
-        )}
-      >
-        <div className="w-full mx-auto max-w-7xl bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-end mb-4">
-            <Button
-              onClick={onSignOut}
-              variant="outline"
-              className="gap-2"
-            >
-              Sign Out
-            </Button>
+    <div className="flex h-screen bg-background">
+      <SupplierSidebar />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <header className="bg-card border-b border-border h-16 flex items-center justify-between px-6 sticky top-0 z-10">
+          <h1 className="text-xl font-semibold">Supplier Pro Africa</h1>
+          <div className="flex items-center space-x-4">
+            <ThemeSwitcher />
+            <span className="text-sm text-muted-foreground">
+              Supplier Dashboard
+            </span>
           </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
