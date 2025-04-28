@@ -1,60 +1,77 @@
 
 import { useState } from 'react';
-import { RegisterFormState, LoginFormState } from '../types/formTypes';
-import { useEmailCheck } from './useEmailCheck';
-import { useFormValidation } from './useFormValidation';
+import { useNavigate } from 'react-router-dom';
+import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 import { useRegisterSubmit } from './useRegisterSubmit';
+import { useFormValidation } from './useFormValidation';
 
-const initialFormState: RegisterFormState = {
-  email: '',
-  password: '',
-  confirmPassword: '',
-  companyType: '',
-  companyName: '',
-  location: '',
-  country: 'Kenya',
-  contactName: '',
-  phoneNumber: '',
-  kraPin: '',
-  physicalAddress: '',
-  websiteUrl: '',
-  categoriesOfInterest: [],
-  supplyLocations: [],
-  agreeToTerms: false
-};
-
-export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>) => {
-  const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
-  const [loginForm, setLoginForm] = useState<LoginFormState>({ email: '', password: '' });
+export const useRegisterForm = (setSearchParams: any) => {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Use our custom hooks
-  const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists } = useEmailCheck();
-  const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
-  const { isSubmitting, handleRegisterSubmit } = useRegisterSubmit(
+  // Initial form state
+  const [registerForm, setRegisterForm] = useState<RegisterFormState>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    companyType: '',
+    companyName: '',
+    location: '',
+    country: 'Kenya', // Default country
+    contactName: '',
+    phoneNumber: '',
+    kraPin: '',
+    physicalAddress: '',
+    websiteUrl: '',
+    categoriesOfInterest: [],
+    supplyLocations: [],
+    agreeToTerms: false
+  });
+
+  // Initial login form for seamless transfer to login tab
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: ''
+  });
+
+  // Form validation errors
+  const [registerFormErrors, setRegisterFormErrors] = useState<RegisterFormErrors>({});
+  
+  // Import form validation hook
+  const { validateRegisterForm } = useFormValidation();
+  
+  // Import register submit hook
+  const { handleRegisterSubmit: submitRegistration } = useRegisterSubmit(
     setSearchParams,
     setLoginForm,
     setRegisterFormErrors,
     registerFormErrors
   );
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent, form: RegisterFormState) => {
     e.preventDefault();
     
-    // Check if email exists before proceeding with validation
-    if (registerForm.email) {
-      const emailExists = await checkEmailExists(registerForm.email);
-      
-      // If email exists, don't proceed with form validation and submission
-      if (emailExists) {
-        return;
+    // Validate form before submission
+    if (!validateRegisterForm(form)) {
+      // Find the first error field
+      const firstErrorField = Object.keys(registerFormErrors)[0];
+      const errorElement = document.getElementById(firstErrorField);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        errorElement.focus();
       }
-    }
-    
-    if (!validateRegisterForm(registerForm)) {
       return;
     }
     
-    await handleRegisterSubmit(e, registerForm);
+    setIsSubmitting(true);
+    
+    try {
+      await submitRegistration(e, form);
+    } catch (error) {
+      console.error('Registration submission error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return {
@@ -62,12 +79,11 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     setRegisterForm,
     registerFormErrors,
     setRegisterFormErrors,
-    emailAlreadyExists,
-    setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists,
+    handleRegisterSubmit,
     loginForm,
-    setLoginForm,
-    handleRegisterSubmit: onSubmit
+    setLoginForm
   };
 };
+
+export default useRegisterForm;
