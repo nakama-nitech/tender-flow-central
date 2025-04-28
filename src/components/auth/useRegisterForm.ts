@@ -58,6 +58,30 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     return Object.keys(errors).length === 0;
   };
 
+  // Add the missing checkEmailExists function
+  const checkEmailExists = useCallback(async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false }
+      });
+      
+      // If there's no error with code "user_not_found", it means the email exists
+      if (error && error.message.includes("user not found")) {
+        console.log("Email doesn't exist in the system");
+        setEmailAlreadyExists(false);
+        return false;
+      } else {
+        console.log("Email already exists in the system");
+        setEmailAlreadyExists(true);
+        return true;
+      }
+    } catch (err) {
+      console.error("Error checking email:", err);
+      return false;
+    }
+  }, []);
+
   // Fixed email check function - now properly detects if an email exists
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
