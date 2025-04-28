@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Building, Phone, Globe, ShieldCheck, Eye, EyeOff, Flag, MapPin, Briefcase } from 'lucide-react';
-import { useRegisterForm } from './useRegisterForm';
+import { useRegisterForm } from './hooks/useRegisterForm';
 import { CompanyType, Category, CountryLocations } from './RegisterFormTypes';
 
 interface RegistrationFormProps {
