@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -14,7 +13,10 @@ const LandingPage: React.FC = () => {
             <h1 className="text-3xl font-bold">SupplierPro Africa</h1>
             <div className="flex gap-4">
               <Link to="/auth">
-                <Button variant="outline" className="text-white border-white hover:bg-white/10">
+                <Button 
+                  variant="outline" 
+                  className="bg-white text-blue-900 border-2 border-white hover:bg-blue-50 hover:text-blue-900 font-semibold"
+                >
                   Login
                 </Button>
               </Link>
@@ -31,12 +33,19 @@ const LandingPage: React.FC = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/auth?signup=true">
-                  <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
+                  <Button 
+                    size="lg" 
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                  >
                     Register as Supplier
                   </Button>
                 </Link>
                 <Link to="/auth">
-                  <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="bg-white/10 text-white border-2 border-white hover:bg-white/20 font-semibold backdrop-blur-sm"
+                  >
                     Login to Your Account
                   </Button>
                 </Link>
