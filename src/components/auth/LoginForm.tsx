@@ -37,11 +37,11 @@ export const LoginForm = () => {
       console.log("Login successful, session:", data.session);
       
       toast({
-        title: "Logged in successfully",
-        description: "Redirecting you to your dashboard...",
+        title: "Login successful",
+        description: "Redirecting to your dashboard...",
       });
       
-      // Always redirect to /redirect which will handle role-based routing
+      // Always redirect to /redirect which will handle role-based routing to the supplier dashboard
       navigate('/redirect');
       
     } catch (error: any) {

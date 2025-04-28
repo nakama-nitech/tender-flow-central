@@ -73,8 +73,11 @@ export const useRegisterSubmit = (
       
       toast({
         title: "Registration successful",
-        description: "Your account has been created. You can now log in.",
+        description: "Please log in with your new account credentials.",
       });
+      
+      // Pre-populate the login form with the user's email to make login easier
+      setLoginForm({ email: registerForm.email, password: '' });
       
       // Switch to login tab after successful registration
       setSearchParams((params) => {

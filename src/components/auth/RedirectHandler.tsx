@@ -12,12 +12,15 @@ export const RedirectHandler = () => {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
+        // If user is authenticated, redirect based on role
         if (userRole === 'admin') {
           navigate('/admin');
         } else if (userRole === 'supplier') {
+          // Ensure supplier is redirected to the supplier dashboard
           navigate('/supplier/dashboard');
         }
       } else if (!user && !error) {
+        // If no user and no error, redirect to auth page
         navigate('/auth');
       }
     }
