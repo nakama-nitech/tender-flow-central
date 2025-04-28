@@ -40,6 +40,16 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if email exists before proceeding with validation
+    if (registerForm.email) {
+      const emailExists = await checkEmailExists(registerForm.email);
+      
+      // If email exists, don't proceed with form validation and submission
+      if (emailExists) {
+        return;
+      }
+    }
+    
     if (!validateRegisterForm(registerForm)) {
       return;
     }
@@ -58,6 +68,6 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     checkEmailExists,
     loginForm,
     setLoginForm,
-    handleSubmit: onSubmit
+    handleRegisterSubmit: onSubmit
   };
 };
