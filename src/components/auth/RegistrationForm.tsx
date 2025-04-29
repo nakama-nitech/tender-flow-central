@@ -1,13 +1,13 @@
-import React from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Building, Phone, Globe, ShieldCheck, Eye, EyeOff, Flag, MapPin, Briefcase } from 'lucide-react';
-import { useRegisterForm } from './hooks/useRegisterForm';
+import { Building, Phone, Globe, ShieldCheck, Eye, EyeOff, MapPin, Briefcase, ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
+import { useRegisterForm } from './useRegisterForm';
 import { CompanyType, Category, CountryLocations } from './RegisterFormTypes';
 
 interface RegistrationFormProps {
@@ -24,8 +24,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   countryLocations
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   
   const {
     registerForm,
@@ -39,7 +41,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     checkEmailExists,
     loginForm,
     setLoginForm
-  } = useRegisterForm(setSearchParams);
+  } = useRegisterForm(setSearchParams, navigate);
   
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
@@ -47,41 +49,170 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     ) : null;
   };
 
-  return (
-    <form onSubmit={handleRegisterSubmit}>
-      <div className="space-y-6">
-        <div className="text-lg font-medium flex items-center">
-          <Building className="h-5 w-5 mr-2 text-primary" />
-          <span>Company Details</span>
+  const validateStep = (step: number) => {
+    const errors: Record<string, string> = {};
+    
+    if (step === 1) {
+      // Email validation
+      if (!registerForm.email) {
+        errors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(registerForm.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+      
+      // Password validation
+      if (!registerForm.password) {
+        errors.password = 'Password is required';
+      } else if (registerForm.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters long';
+      }
+      
+      // Confirm password
+      if (!registerForm.confirmPassword) {
+        errors.confirmPassword = 'Please confirm your password';
+      } else if (registerForm.password !== registerForm.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+    } else if (step === 2) {
+      // Company type validation
+      if (!registerForm.companyType) {
+        errors.companyType = 'Please select a company type';
+      }
+      
+      // Company name validation
+      if (!registerForm.companyName) {
+        errors.companyName = 'Company name is required';
+      }
+      
+      // Location validation
+      if (!registerForm.location) {
+        errors.location = 'Location is required';
+      }
+      
+      // KRA PIN validation
+      if (!registerForm.kraPin) {
+        errors.kraPin = 'KRA PIN is required';
+      }
+    } else if (step === 3) {
+      // Contact name validation
+      if (!registerForm.contactName) {
+        errors.contactName = 'Contact name is required';
+      }
+      
+      // Phone number validation
+      if (!registerForm.phoneNumber) {
+        errors.phoneNumber = 'Phone number is required';
+      } else if (!/^\d+$/.test(registerForm.phoneNumber)) {
+        errors.phoneNumber = 'Phone number must contain only digits';
+      }
+      
+      // Categories validation
+      if (registerForm.categoriesOfInterest.length === 0) {
+        errors.categoriesOfInterest = 'Please select at least one category';
+      }
+      
+      // Terms validation
+      if (!registerForm.agreeToTerms) {
+        errors.agreeToTerms = 'You must agree to the terms and conditions';
+      }
+    }
+    
+    setRegisterFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = async () => {
+    if (currentStep === 1) {
+      // Check if email exists before proceeding to next step
+      const emailExists = await checkEmailExists(registerForm.email);
+      if (emailExists) {
+        return; // Don't proceed if email exists
+      }
+    }
+    
+    const isValid = validateStep(currentStep);
+    if (isValid) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(currentStep - 1);
+    window.scrollTo(0, 0);
+  };
+
+  const submitForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    const isValid = validateStep(currentStep);
+    if (isValid) {
+      handleRegisterSubmit(e);
+    }
+  };
+
+  const renderStepIndicator = () => {
+    return (
+      <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center space-x-2">
+          {[1, 2, 3].map((step) => (
+            <React.Fragment key={step}>
+              <div 
+                className={`w-8 h-8 rounded-full flex items-center justify-center
+                  ${currentStep === step 
+                    ? 'bg-primary text-white' 
+                    : currentStep > step 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-gray-200 text-gray-500'}`}
+              >
+                {currentStep > step ? '✓' : step}
+              </div>
+              {step < 3 && (
+                <div className={`w-20 h-1 ${currentStep > step ? 'bg-green-500' : 'bg-gray-200'}`} />
+              )}
+            </React.Fragment>
+          ))}
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="companyType">Company Type <span className="text-red-500">*</span></Label>
-            <Select 
-              value={registerForm.companyType}
-              onValueChange={(value) => {
-                setRegisterForm({...registerForm, companyType: value});
-                setRegisterFormErrors({...registerFormErrors, companyType: ''});
-              }}
-              required
-            >
-              <SelectTrigger className={`border-primary/20 ${registerFormErrors.companyType ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Select company type" />
-              </SelectTrigger>
-              <SelectContent>
-                {companyTypes.map(type => (
-                  <SelectItem key={type.id} value={type.id.toString()}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {getFieldError('companyType')}
+      </div>
+    );
+  };
+
+  const renderStepTitle = () => {
+    switch(currentStep) {
+      case 1:
+        return (
+          <div className="text-lg font-medium flex items-center mb-6">
+            <User className="h-5 w-5 mr-2 text-primary" />
+            <span>Account Details</span>
           </div>
-          
+        );
+      case 2:
+        return (
+          <div className="text-lg font-medium flex items-center mb-6">
+            <Building className="h-5 w-5 mr-2 text-primary" />
+            <span>Company Details</span>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="text-lg font-medium flex items-center mb-6">
+            <Briefcase className="h-5 w-5 mr-2 text-primary" />
+            <span>Preferences & Contact</span>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderStep1 = () => {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+            <Label htmlFor="email" className="flex items-center">
+              <Mail className="h-4 w-4 mr-2 text-primary" />
+              Email Address <span className="text-red-500">*</span>
+            </Label>
             <Input 
               id="email" 
               type="email" 
@@ -128,7 +259,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+            <Label htmlFor="password" className="flex items-center">
+              <Lock className="h-4 w-4 mr-2 text-primary" />
+              Password <span className="text-red-500">*</span>
+            </Label>
             <div className="relative">
               <Input 
                 id="password" 
@@ -159,7 +293,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+            <Label htmlFor="confirmPassword" className="flex items-center">
+              <Lock className="h-4 w-4 mr-2 text-primary" />
+              Confirm Password <span className="text-red-500">*</span>
+            </Label>
             <div className="relative">
               <Input 
                 id="confirmPassword" 
@@ -187,8 +324,39 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
             {getFieldError('confirmPassword')}
           </div>
+        </div>
+      </div>
+    );
+  };
 
-          {/* Rest of the form fields */}
+  const renderStep2 = () => {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="companyType">Company Type <span className="text-red-500">*</span></Label>
+            <Select 
+              value={registerForm.companyType}
+              onValueChange={(value) => {
+                setRegisterForm({...registerForm, companyType: value});
+                setRegisterFormErrors({...registerFormErrors, companyType: ''});
+              }}
+              required
+            >
+              <SelectTrigger className={`border-primary/20 ${registerFormErrors.companyType ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Select company type" />
+              </SelectTrigger>
+              <SelectContent>
+                {companyTypes.map(type => (
+                  <SelectItem key={type.id} value={type.id.toString()}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {getFieldError('companyType')}
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="companyName">Company Name <span className="text-red-500">*</span></Label>
             <Input 
@@ -242,6 +410,57 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
           
           <div className="space-y-2">
+            <Label htmlFor="kraPin">KRA PIN Number <span className="text-red-500">*</span></Label>
+            <Input 
+              id="kraPin"
+              placeholder="Enter Tax Identification Number"
+              value={registerForm.kraPin}
+              onChange={(e) => {
+                setRegisterForm({...registerForm, kraPin: e.target.value});
+                setRegisterFormErrors({...registerFormErrors, kraPin: ''});
+              }}
+              required
+              className={`border-primary/20 ${registerFormErrors.kraPin ? 'border-red-500' : ''}`}
+            />
+            {getFieldError('kraPin')}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="websiteUrl">Website or Social Media URL</Label>
+            <div className="flex">
+              <div className="flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md">
+                <Globe className="h-4 w-4 text-primary" />
+              </div>
+              <Input 
+                id="websiteUrl"
+                className="rounded-l-none border-primary/20"
+                placeholder="http://www.example.com"
+                value={registerForm.websiteUrl}
+                onChange={(e) => setRegisterForm({...registerForm, websiteUrl: e.target.value})}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="physicalAddress">Physical Address</Label>
+          <Textarea 
+            id="physicalAddress"
+            placeholder="P.O. Box address"
+            value={registerForm.physicalAddress}
+            onChange={(e) => setRegisterForm({...registerForm, physicalAddress: e.target.value})}
+            className="border-primary/20"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderStep3 = () => {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
             <Label htmlFor="contactName">Contact Name <span className="text-red-500">*</span></Label>
             <Input 
               id="contactName"
@@ -278,53 +497,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
             {getFieldError('phoneNumber')}
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="kraPin">KRA PIN Number <span className="text-red-500">*</span></Label>
-            <Input 
-              id="kraPin"
-              placeholder="Enter Tax Identification Number"
-              value={registerForm.kraPin}
-              onChange={(e) => {
-                setRegisterForm({...registerForm, kraPin: e.target.value});
-                setRegisterFormErrors({...registerFormErrors, kraPin: ''});
-              }}
-              required
-              className={`border-primary/20 ${registerFormErrors.kraPin ? 'border-red-500' : ''}`}
-            />
-            {getFieldError('kraPin')}
-          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="physicalAddress">Physical Address</Label>
-            <Textarea 
-              id="physicalAddress"
-              placeholder="P.O. Box address"
-              value={registerForm.physicalAddress}
-              onChange={(e) => setRegisterForm({...registerForm, physicalAddress: e.target.value})}
-              className="border-primary/20"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="websiteUrl">Website or Social Media URL</Label>
-            <div className="flex">
-              <div className="flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md">
-                <Globe className="h-4 w-4 text-primary" />
-              </div>
-              <Input 
-                id="websiteUrl"
-                className="rounded-l-none border-primary/20"
-                placeholder="http://www.example.com"
-                value={registerForm.websiteUrl}
-                onChange={(e) => setRegisterForm({...registerForm, websiteUrl: e.target.value})}
-              />
-            </div>
-          </div>
-        </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="categoriesOfInterest" className="flex items-center">
             <Briefcase className="h-4 w-4 mr-2 text-primary" />
@@ -424,32 +598,85 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             Fields marked with <span className="text-red-500">*</span> are required
           </div>
         </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="text-sm">You have an account?</span>
-            <Button variant="link" className="p-0 ml-1" type="button" onClick={() => {
-              const searchParams = new URLSearchParams();
-              searchParams.set('tab', 'login');
-              setSearchParams(searchParams);
-            }}>
-              Sign In
+      </div>
+    );
+  };
+
+  const renderCurrentStep = () => {
+    switch(currentStep) {
+      case 1:
+        return renderStep1();
+      case 2:
+        return renderStep2();
+      case 3:
+        return renderStep3();
+      default:
+        return null;
+    }
+  };
+
+  const renderNavigation = () => {
+    return (
+      <div className="flex items-center justify-between mt-8">
+        <div>
+          {currentStep > 1 && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handlePreviousStep}
+              className="flex items-center"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
             </Button>
-          </div>
-          <Button 
-            type="submit" 
-            disabled={isSubmitting} 
-            className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                Creating account...
-              </>
-            ) : "Sign Up"}
-          </Button>
+          )}
+        </div>
+        <div className="flex items-center">
+          <span className="text-sm mr-4">
+            {currentStep < 3 ? (
+              <>You have an account? <Button variant="link" className="p-0" type="button" onClick={() => {
+                setSearchParams(params => {
+                  params.set('tab', 'login');
+                  return params;
+                });
+              }}>Sign In</Button></>
+            ) : null}
+          </span>
+          {currentStep < 3 ? (
+            <Button 
+              type="button" 
+              onClick={handleNextStep}
+              disabled={isSubmitting || emailAlreadyExists}
+              className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700 flex items-center"
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          ) : (
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                  Creating account...
+                </>
+              ) : "Complete Registration"}
+            </Button>
+          )}
         </div>
       </div>
+    );
+  };
+
+  return (
+    <form onSubmit={submitForm}>
+      {renderStepIndicator()}
+      {renderStepTitle()}
+      {renderCurrentStep()}
+      {renderNavigation()}
     </form>
   );
 };
