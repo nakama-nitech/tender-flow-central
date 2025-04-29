@@ -12,7 +12,7 @@ interface Step1Props {
   registerFormErrors: RegisterFormErrors;
   setRegisterFormErrors: React.Dispatch<React.SetStateAction<RegisterFormErrors>>;
   emailAlreadyExists: boolean;
-  checkEmailExists: (email: string) => Promise<boolean>;
+  checkEmailExists: (email: string) => Promise<boolean>; // Ensure this is defined as a function that returns Promise<boolean>
   loginForm: { email: string; password: string };
   setLoginForm: React.Dispatch<React.SetStateAction<{ email: string; password: string }>>;
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>;
@@ -24,7 +24,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   registerFormErrors,
   setRegisterFormErrors,
   emailAlreadyExists,
-  checkEmailExists,
+  checkEmailExists, // Make sure we receive this prop
   loginForm,
   setLoginForm,
   setSearchParams
@@ -41,8 +41,12 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
     if (email && email.trim()) {
-      // Make sure we're using the passed checkEmailExists function
-      await checkEmailExists(email);
+      // Make sure we're using the passed checkEmailExists function properly
+      if (typeof checkEmailExists === 'function') {
+        await checkEmailExists(email);
+      } else {
+        console.error('checkEmailExists is not a function', checkEmailExists);
+      }
     }
   };
   

@@ -56,8 +56,14 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       
       // Check email exists only if there are no validation errors and email is provided
       if (Object.keys(errors).length === 0 && registerForm.email) {
-        const emailExists = await checkEmailExists(registerForm.email);
-        canProceed = !emailExists;
+        try {
+          const emailExists = await checkEmailExists(registerForm.email);
+          canProceed = !emailExists;
+        } catch (error) {
+          console.error("Error checking email:", error);
+          // If there's an error checking email, still allow proceeding
+          canProceed = true;
+        }
       } else {
         canProceed = Object.keys(errors).length === 0;
       }
@@ -126,7 +132,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists}  // Make sure we're passing this
+            checkEmailExists={checkEmailExists}  // Make sure we're passing this with the correct type
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}

@@ -5,12 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   
+  // Make sure this is defined as a clearly-typed function that returns Promise<boolean>
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
+    console.log("checkEmailExists function called with email:", email);
+    
     if (!email || !email.trim()) {
+      console.log("Email empty, returning false");
       return false;
     }
     
     try {
+      console.log("Attempting to check if email exists:", email);
       // A different approach to check if email exists since signInWithOtp is causing issues
       // Check if we can get an auth error when trying to sign up directly
       const { data, error } = await supabase.auth.signUp({
@@ -45,9 +50,11 @@ export const useEmailCheck = () => {
     }
   }, []);
 
+  console.log("useEmailCheck hook initialized, checkEmailExists function:", checkEmailExists);
+
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
-    checkEmailExists
+    checkEmailExists  // Make sure this is properly returned
   };
 };
