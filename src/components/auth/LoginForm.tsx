@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,37 +8,18 @@ import { Label } from '@/components/ui/label';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSessionState } from '@/hooks/useSessionState';
 
 export const LoginForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  
-  // Use session state with checkOnLoad: false to prevent automatic session checking
-  const { isLoading, error, user } = useSessionState({ checkOnLoad: false });
   
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: '',
   });
-
-  // Effect to prevent redirect loops and give user time to see success messages
-  useEffect(() => {
-    if (user && !isRedirecting) {
-      // Add a small delay before redirecting to show success message
-      setIsRedirecting(true);
-      const timer = setTimeout(() => {
-        navigate('/redirect', { replace: true });
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, navigate, isRedirecting]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +48,8 @@ export const LoginForm = () => {
         description: "Redirecting to your dashboard...",
       });
       
-      // Don't navigate immediately, let the useEffect handle it with a delay
+      // Redirect to the handler which will determine where to send the user based on their role
+      navigate('/redirect', { replace: true });
       
     } catch (error: any) {
       console.error("Login error:", error);
@@ -104,7 +87,7 @@ export const LoginForm = () => {
             onChange={handleInputChange}
             required
             className={`border-primary/20 focus:border-primary ${loginError ? 'border-red-500' : ''}`}
-            disabled={isSubmitting || isRedirecting}
+            disabled={isSubmitting}
           />
         </div>
         
@@ -124,13 +107,13 @@ export const LoginForm = () => {
               onChange={handleInputChange}
               required
               className={`border-primary/20 focus:border-primary pr-10 ${loginError ? 'border-red-500' : ''}`}
-              disabled={isSubmitting || isRedirecting}
+              disabled={isSubmitting}
             />
             <button 
               type="button"
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
               onClick={() => setShowPassword(!showPassword)}
-              disabled={isSubmitting || isRedirecting}
+              disabled={isSubmitting}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -150,17 +133,12 @@ export const LoginForm = () => {
         <Button 
           type="submit" 
           className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700" 
-          disabled={isSubmitting || isRedirecting}
+          disabled={isSubmitting}
         >
           {isSubmitting ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
               Logging in...
-            </>
-          ) : isRedirecting ? (
-            <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-              Redirecting...
             </>
           ) : "Login"}
         </Button>

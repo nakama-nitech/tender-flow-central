@@ -22,6 +22,7 @@ import AdminTenderList from "./pages/admin/AdminTenderList";
 import AdminTenderBids from "./pages/admin/AdminTenderBids";
 import AdminSupplierList from "./pages/admin/AdminSupplierList";
 import AdminSupplierDetails from "./pages/admin/AdminSupplierDetails";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +51,14 @@ const App = () => (
           <Route path="/auth/callback" element={<Navigate to="/redirect" />} />
           
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminTenderList />} />
             <Route path="tenders" element={<AdminTenderList />} />
             <Route path="create-tender" element={<AdminTenderCreate />} />
@@ -61,7 +69,14 @@ const App = () => (
           </Route>
           
           {/* Supplier Routes */}
-          <Route path="/supplier" element={<SupplierLayout />}>
+          <Route 
+            path="/supplier" 
+            element={
+              <ProtectedRoute requiredRole="supplier">
+                <SupplierLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="dashboard" element={<SupplierDashboard />} />
             <Route path="tenders" element={<TenderDiscovery />} />
             <Route path="tender-details/:tenderId" element={<TenderDetails />} />

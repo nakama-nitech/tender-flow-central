@@ -1,19 +1,19 @@
 
 import { useState } from 'react';
+import { NavigateFunction } from 'react-router-dom';
 import { RegisterFormState } from '../types/formTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 export const useRegisterSubmit = (
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>,
   setLoginForm: (form: { email: string; password: string }) => void,
   setRegisterFormErrors: (errors: { [key: string]: string }) => void,
-  registerFormErrors: { [key: string]: string }
+  registerFormErrors: { [key: string]: string },
+  navigate: NavigateFunction
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
