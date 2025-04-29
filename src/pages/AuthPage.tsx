@@ -132,7 +132,7 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-blue-100">
       <header className="py-4 px-6 md:px-10 flex justify-between items-center border-b bg-white shadow-sm">
         <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg">
           <ArrowLeft className="h-4 w-4" />
@@ -143,8 +143,8 @@ const AuthPage = () => {
       <div className="flex-1 flex items-center justify-center p-6 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center bg-no-repeat">
         <div className="w-full max-w-3xl">
           <Card className="border-none shadow-xl backdrop-blur-sm bg-white/95">
-            <CardHeader className="text-center bg-gradient-to-r from-primary/80 to-indigo-600/80 text-white rounded-t-lg">
-              <CardTitle className="text-2xl">Welcome to TenderFlow</CardTitle>
+            <CardHeader className="text-center bg-gradient-to-r from-purple-600/90 to-blue-500/90 text-white rounded-t-lg">
+              <CardTitle className="text-2xl">Welcome to Supplier Pro Africa</CardTitle>
               <CardDescription className="text-white/90">
                 Your platform for discovering and bidding on tenders
               </CardDescription>

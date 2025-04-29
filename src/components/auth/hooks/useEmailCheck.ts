@@ -11,12 +11,13 @@ export const useEmailCheck = () => {
     }
     
     try {
-      // A more reliable way to check if an email exists is by trying to sign up with OTP
-      // This won't create a user but will tell us if the email is already used
-      const { data, error } = await supabase.auth.signInWithOtp({
+      // A different approach to check if email exists since signInWithOtp is causing issues
+      // Check if we can get an auth error when trying to sign up directly
+      const { data, error } = await supabase.auth.signUp({
         email: email,
+        password: `temp-${Date.now()}${Math.random()}`,
         options: {
-          shouldCreateUser: false // Don't create a new user
+          data: { checkOnly: true }
         }
       });
       

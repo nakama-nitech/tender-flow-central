@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -25,7 +26,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(221 83% 53%)",
+          DEFAULT: "hsl(260 70% 60%)", // Purple color for Supplier Pro Africa
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -37,7 +38,7 @@ export default {
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "hsl(217 33% 97%)",
+          DEFAULT: "hsl(260 33% 97%)", // Lighter purple shade
           foreground: "hsl(215 16% 47%)",
         },
         accent: {

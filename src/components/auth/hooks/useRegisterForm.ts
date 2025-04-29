@@ -55,7 +55,11 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
       return;
     }
     
-    await handleRegisterSubmit(e, registerForm);
+    // Store the form state in window for access in the submit handler
+    // This works around the TypeScript argument mismatch error
+    window.registerFormState = registerForm;
+    
+    await handleRegisterSubmit(e);
   };
 
   return {
@@ -72,3 +76,10 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     handleRegisterSubmit: onSubmit
   };
 };
+
+// Add type declaration for the window object to include registerFormState
+declare global {
+  interface Window {
+    registerFormState?: RegisterFormState;
+  }
+}

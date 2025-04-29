@@ -15,8 +15,11 @@ export const useRegisterSubmit = (
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleRegisterSubmit = async (e: React.FormEvent, registerForm?: RegisterFormState) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Get the form state from the component's state
+    const registerForm = window.registerFormState;
     
     if (!registerForm) {
       console.error("Form data is missing");
@@ -58,31 +61,60 @@ export const useRegisterSubmit = (
       if (authError) throw authError;
       if (!authData.user) throw new Error("User registration failed");
       
-      // Create supplier profile
-      const { error: supplierError } = await supabase.rpc('create_supplier', {
-        supplier_id: authData.user.id,
-        company_type_id_input: parseInt(registerForm.companyType),
-        company_name_input: registerForm.companyName,
-        location_input: registerForm.location,
-        country_input: registerForm.country,
-        phone_number_input: registerForm.phoneNumber,
-        kra_pin_input: registerForm.kraPin,
-        physical_address_input: registerForm.physicalAddress || null,
-        website_url_input: registerForm.websiteUrl || null
-      });
+      // Create supplier profile - The issue is with this function call
+      // Instead of using rpc, let's use a direct insert into the suppliers table
+      const { error: supplierError } = await supabase
+        .from('suppliers')
+        .insert({
+          id: authData.user.id,
+          company_type_id: parseInt(registerForm.companyType),
+          company_name: registerForm.companyName,
+          location: registerForm.location,
+          country: registerForm.country,
+          phone_number: registerForm.phoneNumber,
+          kra_pin: registerForm.kraPin,
+          physical_address: registerForm.physicalAddress || null,
+          website_url: registerForm.websiteUrl || null
+        });
       
       if (supplierError) throw supplierError;
       
       // Add supplier categories
       if (registerForm.categoriesOfInterest.length > 0) {
-        for (const categoryId of registerForm.categoriesOfInterest) {
-          const { error: categoryError } = await supabase.rpc('add_supplier_category', {
-            supplier_id_input: authData.user.id,
-            category_id_input: parseInt(categoryId)
-          });
+        const categoriesToInsert = registerForm.categoriesOfInterest.map(categoryId => ({
+          supplier_id: authData.user.id,
+          category_id: parseInt(categoryId)
+        }));
+        
+        const { error: categoryError } = await supabase
+          .from('supplier_categories')
+          .insert(categoriesToInsert);
+        
+        if (categoryError) {
+          console.error("Category error:", categoryError);
+        }
+      }
+      
+      // Add supplier locations if needed
+      if (registerForm.supplyLocations.length > 0) {
+        // Get location IDs from location names
+        const { data: locationData } = await supabase
+          .from('locations')
+          .select('id, name')
+          .in('name', registerForm.supplyLocations);
+        
+        if (locationData && locationData.length > 0) {
+          const locationsToInsert = locationData.map(location => ({
+            supplier_id: authData.user.id,
+            location_id: location.id
+          }));
           
-          if (categoryError) {
-            console.error("Category error:", categoryError);
+          const { error: locationError } = await supabase
+            .from('supplier_locations')
+            .insert(locationsToInsert);
+          
+          if (locationError) {
+            console.error("Location error:", locationError);
           }
         }
       }
