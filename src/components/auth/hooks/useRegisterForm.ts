@@ -25,7 +25,8 @@ const initialFormState: RegisterFormState = {
 };
 
 export const useRegisterForm = (
-  setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>
+  setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>,
+  navigate?: any // Make navigate optional
 ) => {
   const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
   const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
