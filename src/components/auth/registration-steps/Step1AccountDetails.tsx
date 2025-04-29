@@ -31,6 +31,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   
   // Add debug logging to verify function presence
   console.log("Step1AccountDetails received checkEmailExists:", !!checkEmailExists, typeof checkEmailExists);
@@ -46,6 +47,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     const email = e.target.value;
     if (email && email.trim()) {
       console.log("Checking email existence for:", email);
+      setIsCheckingEmail(true);
       try {
         // Ensure checkEmailExists is a function before calling it
         if (typeof checkEmailExists === 'function') {
@@ -55,6 +57,8 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
         }
       } catch (err) {
         console.error("Error in handleEmailBlur:", err);
+      } finally {
+        setIsCheckingEmail(false);
       }
     }
   }, [checkEmailExists]);
@@ -85,7 +89,10 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
             className={`border-primary/20 ${registerFormErrors.email || emailAlreadyExists ? 'border-red-500' : ''}`}
           />
           {getFieldError('email')}
-          {emailAlreadyExists && !registerFormErrors.email && (
+          {isCheckingEmail && (
+            <p className="text-xs text-blue-600">Checking if email is available...</p>
+          )}
+          {emailAlreadyExists && !registerFormErrors.email && !isCheckingEmail && (
             <div className="flex items-center mt-1">
               <p className="text-xs text-blue-600">
                 Email already registered. 
