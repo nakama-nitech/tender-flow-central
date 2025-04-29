@@ -32,7 +32,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     emailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists,  // Make sure we're destructuring this
+    checkEmailExists,
     loginForm,
     setLoginForm
   } = useRegisterForm(setSearchParams);
@@ -40,7 +40,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
-  const nextStep = async () => {
+  const nextStep = () => {
     let canProceed = true;
     
     // Validate current step before proceeding
@@ -53,20 +53,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = 'Passwords do not match';
       
       setRegisterFormErrors(errors);
-      
-      // Check email exists only if there are no validation errors and email is provided
-      if (Object.keys(errors).length === 0 && registerForm.email) {
-        try {
-          const emailExists = await checkEmailExists(registerForm.email);
-          canProceed = !emailExists;
-        } catch (error) {
-          console.error("Error checking email:", error);
-          // If there's an error checking email, still allow proceeding
-          canProceed = true;
-        }
-      } else {
-        canProceed = Object.keys(errors).length === 0;
-      }
+      canProceed = Object.keys(errors).length === 0 && !emailAlreadyExists;
     }
     
     if (registerForm.currentStep === 2) {
@@ -132,7 +119,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists}  // Make sure we're passing this with the correct type
+            checkEmailExists={checkEmailExists}
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}

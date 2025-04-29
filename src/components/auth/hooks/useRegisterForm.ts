@@ -62,7 +62,6 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     await handleRegisterSubmit(e);
   };
 
-  // Explicitly return the checkEmailExists function to ensure it's available
   return {
     registerForm,
     setRegisterForm,
@@ -71,7 +70,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists, // Make sure we're returning this with proper type
+    checkEmailExists,
     loginForm,
     setLoginForm,
     handleRegisterSubmit: onSubmit
