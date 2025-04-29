@@ -25,6 +25,11 @@ export const useRegisterSubmit = (
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
+      // Determine the current origin for redirect URL
+      const currentOrigin = window.location.origin;
+      const redirectPath = '/auth';
+      const redirectUrl = `${currentOrigin}${redirectPath}`;
+      
       // Attempt user registration
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: registerForm.email,
@@ -35,7 +40,7 @@ export const useRegisterSubmit = (
             first_name: firstName,
             last_name: lastName
           },
-          emailRedirectTo: window.location.origin + '/redirect'
+          emailRedirectTo: redirectUrl
         }
       });
       
@@ -85,6 +90,9 @@ export const useRegisterSubmit = (
         newParams.set('tab', 'login');
         return newParams;
       });
+      
+      // Redirect to auth page with login tab selected
+      navigate('/auth?tab=login');
       
     } catch (error: any) {
       console.error("Registration error:", error);

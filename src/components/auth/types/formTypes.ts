@@ -21,6 +21,7 @@ export interface RegisterFormState {
   categoriesOfInterest: string[];
   supplyLocations: string[];
   agreeToTerms: boolean;
+  currentStep: number;
 }
 
 export interface RegisterFormErrors {

@@ -46,6 +46,9 @@ const App = () => (
           {/* Redirect Handler */}
           <Route path="/redirect" element={<RedirectHandler />} />
           
+          {/* Handle Supabase Auth Redirect URLs */}
+          <Route path="/auth/callback" element={<Navigate to="/redirect" />} />
+          
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminTenderList />} />

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { RegistrationForm } from '@/components/auth/RegistrationForm';
+import { MultiStepRegistrationForm } from '@/components/auth/MultiStepRegistrationForm';
 import { CompanyType, Category, CountryLocations } from '@/components/auth/RegisterFormTypes';
 
 const AuthPage = () => {
@@ -92,7 +92,7 @@ const AuthPage = () => {
           .maybeSingle();
         
         if (profileData && profileData.role === 'admin') {
-          navigate('/select-role');
+          navigate('/redirect');
         } else {
           navigate('/supplier/dashboard');
         }
@@ -162,7 +162,7 @@ const AuthPage = () => {
               
               <TabsContent value="register">
                 <CardContent>
-                  <RegistrationForm 
+                  <MultiStepRegistrationForm 
                     companyTypes={displayCompanyTypes}
                     categories={displayCategories}
                     availableLocations={availableLocations}

@@ -11,30 +11,27 @@ export const useEmailCheck = () => {
     }
     
     try {
-      // Use OTP method with shouldCreateUser: false to check if email exists
-      // If "user not found" error is returned, the email doesn't exist
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false }
-      });
+      // A more reliable way to check if an email exists 
+      // is by trying to get the user by email
+      const { data, error } = await supabase.auth.admin.getUserByEmail(email);
       
-      // Debug: Log the exact error for troubleshooting
-      console.log("Email check response:", error?.message);
+      console.log("Email check response:", data, error);
       
-      // If there's an error saying "user not found", the email doesn't exist in the system
-      if (error && error.message.includes("user not found")) {
-        console.log("Email doesn't exist in the system");
-        setEmailAlreadyExists(false);
-        return false;
-      } else {
-        // No "user not found" error means the email exists
+      // If the API returns a user, the email exists
+      if (data?.user) {
         console.log("Email already exists in the system");
         setEmailAlreadyExists(true);
         return true;
+      } else {
+        console.log("Email doesn't exist in the system");
+        setEmailAlreadyExists(false);
+        return false;
       }
     } catch (err) {
+      // If we get an error, log it but assume the email doesn't exist
+      // to let the registration attempt go through
       console.error("Error checking email:", err);
-      // On error, assume email doesn't exist to allow registration attempt
+      setEmailAlreadyExists(false);
       return false;
     }
   }, []);

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { RegisterFormState, LoginFormState } from '../types/formTypes';
+import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 import { useEmailCheck } from './useEmailCheck';
 import { useFormValidation } from './useFormValidation';
 import { useRegisterSubmit } from './useRegisterSubmit';
@@ -20,12 +20,13 @@ const initialFormState: RegisterFormState = {
   websiteUrl: '',
   categoriesOfInterest: [],
   supplyLocations: [],
-  agreeToTerms: false
+  agreeToTerms: false,
+  currentStep: 1  // Start at step 1
 };
 
 export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>) => {
   const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
-  const [loginForm, setLoginForm] = useState<LoginFormState>({ email: '', password: '' });
+  const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
   
   // Use our custom hooks
   const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists } = useEmailCheck();

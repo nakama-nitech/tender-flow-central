@@ -25,7 +25,8 @@ export const RedirectHandler = () => {
             description: "You have been redirected to the admin dashboard",
           });
         } else if (userRole === 'supplier') {
-          // Ensure supplier is redirected to the supplier dashboard
+          // Always redirect supplier to the supplier dashboard
+          console.log("Redirecting supplier to dashboard");
           navigate('/supplier/dashboard');
           toast({
             title: "Welcome back, Supplier",

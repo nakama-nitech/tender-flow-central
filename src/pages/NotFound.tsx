@@ -13,10 +13,19 @@ const NotFound = () => {
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+    
+    // If it looks like a redirect path from auth, redirect to the auth page
+    if (location.pathname.includes("callback") || location.pathname.includes("auth")) {
+      console.log("Detected auth redirect path, redirecting to /auth");
+      setTimeout(() => {
+        navigate("/auth");
+      }, 1500);
+    }
+  }, [location.pathname, navigate]);
 
   const goToHome = () => navigate("/");
   const goBack = () => navigate(-1);
+  const goToAuth = () => navigate("/auth");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -33,6 +42,12 @@ const NotFound = () => {
           >
             <Home size={16} />
             Return to Home
+          </Button>
+          <Button 
+            onClick={goToAuth}
+            className="flex items-center gap-2"
+          >
+            Login / Register
           </Button>
           <Button 
             variant="outline"
