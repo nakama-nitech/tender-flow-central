@@ -42,18 +42,18 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     ) : null;
   };
   
-  // Define a safer email check handler with error handling
+  // Define a safer email check handler with error handling and a fallback
   const handleEmailBlur = useCallback(async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
     if (email && email.trim()) {
       console.log("Checking email existence for:", email);
       setIsCheckingEmail(true);
       try {
-        // Ensure checkEmailExists is a function before calling it
+        // Create a safer function call with fallback
         if (typeof checkEmailExists === 'function') {
           await checkEmailExists(email);
         } else {
-          console.error("checkEmailExists is not a function:", checkEmailExists);
+          console.error("checkEmailExists is not available in Step1AccountDetails");
         }
       } catch (err) {
         console.error("Error in handleEmailBlur:", err);

@@ -65,7 +65,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           const checkEmail = typeof checkEmailExists === 'function' 
             ? checkEmailExists 
             : async () => {
-                console.error("checkEmailExists function is missing");
+                console.error("checkEmailExists function is missing in MultiStepRegistrationForm");
                 return false;
               };
           

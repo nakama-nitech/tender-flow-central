@@ -32,8 +32,15 @@ export const useRegisterForm = (
   const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
   
   // Use our custom hooks
-  const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists, isChecking } = useEmailCheck();
+  const { 
+    emailAlreadyExists, 
+    setEmailAlreadyExists, 
+    checkEmailExists, 
+    isChecking 
+  } = useEmailCheck();
+  
   const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
+  
   const { isSubmitting, handleRegisterSubmit } = useRegisterSubmit(
     setSearchParams,
     setLoginForm,
