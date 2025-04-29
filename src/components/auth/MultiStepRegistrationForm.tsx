@@ -32,7 +32,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     emailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists,
+    checkEmailExists,  // Make sure this is properly extracted
     loginForm,
     setLoginForm
   } = useRegisterForm(setSearchParams);
@@ -122,7 +122,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists}
+            checkEmailExists={checkEmailExists} // Ensure we're passing the function
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}

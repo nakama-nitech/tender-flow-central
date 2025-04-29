@@ -47,9 +47,12 @@ export const useEmailCheck = () => {
     }
   }, []);
 
+  // Add debug output to verify our implementation
+  console.log("useEmailCheck hook has checkEmailExists defined as:", typeof checkEmailExists);
+
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
-    checkEmailExists
+    checkEmailExists  // Make sure we're returning this function
   };
 };

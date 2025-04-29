@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
@@ -41,12 +41,13 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     ) : null;
   };
   
-  const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+  // Define a safer email check handler with error handling
+  const handleEmailBlur = useCallback(async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
     if (email && email.trim()) {
       console.log("Checking email existence for:", email);
       try {
-        // Make sure we're using the passed checkEmailExists function
+        // Ensure checkEmailExists is a function before calling it
         if (typeof checkEmailExists === 'function') {
           await checkEmailExists(email);
         } else {
@@ -56,7 +57,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
         console.error("Error in handleEmailBlur:", err);
       }
     }
-  };
+  }, [checkEmailExists]);
   
   return (
     <div className="space-y-6">

@@ -41,6 +41,9 @@ export const useRegisterForm = (
     registerFormErrors
   );
 
+  // Debug output to verify checkEmailExists is defined
+  console.log("useRegisterForm has checkEmailExists:", !!checkEmailExists, typeof checkEmailExists);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -73,7 +76,7 @@ export const useRegisterForm = (
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists,
+    checkEmailExists,  // Make sure we're explicitly returning this
     loginForm,
     setLoginForm,
     handleRegisterSubmit: onSubmit
