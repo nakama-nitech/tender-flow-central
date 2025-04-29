@@ -24,7 +24,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   registerFormErrors,
   setRegisterFormErrors,
   emailAlreadyExists,
-  checkEmailExists = async () => false,
+  checkEmailExists,
   loginForm,
   setLoginForm,
   setSearchParams

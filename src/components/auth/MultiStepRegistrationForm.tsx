@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -33,12 +32,16 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     isSubmitting,
     handleRegisterSubmit,
     checkEmailExists,
+    isChecking,
     loginForm,
     setLoginForm
   } = useRegisterForm(setSearchParams);
   
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
+  
+  // Add debug logging to verify function presence
+  console.log("MultiStepRegistrationForm checkEmailExists is defined:", !!checkEmailExists, typeof checkEmailExists);
   
   const nextStep = async () => {
     let canProceed = true;
@@ -119,9 +122,6 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     }
   };
   
-  // Add debug logging to verify function presence
-  console.log("MultiStepRegistrationForm checkEmailExists is defined:", !!checkEmailExists, typeof checkEmailExists);
-  
   return (
     <div className="space-y-6">
       <div className="mb-8">
@@ -190,8 +190,12 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           </div>
           
           {registerForm.currentStep < 3 ? (
-            <Button type="button" onClick={nextStep}>
-              Next
+            <Button 
+              type="button" 
+              onClick={nextStep}
+              disabled={isSubmitting || isChecking || emailAlreadyExists}
+            >
+              {isChecking ? "Checking..." : "Next"}
             </Button>
           ) : (
             <Button 

@@ -32,7 +32,7 @@ export const useRegisterForm = (
   const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
   
   // Use our custom hooks
-  const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists } = useEmailCheck();
+  const { emailAlreadyExists, setEmailAlreadyExists, checkEmailExists, isChecking } = useEmailCheck();
   const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
   const { isSubmitting, handleRegisterSubmit } = useRegisterSubmit(
     setSearchParams,
@@ -41,18 +41,22 @@ export const useRegisterForm = (
     registerFormErrors
   );
 
+  console.log("useRegisterForm checkEmailExists is defined:", !!checkEmailExists, typeof checkEmailExists);
+
   // Wrap the onSubmit function in useCallback to prevent unnecessary rerenders
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Ensure we have a valid checkEmailExists function
-    const emailCheckFn = typeof checkEmailExists === 'function' ? checkEmailExists : async () => false;
+    if (typeof checkEmailExists !== 'function') {
+      console.error("checkEmailExists is not a function:", checkEmailExists);
+      return;
+    }
     
     // Check if email exists before proceeding with validation
     if (registerForm.email) {
       try {
-        // Use the safe reference to the function
-        const emailExists = await emailCheckFn(registerForm.email);
+        const emailExists = await checkEmailExists(registerForm.email);
         
         // If email exists, don't proceed with form validation and submission
         if (emailExists) {
@@ -84,6 +88,7 @@ export const useRegisterForm = (
     setEmailAlreadyExists,
     isSubmitting,
     checkEmailExists,
+    isChecking,
     loginForm,
     setLoginForm,
     handleRegisterSubmit: onSubmit
