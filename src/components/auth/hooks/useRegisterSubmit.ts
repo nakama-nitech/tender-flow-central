@@ -15,8 +15,19 @@ export const useRegisterSubmit = (
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleRegisterSubmit = async (e: React.FormEvent, registerForm: RegisterFormState) => {
+  const handleRegisterSubmit = async (e: React.FormEvent, registerForm?: RegisterFormState) => {
     e.preventDefault();
+    
+    if (!registerForm) {
+      console.error("Form data is missing");
+      toast({
+        title: "Registration failed",
+        description: "Form data is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {

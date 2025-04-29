@@ -99,7 +99,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       
       if (Object.keys(errors).length === 0) {
         // Submit the form
-        handleRegisterSubmit(e, registerForm);
+        handleRegisterSubmit(e);
       }
     }
   };

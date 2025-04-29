@@ -11,14 +11,22 @@ export const useEmailCheck = () => {
     }
     
     try {
-      // A more reliable way to check if an email exists 
-      // is by trying to get the user by email
-      const { data, error } = await supabase.auth.admin.getUserByEmail(email);
+      // A more reliable way to check if an email exists is by trying to sign up with OTP
+      // This won't create a user but will tell us if the email is already used
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false // Don't create a new user
+        }
+      });
       
       console.log("Email check response:", data, error);
       
-      // If the API returns a user, the email exists
-      if (data?.user) {
+      // If we get an error about email already registered, the email exists
+      if (error && (
+        error.message.includes("already been registered") ||
+        error.message.includes("Email already registered")
+      )) {
         console.log("Email already exists in the system");
         setEmailAlreadyExists(true);
         return true;
