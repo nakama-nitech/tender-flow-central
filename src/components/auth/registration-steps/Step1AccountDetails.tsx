@@ -41,8 +41,13 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
     if (email && email.trim()) {
-      // Make sure we're using the passed checkEmailExists function
-      await checkEmailExists(email);
+      console.log("Checking email existence for:", email);
+      try {
+        // Make sure we're using the passed checkEmailExists function
+        await checkEmailExists(email);
+      } catch (err) {
+        console.error("Error in handleEmailBlur:", err);
+      }
     }
   };
   

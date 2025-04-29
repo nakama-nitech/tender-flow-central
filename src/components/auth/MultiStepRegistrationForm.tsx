@@ -104,6 +104,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     }
   };
   
+  console.log("checkEmailExists is defined in MultiStepRegistrationForm:", !!checkEmailExists);
+  
   return (
     <div className="space-y-6">
       <div className="mb-8">
