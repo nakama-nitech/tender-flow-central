@@ -32,6 +32,9 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
+  // Add debug logging to verify function presence
+  console.log("Step1AccountDetails received checkEmailExists:", !!checkEmailExists, typeof checkEmailExists);
+  
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
       <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
@@ -44,7 +47,11 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
       console.log("Checking email existence for:", email);
       try {
         // Make sure we're using the passed checkEmailExists function
-        await checkEmailExists(email);
+        if (typeof checkEmailExists === 'function') {
+          await checkEmailExists(email);
+        } else {
+          console.error("checkEmailExists is not a function:", checkEmailExists);
+        }
       } catch (err) {
         console.error("Error in handleEmailBlur:", err);
       }

@@ -6,7 +6,9 @@ export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
+    console.log("checkEmailExists called with:", email);
     if (!email || !email.trim()) {
+      setEmailAlreadyExists(false);
       return false;
     }
     
