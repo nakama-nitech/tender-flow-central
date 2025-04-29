@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,19 +11,45 @@ import { useSessionState } from '@/hooks/useSessionState';
 
 export const LoginForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  
   // Use session state with checkOnLoad: false to prevent automatic session checking
   const { isLoading, error, user } = useSessionState({ checkOnLoad: false });
+  
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: '',
   });
 
+  // Effect to prevent redirect loops and give user time to see success messages
+  useEffect(() => {
+    if (user && !isRedirecting) {
+      // Add a small delay before redirecting to show success message
+      setIsRedirecting(true);
+      const timer = setTimeout(() => {
+        navigate('/redirect', { replace: true });
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigate, isRedirecting]);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setLoginError(null);
+    
+    // Validate form fields
+    if (!loginForm.email || !loginForm.password) {
+      setLoginError("Please enter both email and password");
+      setIsSubmitting(false);
+      return;
+    }
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -41,11 +66,11 @@ export const LoginForm = () => {
         description: "Redirecting to your dashboard...",
       });
       
-      // Always redirect to /redirect which will handle role-based routing to the supplier dashboard
-      navigate('/redirect');
+      // Don't navigate immediately, let the useEffect handle it with a delay
       
     } catch (error: any) {
       console.error("Login error:", error);
+      setLoginError(error.message || "Please check your credentials and try again");
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again",
@@ -53,6 +78,16 @@ export const LoginForm = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setLoginForm({...loginForm, [id]: value});
+    
+    // Clear error when user starts typing again
+    if (loginError) {
+      setLoginError(null);
     }
   };
 
@@ -66,9 +101,10 @@ export const LoginForm = () => {
             type="email" 
             placeholder="supplier@example.com" 
             value={loginForm.email}
-            onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+            onChange={handleInputChange}
             required
-            className="border-primary/20 focus:border-primary"
+            className={`border-primary/20 focus:border-primary ${loginError ? 'border-red-500' : ''}`}
+            disabled={isSubmitting || isRedirecting}
           />
         </div>
         
@@ -85,14 +121,16 @@ export const LoginForm = () => {
               type={showPassword ? "text" : "password"} 
               placeholder="••••••••" 
               value={loginForm.password}
-              onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+              onChange={handleInputChange}
               required
-              className="border-primary/20 focus:border-primary pr-10"
+              className={`border-primary/20 focus:border-primary pr-10 ${loginError ? 'border-red-500' : ''}`}
+              disabled={isSubmitting || isRedirecting}
             />
             <button 
               type="button"
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
               onClick={() => setShowPassword(!showPassword)}
+              disabled={isSubmitting || isRedirecting}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -102,18 +140,27 @@ export const LoginForm = () => {
             </button>
           </div>
         </div>
+        
+        {loginError && (
+          <div className="text-sm text-red-500 mt-2">{loginError}</div>
+        )}
       </CardContent>
       
       <CardFooter className="flex flex-col">
         <Button 
           type="submit" 
           className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700" 
-          disabled={isSubmitting}
+          disabled={isSubmitting || isRedirecting}
         >
           {isSubmitting ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
               Logging in...
+            </>
+          ) : isRedirecting ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+              Redirecting...
             </>
           ) : "Login"}
         </Button>

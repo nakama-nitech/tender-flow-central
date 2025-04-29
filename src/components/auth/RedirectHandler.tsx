@@ -1,6 +1,5 @@
-
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -8,18 +7,22 @@ import { useToast } from '@/hooks/use-toast';
 
 export const RedirectHandler = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoading, error, user, userRole } = useAuth();
   const { toast } = useToast();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    // Prevent redirect loops by tracking if we've already redirected
+    if (!isLoading && !hasRedirected) {
       if (user) {
         // Log redirection attempt for debugging
         console.log("RedirectHandler: Redirecting authenticated user with role:", userRole);
         
         // If user is authenticated, redirect based on role
         if (userRole === 'admin') {
-          navigate('/admin');
+          setHasRedirected(true);
+          navigate('/admin', { replace: true });
           toast({
             title: "Welcome back, Admin",
             description: "You have been redirected to the admin dashboard",
@@ -27,7 +30,8 @@ export const RedirectHandler = () => {
         } else if (userRole === 'supplier') {
           // Always redirect supplier to the supplier dashboard
           console.log("Redirecting supplier to dashboard");
-          navigate('/supplier/dashboard');
+          setHasRedirected(true);
+          navigate('/supplier/dashboard', { replace: true });
           toast({
             title: "Welcome back, Supplier",
             description: "You have been redirected to the supplier dashboard",
@@ -35,19 +39,21 @@ export const RedirectHandler = () => {
         } else {
           // If role is not recognized, default to supplier dashboard
           console.warn("Unknown user role:", userRole, "defaulting to supplier dashboard");
-          navigate('/supplier/dashboard');
+          setHasRedirected(true);
+          navigate('/supplier/dashboard', { replace: true });
           toast({
             title: "Welcome",
             description: "You have been logged in successfully",
           });
         }
-      } else if (!user && !error) {
-        // If no user and no error, redirect to auth page
+      } else if (!user && !error && location.pathname === '/redirect') {
+        // Only redirect to auth if we're on the redirect page and have no user
         console.log("RedirectHandler: No user found, redirecting to auth page");
-        navigate('/auth');
+        setHasRedirected(true);
+        navigate('/auth', { replace: true });
       }
     }
-  }, [isLoading, user, userRole, navigate, error, toast]);
+  }, [isLoading, user, userRole, navigate, error, toast, location.pathname, hasRedirected]);
 
   if (isLoading) {
     return (
