@@ -32,7 +32,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     emailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists,
+    checkEmailExists,  // Make sure we're destructuring this
     loginForm,
     setLoginForm
   } = useRegisterForm(setSearchParams);
@@ -40,7 +40,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
-  const nextStep = () => {
+  const nextStep = async () => {
     let canProceed = true;
     
     // Validate current step before proceeding
@@ -53,7 +53,14 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = 'Passwords do not match';
       
       setRegisterFormErrors(errors);
-      canProceed = Object.keys(errors).length === 0 && !emailAlreadyExists;
+      
+      // Check email exists only if there are no validation errors and email is provided
+      if (Object.keys(errors).length === 0 && registerForm.email) {
+        const emailExists = await checkEmailExists(registerForm.email);
+        canProceed = !emailExists;
+      } else {
+        canProceed = Object.keys(errors).length === 0;
+      }
     }
     
     if (registerForm.currentStep === 2) {
@@ -119,7 +126,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists}
+            checkEmailExists={checkEmailExists}  // Make sure we're passing this
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}

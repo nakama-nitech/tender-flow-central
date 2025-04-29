@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Building, Phone, Globe, ShieldCheck, Eye, EyeOff, MapPin, Briefcase, ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
-import { useRegisterForm } from './useRegisterForm';
+import { useRegisterForm } from './hooks/useRegisterForm';
 import { CompanyType, Category, CountryLocations } from './RegisterFormTypes';
 
 interface RegistrationFormProps {
@@ -38,10 +38,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setEmailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists,
+    checkEmailExists,  // Make sure we're destructuring this
     loginForm,
     setLoginForm
-  } = useRegisterForm(setSearchParams, navigate);
+  } = useRegisterForm(setSearchParams);
   
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
