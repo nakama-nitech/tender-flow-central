@@ -1,9 +1,6 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSessionState } from '@/hooks/useSessionState';
 import { useAuthState } from '@/hooks/useAuthState';
-import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
   // Use the core auth state for session management
@@ -17,34 +14,37 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     setError 
   } = useAuthState();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setAuthError] = useState<string | null>(authError);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [loadingAttempts, setLoadingAttempts] = useState(0);
+  const [lastCheckTimestamp, setLastCheckTimestamp] = useState(0);
 
-  // Check user role from database when user is available
+  // Debounce profile checks to prevent excessive database calls
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!user) {
-        setUserRole(null);
-        setIsLoading(false);
-        setAuthChecked(true);
-        setProfileLoaded(true);
-        return;
-      }
+    if (!user) {
+      setUserRole(null);
+      setProfileLoaded(false);
+      return;
+    }
 
+    if (profileLoaded) return;
+    
+    // Skip duplicate profile checks within a short time window
+    const now = Date.now();
+    if (now - lastCheckTimestamp < 2000) return;
+    
+    setLastCheckTimestamp(now);
+    
+    const checkUserRole = async () => {
       try {
         setLoadingAttempts(prev => prev + 1);
+        
         // First, check user metadata for role
         const metadataRole = user.user_metadata?.role;
         
         if (metadataRole) {
           console.log("Found role in user metadata:", metadataRole);
           setUserRole(metadataRole);
-          setIsLoading(false);
-          setAuthChecked(true);
           setProfileLoaded(true);
           return;
         }
@@ -85,43 +85,25 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
             setUserRole('supplier');
             setProfileLoaded(true);
           } else {
-            // We can't directly query the 'admins' table, as it doesn't exist in the schema
-            // Instead, we will check a flag in the user's metadata or just default to supplier
-            const isAdminUser = user.user_metadata?.is_admin === true;
-            
-            if (isAdminUser) {
-              console.log("User marked as admin in metadata");
-              setUserRole('admin');
-            } else {
-              console.warn("User not found in role tables, defaulting to supplier");
-              setUserRole('supplier');
-            }
+            // Default to supplier role if not found
+            console.log("User not found in role tables, defaulting to supplier");
+            setUserRole('supplier');
             setProfileLoaded(true);
           }
         }
       } catch (error: any) {
         console.error("Error determining user role:", error);
-        setAuthError(error.message || "Failed to determine user role");
-      } finally {
-        setIsLoading(false);
-        setAuthChecked(true);
+        if (loadingAttempts >= 3) {
+          setError(error.message || "Failed to determine user role");
+        }
       }
     };
 
-    if (!authLoading) {
-      if (!authChecked) {
-        checkUserRole();
-      }
-    } else {
-      setIsLoading(true);
-    }
-  }, [user, authLoading, authChecked]);
+    checkUserRole();
+  }, [user, loadingAttempts, lastCheckTimestamp, profileLoaded, setError]);
 
-  // Use the role access hook to check permissions
-  const roleAccess = useRoleAccess(userRole, requiredRole);
-
-  // Check if user has required role
-  const hasRequiredRole = (): boolean => {
+  // Memoize role checking functions to prevent unnecessary re-renders
+  const hasRequiredRole = useCallback((): boolean => {
     if (!requiredRole) return true;
     if (!userRole) return false;
     
@@ -131,23 +113,36 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     }
     
     return userRole === requiredRole;
-  };
+  }, [requiredRole, userRole]);
 
   // Add isAdmin function for components that need it
-  const isAdmin = (): boolean => {
+  const isAdmin = useCallback((): boolean => {
     return userRole === 'admin';
-  };
+  }, [userRole]);
 
-  // Merge all the errors
-  useEffect(() => {
-    if (authError) {
-      setAuthError(authError);
-    }
+  // Calculate final loading state - only done loading when auth AND profile are loaded
+  const isLoading = useMemo(() => {
+    // If auth is still loading, we're loading
+    if (authLoading) return true;
+    
+    // If auth finished loading and there's no user, we're done loading
+    if (!user) return false;
+    
+    // If we have a user but no profile and haven't reached max attempts, we're still loading
+    if (user && !profileLoaded && loadingAttempts < 3) return true;
+    
+    // Otherwise we're done loading
+    return false;
+  }, [authLoading, user, profileLoaded, loadingAttempts]);
+
+  // Consolidated error handling
+  const error = useMemo(() => {
+    return authError;
   }, [authError]);
 
   return {
-    isLoading: isLoading || authLoading,
-    error: error || authError,
+    isLoading,
+    error,
     user,
     session,
     userRole,

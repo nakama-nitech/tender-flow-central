@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,17 +12,25 @@ export const RedirectHandler = () => {
   const { isLoading, error, user, userRole } = useAuth();
   const { toast } = useToast();
   const [hasRedirected, setHasRedirected] = useState(false);
+  const [redirectTimer, setRedirectTimer] = useState<number | null>(null);
 
-  useEffect(() => {
+  // Create a memoized redirect function to prevent unnecessary rerenders
+  const redirectUser = useCallback(() => {
     // Prevent redirect loops by tracking if we've already redirected
-    if (!isLoading && !hasRedirected) {
-      if (user) {
-        // Log redirection attempt for debugging
-        console.log("RedirectHandler: Redirecting authenticated user with role:", userRole);
+    if (!isLoading && !hasRedirected && user) {
+      // Log redirection attempt for debugging
+      console.log("RedirectHandler: Redirecting authenticated user with role:", userRole);
+      
+      // Clear any existing timers
+      if (redirectTimer !== null) {
+        window.clearTimeout(redirectTimer);
+      }
+      
+      // Use a slight delay before redirecting to ensure all auth states are settled
+      const timer = window.setTimeout(() => {
+        setHasRedirected(true);
         
-        // If user is authenticated, redirect based on role
         if (userRole === 'admin') {
-          setHasRedirected(true);
           navigate('/admin', { replace: true });
           toast({
             title: "Welcome back, Admin",
@@ -31,7 +39,6 @@ export const RedirectHandler = () => {
         } else if (userRole === 'supplier') {
           // Always redirect supplier to the supplier dashboard
           console.log("Redirecting supplier to dashboard");
-          setHasRedirected(true);
           navigate('/supplier/dashboard', { replace: true });
           toast({
             title: "Welcome back, Supplier",
@@ -40,21 +47,38 @@ export const RedirectHandler = () => {
         } else {
           // If role is not recognized, default to supplier dashboard
           console.warn("Unknown user role:", userRole, "defaulting to supplier dashboard");
-          setHasRedirected(true);
           navigate('/supplier/dashboard', { replace: true });
           toast({
             title: "Welcome",
             description: "You have been logged in successfully",
           });
         }
-      } else if (!user && !error && location.pathname === '/redirect') {
-        // Only redirect to auth if we're on the redirect page and have no user
-        console.log("RedirectHandler: No user found, redirecting to auth page");
-        setHasRedirected(true);
-        navigate('/auth', { replace: true });
-      }
+      }, 100);
+      
+      setRedirectTimer(timer);
+      
+      // Cleanup function
+      return () => {
+        if (timer) window.clearTimeout(timer);
+      };
+    } else if (!isLoading && !user && !error && location.pathname === '/redirect' && !hasRedirected) {
+      // Only redirect to auth if we're on the redirect page and have no user
+      console.log("RedirectHandler: No user found, redirecting to auth page");
+      setHasRedirected(true);
+      navigate('/auth', { replace: true });
     }
-  }, [isLoading, user, userRole, navigate, error, toast, location.pathname, hasRedirected]);
+  }, [isLoading, user, userRole, navigate, error, toast, location.pathname, hasRedirected, redirectTimer]);
+
+  useEffect(() => {
+    redirectUser();
+    
+    // Cleanup function
+    return () => {
+      if (redirectTimer !== null) {
+        window.clearTimeout(redirectTimer);
+      }
+    };
+  }, [redirectUser, redirectTimer]);
 
   if (isLoading) {
     return (

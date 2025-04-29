@@ -13,6 +13,7 @@ export const useAuthState = () => {
 
   useEffect(() => {
     console.log("Auth state hook initializing...");
+    let mounted = true;
     setIsLoading(true);
     setError(null);
     
@@ -20,6 +21,8 @@ export const useAuthState = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, sessionData) => {
         console.log("Auth state changed:", event);
+        
+        if (!mounted) return;
         
         if (event === 'SIGNED_OUT') {
           console.log("User signed out");
@@ -31,8 +34,7 @@ export const useAuthState = () => {
           setUser(sessionData.user);
         }
         
-        // Always update loading state on auth events
-        setIsLoading(false);
+        // Don't set loading to false here, let the getSession call handle it
       }
     );
     
@@ -40,6 +42,8 @@ export const useAuthState = () => {
     const checkSession = async () => {
       try {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
         
         if (sessionError) {
           console.error("Session error:", sessionError);
@@ -59,24 +63,23 @@ export const useAuthState = () => {
         setUser(sessionData.session.user);
         setIsLoading(false);
       } catch (e) {
+        if (!mounted) return;
         console.error("Auth check error:", e);
         setError("Authentication error. Please try logging in again.");
         setIsLoading(false);
       }
     };
     
-    // Add delay before checking auth to ensure session is fully established
-    const timer = setTimeout(() => {
-      checkSession();
-    }, 300); // Increased delay for better reliability
+    // Check session directly without additional timeout - causes fewer flickering issues
+    checkSession();
     
     return () => {
-      clearTimeout(timer);
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [retryCount]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     setRetryCount(prev => prev + 1);
     setIsLoading(true);
     setError(null);
@@ -84,9 +87,9 @@ export const useAuthState = () => {
       title: "Retrying...",
       description: "Attempting to reconnect to your account"
     });
-  };
+  }, [toast]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
@@ -117,7 +120,7 @@ export const useAuthState = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   return { 
     isLoading, 
