@@ -47,13 +47,22 @@ export const useRegisterForm = (
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Ensure we have a valid checkEmailExists function
+    const emailCheckFn = typeof checkEmailExists === 'function' ? checkEmailExists : async () => false;
+    
     // Check if email exists before proceeding with validation
     if (registerForm.email) {
-      const emailExists = await checkEmailExists(registerForm.email);
-      
-      // If email exists, don't proceed with form validation and submission
-      if (emailExists) {
-        return;
+      try {
+        // Use the safe reference to the function
+        const emailExists = await emailCheckFn(registerForm.email);
+        
+        // If email exists, don't proceed with form validation and submission
+        if (emailExists) {
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking if email exists:", error);
+        // Continue with form submission even if email check fails
       }
     }
     

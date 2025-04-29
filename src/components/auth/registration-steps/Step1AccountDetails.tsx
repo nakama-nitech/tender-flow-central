@@ -12,7 +12,7 @@ interface Step1Props {
   registerFormErrors: RegisterFormErrors;
   setRegisterFormErrors: React.Dispatch<React.SetStateAction<RegisterFormErrors>>;
   emailAlreadyExists: boolean;
-  checkEmailExists: (email: string) => Promise<boolean>;
+  checkEmailExists?: (email: string) => Promise<boolean>;
   loginForm: { email: string; password: string };
   setLoginForm: React.Dispatch<React.SetStateAction<{ email: string; password: string }>>;
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>;
@@ -24,7 +24,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   registerFormErrors,
   setRegisterFormErrors,
   emailAlreadyExists,
-  checkEmailExists,
+  checkEmailExists = async () => false,
   loginForm,
   setLoginForm,
   setSearchParams

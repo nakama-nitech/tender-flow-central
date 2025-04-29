@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   
+  // Define checkEmailExists using useCallback to maintain reference stability
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
     console.log("checkEmailExists called with:", email);
     if (!email || !email.trim()) {

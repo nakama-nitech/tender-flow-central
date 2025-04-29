@@ -32,7 +32,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     emailAlreadyExists,
     isSubmitting,
     handleRegisterSubmit,
-    checkEmailExists,  // Make sure this is properly extracted
+    checkEmailExists,
     loginForm,
     setLoginForm
   } = useRegisterForm(setSearchParams);
@@ -40,7 +40,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
-  const nextStep = () => {
+  const nextStep = async () => {
     let canProceed = true;
     
     // Validate current step before proceeding
@@ -53,7 +53,22 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       if (registerForm.password !== registerForm.confirmPassword) errors.confirmPassword = 'Passwords do not match';
       
       setRegisterFormErrors(errors);
-      canProceed = Object.keys(errors).length === 0 && !emailAlreadyExists;
+      
+      // Check if email exists before proceeding
+      if (registerForm.email && typeof checkEmailExists === 'function' && !errors.email) {
+        try {
+          const exists = await checkEmailExists(registerForm.email);
+          if (exists) {
+            console.log("Email exists, preventing next step");
+            canProceed = false;
+          }
+        } catch (error) {
+          console.error("Error checking email in nextStep:", error);
+          // Continue even if email check fails
+        }
+      }
+      
+      canProceed = canProceed && Object.keys(errors).length === 0 && !emailAlreadyExists;
     }
     
     if (registerForm.currentStep === 2) {
@@ -105,7 +120,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   };
   
   // Add debug logging to verify function presence
-  console.log("checkEmailExists is defined in MultiStepRegistrationForm:", !!checkEmailExists, typeof checkEmailExists);
+  console.log("MultiStepRegistrationForm checkEmailExists is defined:", !!checkEmailExists, typeof checkEmailExists);
   
   return (
     <div className="space-y-6">
@@ -122,7 +137,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists} // Ensure we're passing the function
+            checkEmailExists={checkEmailExists}
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}
