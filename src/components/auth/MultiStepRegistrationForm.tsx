@@ -159,9 +159,11 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
               <div className="flex items-center">
                 <span className="text-sm">Already have an account?</span>
                 <Button variant="link" className="p-0 ml-1" type="button" onClick={() => {
-                  const searchParams = new URLSearchParams();
-                  searchParams.set('tab', 'login');
-                  setSearchParams(searchParams);
+                  setSearchParams(params => {
+                    const newParams = new URLSearchParams(params);
+                    newParams.set('tab', 'login');
+                    return newParams;
+                  });
                 }}>
                   Sign In
                 </Button>

@@ -38,6 +38,14 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     ) : null;
   };
   
+  const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    if (email && email.trim()) {
+      // Make sure we're using the passed checkEmailExists function
+      await checkEmailExists(email);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div className="text-lg font-medium mb-4">
@@ -59,11 +67,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
               setRegisterForm({...registerForm, email: e.target.value});
               setRegisterFormErrors({...registerFormErrors, email: ''});
             }}
-            onBlur={(e) => {
-              if (e.target.value) {
-                checkEmailExists(e.target.value);
-              }
-            }}
+            onBlur={handleEmailBlur}
             required
             className={`border-primary/20 ${registerFormErrors.email || emailAlreadyExists ? 'border-red-500' : ''}`}
           />
@@ -79,8 +83,9 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
                   onClick={() => {
                     setLoginForm({...loginForm, email: registerForm.email});
                     setSearchParams(params => {
-                      params.set('tab', 'login');
-                      return params;
+                      const newParams = new URLSearchParams(params);
+                      newParams.set('tab', 'login');
+                      return newParams;
                     });
                   }}
                 >

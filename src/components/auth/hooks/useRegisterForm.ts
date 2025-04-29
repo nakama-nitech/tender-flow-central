@@ -70,7 +70,7 @@ export const useRegisterForm = (setSearchParams: React.Dispatch<React.SetStateAc
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists, // Make sure this is exported properly
+    checkEmailExists,
     loginForm,
     setLoginForm,
     handleRegisterSubmit: onSubmit
