@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 import { useEmailCheck } from './useEmailCheck';
 import { useFormValidation } from './useFormValidation';
@@ -28,7 +27,6 @@ const initialFormState: RegisterFormState = {
 export const useRegisterForm = (
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>
 ) => {
-  const navigate = useNavigate();
   const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
   const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
   
@@ -39,8 +37,7 @@ export const useRegisterForm = (
     setSearchParams,
     setLoginForm,
     setRegisterFormErrors,
-    registerFormErrors,
-    navigate
+    registerFormErrors
   );
 
   const onSubmit = async (e: React.FormEvent) => {

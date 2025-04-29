@@ -1,172 +1,122 @@
 
 import { useState } from 'react';
-import { NavigateFunction } from 'react-router-dom';
-import { RegisterFormState } from '../types/formTypes';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { RegisterFormErrors } from '../types/formTypes';
 
 export const useRegisterSubmit = (
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>,
-  setLoginForm: (form: { email: string; password: string }) => void,
-  setRegisterFormErrors: (errors: { [key: string]: string }) => void,
-  registerFormErrors: { [key: string]: string },
-  navigate: NavigateFunction
+  setLoginForm: React.Dispatch<React.SetStateAction<{ email: string; password: string }>>,
+  setRegisterFormErrors: React.Dispatch<React.SetStateAction<RegisterFormErrors>>,
+  registerFormErrors: RegisterFormErrors
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Get the form state from the component's state
-    const registerForm = window.registerFormState;
-    
-    if (!registerForm) {
-      console.error("Form data is missing");
-      toast({
-        title: "Registration failed",
-        description: "Form data is missing",
-        variant: "destructive",
-      });
+    if (!window.registerFormState) {
+      console.error('Register form state not found');
       return;
     }
     
-    setIsSubmitting(true);
+    const formData = window.registerFormState;
     
     try {
-      // Extract name parts for user metadata
-      const nameParts = registerForm.contactName.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      setIsSubmitting(true);
       
-      // Determine the current origin for redirect URL
-      const currentOrigin = window.location.origin;
-      const redirectPath = '/auth';
-      const redirectUrl = `${currentOrigin}${redirectPath}`;
-      
-      // Attempt user registration
+      // Create Auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: registerForm.email,
-        password: registerForm.password,
+        email: formData.email,
+        password: formData.password,
         options: {
           data: {
             role: 'supplier',
-            first_name: firstName,
-            last_name: lastName
+            first_name: formData.contactName?.split(' ')[0] || '',
+            last_name: formData.contactName?.split(' ').slice(1).join(' ') || ''
           },
-          emailRedirectTo: redirectUrl
-        }
+        },
       });
       
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("User registration failed");
-      
-      // Create supplier profile - The issue is with this function call
-      // Instead of using rpc, let's use a direct insert into the suppliers table
-      const { error: supplierError } = await supabase
-        .from('suppliers')
-        .insert({
-          id: authData.user.id,
-          company_type_id: parseInt(registerForm.companyType),
-          company_name: registerForm.companyName,
-          location: registerForm.location,
-          country: registerForm.country,
-          phone_number: registerForm.phoneNumber,
-          kra_pin: registerForm.kraPin,
-          physical_address: registerForm.physicalAddress || null,
-          website_url: registerForm.websiteUrl || null
-        });
-      
-      if (supplierError) throw supplierError;
-      
-      // Add supplier categories
-      if (registerForm.categoriesOfInterest.length > 0) {
-        const categoriesToInsert = registerForm.categoriesOfInterest.map(categoryId => ({
-          supplier_id: authData.user.id,
-          category_id: parseInt(categoryId)
-        }));
-        
-        const { error: categoryError } = await supabase
-          .from('supplier_categories')
-          .insert(categoriesToInsert);
-        
-        if (categoryError) {
-          console.error("Category error:", categoryError);
-        }
+      if (authError) {
+        throw authError;
       }
       
-      // Add supplier locations if needed
-      if (registerForm.supplyLocations.length > 0) {
-        // Get location IDs from location names
-        const { data: locationData } = await supabase
-          .from('locations')
-          .select('id, name')
-          .in('name', registerForm.supplyLocations);
+      // If auth user creation was successful, create the supplier record
+      if (authData?.user) {
+        const { error: supplierError } = await supabase
+          .from('suppliers')
+          .insert({
+            id: authData.user.id,
+            company_name: formData.companyName,
+            location: formData.location,
+            country: formData.country,
+            phone_number: formData.phoneNumber,
+            kra_pin: formData.kraPin || null,
+            physical_address: formData.physicalAddress || null,
+            website_url: formData.websiteUrl || null,
+            company_type_id: formData.companyType ? parseInt(formData.companyType) : null,
+          });
         
-        if (locationData && locationData.length > 0) {
-          const locationsToInsert = locationData.map(location => ({
-            supplier_id: authData.user.id,
-            location_id: location.id
+        if (supplierError) {
+          throw supplierError;
+        }
+        
+        // Add supplier categories if any were selected
+        if (formData.categoriesOfInterest && formData.categoriesOfInterest.length > 0) {
+          const supplierCategories = formData.categoriesOfInterest.map((categoryId) => ({
+            supplier_id: authData.user!.id,
+            category_id: parseInt(categoryId),
           }));
           
-          const { error: locationError } = await supabase
-            .from('supplier_locations')
-            .insert(locationsToInsert);
-          
-          if (locationError) {
-            console.error("Location error:", locationError);
+          const { error: categoriesError } = await supabase
+            .from('supplier_categories')
+            .insert(supplierCategories);
+            
+          if (categoriesError) {
+            console.error('Error adding supplier categories:', categoriesError);
           }
         }
-      }
-      
-      toast({
-        title: "Registration successful",
-        description: "Please log in with your new account credentials.",
-      });
-      
-      // Pre-populate the login form with the user's email to make login easier
-      setLoginForm({ email: registerForm.email, password: '' });
-      
-      // Switch to login tab after successful registration
-      setSearchParams((params) => {
-        const newParams = new URLSearchParams(params);
-        newParams.set('tab', 'login');
-        return newParams;
-      });
-      
-      // Redirect to auth page with login tab selected
-      navigate('/auth?tab=login');
-      
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      
-      if (error.code === "user_already_exists" || error.message?.includes("already been registered")) {
-        setRegisterFormErrors({
-          ...registerFormErrors,
-          email: "This email is already registered. Please log in instead."
+        
+        // Add supplier locations if any were selected
+        if (formData.supplyLocations && formData.supplyLocations.length > 0) {
+          const supplierLocations = formData.supplyLocations.map((locationId) => ({
+            supplier_id: authData.user!.id,
+            location_id: parseInt(locationId),
+          }));
+          
+          const { error: locationsError } = await supabase
+            .from('supplier_locations')
+            .insert(supplierLocations);
+            
+          if (locationsError) {
+            console.error('Error adding supplier locations:', locationsError);
+          }
+        }
+        
+        // Pre-populate the login form with the registration email and password
+        setLoginForm({
+          email: formData.email,
+          password: formData.password,
         });
         
-        setLoginForm({ email: registerForm.email, password: '' });
+        // Switch to login tab and show success message
         setSearchParams((params) => {
           const newParams = new URLSearchParams(params);
           newParams.set('tab', 'login');
+          newParams.set('registered', 'true');
           return newParams;
         });
-        
-        toast({
-          title: "Account already exists",
-          description: "Please login with your existing account",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Registration failed",
-          description: error.message || "There was an error creating your account",
-          variant: "destructive",
-        });
       }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setRegisterFormErrors({
+        ...registerFormErrors,
+        general: error.message || 'Registration failed. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
+      // Clear the form state from window for security
+      delete window.registerFormState;
     }
   };
 

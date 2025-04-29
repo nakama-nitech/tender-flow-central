@@ -1,14 +1,28 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSessionState } from '@/hooks/useSessionState';
+import { useAuthState } from '@/hooks/useAuthState';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
-  const { isLoading: sessionLoading, error: sessionError, user, session } = useSessionState();
+  // Use the core auth state for session management
+  const { 
+    isLoading: authLoading, 
+    error: authError, 
+    user, 
+    session, 
+    handleRetry, 
+    handleSignOut,
+    setError 
+  } = useAuthState();
+  
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(sessionError);
+  const [error, setAuthError] = useState<string | null>(authError);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [loadingAttempts, setLoadingAttempts] = useState(0);
 
   // Check user role from database when user is available
   useEffect(() => {
@@ -17,10 +31,12 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         setUserRole(null);
         setIsLoading(false);
         setAuthChecked(true);
+        setProfileLoaded(true);
         return;
       }
 
       try {
+        setLoadingAttempts(prev => prev + 1);
         // First, check user metadata for role
         const metadataRole = user.user_metadata?.role;
         
@@ -29,6 +45,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
           setUserRole(metadataRole);
           setIsLoading(false);
           setAuthChecked(true);
+          setProfileLoaded(true);
           return;
         }
         
@@ -48,6 +65,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
         if (profileData && profileData.role) {
           console.log("User found in profiles table with role:", profileData.role);
           setUserRole(profileData.role);
+          setProfileLoaded(true);
         } else {
           // Check if user is in suppliers table
           console.log("Checking suppliers table");
@@ -65,45 +83,42 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
           if (supplierData) {
             console.log("User found in suppliers table");
             setUserRole('supplier');
+            setProfileLoaded(true);
           } else {
-            // Check if user is an admin
-            const { data: adminData, error: adminError } = await supabase
-              .from('admins')
-              .select('*')
-              .eq('id', user.id)
-              .maybeSingle();
+            // We can't directly query the 'admins' table, as it doesn't exist in the schema
+            // Instead, we will check a flag in the user's metadata or just default to supplier
+            const isAdminUser = user.user_metadata?.is_admin === true;
             
-            if (adminError && adminError.code !== 'PGRST116') {
-              console.error("Error fetching admin data:", adminError);
-              throw adminError;
-            }
-            
-            if (adminData) {
-              console.log("User found in admins table");
+            if (isAdminUser) {
+              console.log("User marked as admin in metadata");
               setUserRole('admin');
             } else {
               console.warn("User not found in role tables, defaulting to supplier");
               setUserRole('supplier');
             }
+            setProfileLoaded(true);
           }
         }
       } catch (error: any) {
         console.error("Error determining user role:", error);
-        setError(error.message || "Failed to determine user role");
+        setAuthError(error.message || "Failed to determine user role");
       } finally {
         setIsLoading(false);
         setAuthChecked(true);
       }
     };
 
-    if (!sessionLoading) {
+    if (!authLoading) {
       if (!authChecked) {
         checkUserRole();
       }
     } else {
       setIsLoading(true);
     }
-  }, [user, sessionLoading, authChecked]);
+  }, [user, authLoading, authChecked]);
+
+  // Use the role access hook to check permissions
+  const roleAccess = useRoleAccess(userRole, requiredRole);
 
   // Check if user has required role
   const hasRequiredRole = (): boolean => {
@@ -118,12 +133,28 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     return userRole === requiredRole;
   };
 
+  // Add isAdmin function for components that need it
+  const isAdmin = (): boolean => {
+    return userRole === 'admin';
+  };
+
+  // Merge all the errors
+  useEffect(() => {
+    if (authError) {
+      setAuthError(authError);
+    }
+  }, [authError]);
+
   return {
-    isLoading,
-    error: error || sessionError,
+    isLoading: isLoading || authLoading,
+    error: error || authError,
     user,
     session,
     userRole,
-    hasRequiredRole
+    hasRequiredRole,
+    handleRetry,
+    handleSignOut,
+    setError,
+    isAdmin
   };
 };
