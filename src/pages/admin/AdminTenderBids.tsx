@@ -59,7 +59,7 @@ const getBidStatusBadge = (status: Bid['status']) => {
 };
 
 const AdminTenderBids: React.FC = () => {
-  useAuth('admin'); // This ensures only admins can access this page
+  const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
   const { tenderId } = useParams<{ tenderId: string }>();
   const { bids, isLoading, error, updateBidStatus, tender, refreshBids } = useTenderBids(tenderId!);

@@ -9,16 +9,16 @@ import { TenderFilters } from '@/components/admin/tenders/TenderFilters';
 import { TenderCard } from '@/components/admin/tenders/TenderCard';
 import { EmptyTenderState } from '@/components/admin/tenders/EmptyTenderState';
 import { LoadingState } from '@/components/admin/tenders/LoadingState';
+import { useTenderList } from '@/hooks/useTenderList';
 
 const AdminTenderList: React.FC = () => {
-  useAuth('admin'); // This ensures only admins can access this page
+  const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { tenders, isLoading, error, createTender, updateTender, deleteTender } = useTenderList();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<TenderCategory[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [tenders, setTenders] = useState<Tender[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
   // Fetch tenders from Supabase
   useEffect(() => {
