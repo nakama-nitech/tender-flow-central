@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -7,13 +7,15 @@ import { useToast } from '@/hooks/use-toast';
 
 export const RedirectHandler = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoading, error, user, userRole, isAdmin, isSupplier, isInitialized } = useAuth();
   const { toast } = useToast();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const redirectAttempted = useRef(false);
 
   useEffect(() => {
     // Don't proceed if we're still loading or already redirecting
-    if (isRedirecting || isLoading || !isInitialized) {
+    if (isRedirecting || isLoading || !isInitialized || redirectAttempted.current) {
       return;
     }
 
@@ -25,13 +27,13 @@ export const RedirectHandler = () => {
         description: error,
         variant: "destructive",
       });
-      navigate('/auth');
+      navigate('/auth', { replace: true });
       return;
     }
 
     // If no user, redirect to auth
     if (!user) {
-      navigate('/auth');
+      navigate('/auth', { replace: true });
       return;
     }
 
@@ -42,27 +44,28 @@ export const RedirectHandler = () => {
         description: "Unable to determine your role. Please try logging in again or contact support if the issue persists.",
         variant: "destructive",
       });
-      navigate('/auth');
+      navigate('/auth', { replace: true });
       return;
     }
 
+    // Mark that we've attempted a redirect
+    redirectAttempted.current = true;
     setIsRedirecting(true);
 
     // Determine the appropriate dashboard based on role
-    if (isAdmin) {
-      navigate('/admin', { replace: true });
+    const targetPath = isAdmin ? '/admin' : '/supplier/dashboard';
+    
+    // Only redirect if we're not already on the target path
+    if (location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
       toast({
-        title: "Welcome back, Admin",
-        description: "You have been redirected to the admin dashboard",
-      });
-    } else {
-      navigate('/supplier/dashboard', { replace: true });
-      toast({
-        title: "Welcome back",
-        description: "You have been redirected to your dashboard",
+        title: isAdmin ? "Welcome back, Admin" : "Welcome back",
+        description: isAdmin 
+          ? "You have been redirected to the admin dashboard"
+          : "You have been redirected to your dashboard",
       });
     }
-  }, [isLoading, error, user, userRole, isAdmin, isSupplier, navigate, toast, isRedirecting, isInitialized]);
+  }, [isLoading, error, user, userRole, isAdmin, isSupplier, navigate, toast, isRedirecting, isInitialized, location.pathname]);
 
   if (isLoading || !isInitialized) {
     return (

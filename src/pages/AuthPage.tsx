@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -79,28 +78,6 @@ const AuthPage = () => {
     
     fetchReferenceData();
   }, []);
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.session.user.id)
-          .maybeSingle();
-        
-        if (profileData && profileData.role === 'admin') {
-          navigate('/redirect');
-        } else {
-          navigate('/supplier/dashboard');
-        }
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
 
   const defaultCompanyTypes = [
     { id: 1, name: 'Sole Proprietor' },
