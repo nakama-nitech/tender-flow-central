@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useRegisterForm } from './hooks/useRegisterForm';
@@ -38,11 +38,14 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     setLoginForm
   } = useRegisterForm(setSearchParams);
   
+  // Log to verify checkEmailExists is provided
+  useEffect(() => {
+    console.log("[MultiStepRegistrationForm] checkEmailExists is available:", 
+      !!checkEmailExists, typeof checkEmailExists);
+  }, [checkEmailExists]);
+  
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
-  
-  // Add debug logging to verify function presence
-  console.log("MultiStepRegistrationForm: checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
   
   const nextStep = async () => {
     let canProceed = true;
@@ -61,22 +64,23 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       // Check if email exists before proceeding
       if (registerForm.email && !errors.email) {
         try {
-          console.log("nextStep: About to check email existence");
+          console.log("[MultiStepRegistrationForm] About to check email existence");
           
+          // Safety check before calling
           if (typeof checkEmailExists === 'function') {
-            console.log("nextStep: checkEmailExists is a function, calling it");
+            console.log("[MultiStepRegistrationForm] checkEmailExists is a function, calling it");
             const exists = await checkEmailExists(registerForm.email);
             if (exists) {
-              console.log("nextStep: Email exists, preventing next step");
+              console.log("[MultiStepRegistrationForm] Email exists, preventing next step");
               canProceed = false;
             }
           } else {
-            console.error("nextStep: checkEmailExists is not a function!", checkEmailExists);
+            console.error("[MultiStepRegistrationForm] checkEmailExists is not a function!", checkEmailExists);
             // If checkEmailExists is not available, we'll proceed anyway
             // but log a warning
           }
         } catch (error) {
-          console.error("Error checking email in nextStep:", error);
+          console.error("[MultiStepRegistrationForm] Error checking email in nextStep:", error);
           // Continue even if email check fails
         }
       }

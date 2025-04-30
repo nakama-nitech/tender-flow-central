@@ -39,6 +39,8 @@ export const useRegisterForm = (
     isChecking 
   } = useEmailCheck();
   
+  console.log("[useRegisterForm] Initialized with checkEmailExists function:", !!checkEmailExists, typeof checkEmailExists);
+  
   const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
   
   const { isSubmitting, handleRegisterSubmit } = useRegisterSubmit(
@@ -51,9 +53,11 @@ export const useRegisterForm = (
   // Create a stable wrapper around checkEmailExists to prevent unnecessary rerenders
   // and ensure we're always passing a function even if something goes wrong
   const safeCheckEmailExists = useCallback(async (email: string): Promise<boolean> => {
-    console.log("safeCheckEmailExists called with:", email);
-    if (!checkEmailExists) {
-      console.error("checkEmailExists is not available! Using fallback");
+    console.log("[useRegisterForm] safeCheckEmailExists called with:", email);
+    
+    // Check if checkEmailExists is available
+    if (typeof checkEmailExists !== 'function') {
+      console.error("[useRegisterForm] checkEmailExists is not a function! Using fallback");
       return false; // Fallback behavior
     }
     
@@ -61,7 +65,7 @@ export const useRegisterForm = (
       // Call the actual function from useEmailCheck
       return await checkEmailExists(email);
     } catch (error) {
-      console.error("Error in safeCheckEmailExists:", error);
+      console.error("[useRegisterForm] Error in safeCheckEmailExists:", error);
       return false;
     }
   }, [checkEmailExists]);
@@ -70,24 +74,25 @@ export const useRegisterForm = (
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Ensure the email check function exists
-    console.log("onSubmit: checkEmailExists available:", !!safeCheckEmailExists);
+    // Debug check - ensure the function exists
+    console.log("[useRegisterForm] onSubmit: checkEmailExists available:", !!safeCheckEmailExists);
     
-    // Use our safe wrapper function
+    // Only check email if we have one and the check function exists
     if (registerForm.email && safeCheckEmailExists) {
       try {
         const emailExists = await safeCheckEmailExists(registerForm.email);
         
         // If email exists, don't proceed with form validation and submission
         if (emailExists) {
+          console.log("[useRegisterForm] Email exists, stopping submission");
           return;
         }
       } catch (error) {
-        console.error("Error checking if email exists:", error);
+        console.error("[useRegisterForm] Error checking if email exists:", error);
         // Continue with form submission even if email check fails
       }
     } else {
-      console.warn("Cannot check if email exists - function not available or email empty");
+      console.warn("[useRegisterForm] Cannot check if email exists - function not available or email empty");
     }
     
     if (!validateRegisterForm(registerForm)) {
@@ -99,8 +104,6 @@ export const useRegisterForm = (
     
     await handleRegisterSubmit(e);
   }, [registerForm, safeCheckEmailExists, validateRegisterForm, handleRegisterSubmit]);
-
-  console.log("useRegisterForm hook initialized with checkEmailExists:", !!checkEmailExists);
 
   return {
     registerForm,

@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
@@ -33,8 +33,10 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   
-  // Add debug logging to verify function presence
-  console.log("Step1AccountDetails: checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
+  // Log to verify checkEmailExists is received
+  useEffect(() => {
+    console.log("[Step1AccountDetails] checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
+  }, [checkEmailExists]);
   
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
@@ -49,20 +51,20 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
       return;
     }
     
-    console.log("handleEmailBlur: Checking email existence for:", email);
+    console.log("[Step1AccountDetails] handleEmailBlur: Checking email existence for:", email);
     setIsCheckingEmail(true);
     
     try {
       // Create a safer function call with fallback
       if (typeof checkEmailExists === 'function') {
         await checkEmailExists(email);
-        console.log("Email check completed successfully");
+        console.log("[Step1AccountDetails] Email check completed successfully");
       } else {
         // If the function doesn't exist, log an error but don't break the UI
-        console.error("checkEmailExists function not available in Step1AccountDetails");
+        console.error("[Step1AccountDetails] checkEmailExists function not available");
       }
     } catch (err) {
-      console.error("Error in handleEmailBlur:", err);
+      console.error("[Step1AccountDetails] Error in handleEmailBlur:", err);
     } finally {
       setIsCheckingEmail(false);
     }

@@ -8,10 +8,15 @@ export const useEmailCheck = () => {
   
   // Define checkEmailExists using useCallback to maintain reference stability
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
-    console.log("useEmailCheck: checkEmailExists called with email:", email);
+    console.log("[useEmailCheck] checkEmailExists called with email:", email);
     
-    if (!email || !email.trim() || isChecking) {
-      console.log("useEmailCheck: email empty or already checking, returning current state:", emailAlreadyExists);
+    if (!email || !email.trim()) {
+      console.log("[useEmailCheck] Email empty, returning current state:", emailAlreadyExists);
+      return emailAlreadyExists;
+    }
+    
+    if (isChecking) {
+      console.log("[useEmailCheck] Already checking, returning current state:", emailAlreadyExists);
       return emailAlreadyExists;
     }
     
@@ -27,33 +32,32 @@ export const useEmailCheck = () => {
         }
       });
       
-      console.log("useEmailCheck: Email check response:", data, error);
+      console.log("[useEmailCheck] Email check response:", data, error);
       
       // If we get an error about email already registered, the email exists
       if (error && (
         error.message.includes("already been registered") ||
         error.message.includes("Email already registered")
       )) {
-        console.log("useEmailCheck: Email already exists in the system");
+        console.log("[useEmailCheck] Email already exists in the system");
         setEmailAlreadyExists(true);
         return true;
       } else {
-        console.log("useEmailCheck: Email doesn't exist in the system");
+        console.log("[useEmailCheck] Email doesn't exist in the system");
         setEmailAlreadyExists(false);
         return false;
       }
     } catch (err) {
       // If we get an error, log it but assume the email doesn't exist
       // to let the registration attempt go through
-      console.error("useEmailCheck: Error checking email:", err);
+      console.error("[useEmailCheck] Error checking email:", err);
       return emailAlreadyExists;
     } finally {
       setIsChecking(false);
     }
   }, [emailAlreadyExists, isChecking]);
 
-  // Add debug logging to verify function existence when the hook is first used
-  console.log("useEmailCheck: Initialized with checkEmailExists function:", !!checkEmailExists, typeof checkEmailExists);
+  console.log("[useEmailCheck] Hook initialized with checkEmailExists function:", !!checkEmailExists);
 
   return {
     emailAlreadyExists,
