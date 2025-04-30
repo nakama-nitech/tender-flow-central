@@ -13,11 +13,25 @@ export const RedirectHandler = () => {
   const [redirectAttempts, setRedirectAttempts] = useState(0);
 
   useEffect(() => {
+    console.log('RedirectHandler state:', {
+      isLoading,
+      error,
+      user,
+      userRole,
+      isAdmin,
+      isSupplier,
+      redirectAttempts
+    });
+
     // Don't proceed if we're still loading or already redirecting
-    if (isRedirecting || isLoading) return;
+    if (isRedirecting || isLoading) {
+      console.log('Waiting for loading to complete or redirect to finish');
+      return;
+    }
 
     // Handle errors
     if (error) {
+      console.error('Auth error:', error);
       toast({
         title: "Authentication Error",
         description: error,
@@ -29,12 +43,14 @@ export const RedirectHandler = () => {
 
     // If no user, redirect to auth
     if (!user) {
+      console.log('No user found, redirecting to auth');
       navigate('/auth');
       return;
     }
 
     // If we have a user but no role yet, wait a bit and try again
     if (!userRole && redirectAttempts < 5) {
+      console.log(`Waiting for role (attempt ${redirectAttempts + 1}/5)`);
       const timer = setTimeout(() => {
         setRedirectAttempts(prev => prev + 1);
       }, 1000);
@@ -43,9 +59,10 @@ export const RedirectHandler = () => {
 
     // If we still don't have a role after multiple attempts, show error
     if (!userRole) {
+      console.error('Failed to determine role after multiple attempts');
       toast({
         title: "Authentication Error",
-        description: "Unable to determine your role. Please contact support.",
+        description: "Unable to determine your role. Please try logging in again or contact support if the issue persists.",
         variant: "destructive",
       });
       navigate('/auth');
@@ -53,22 +70,25 @@ export const RedirectHandler = () => {
     }
 
     setIsRedirecting(true);
+    console.log('Redirecting based on role:', userRole);
 
     // Determine the appropriate dashboard based on role
     if (isAdmin) {
+      console.log('Redirecting to admin dashboard');
       navigate('/admin', { replace: true });
       toast({
         title: "Welcome back, Admin",
         description: "You have been redirected to the admin dashboard",
       });
     } else if (isSupplier) {
+      console.log('Redirecting to supplier dashboard');
       navigate('/supplier/dashboard', { replace: true });
       toast({
         title: "Welcome back",
         description: "You have been redirected to your dashboard",
       });
     } else {
-      // Default to supplier dashboard if role is not set
+      console.log('No specific role found, defaulting to supplier dashboard');
       navigate('/supplier/dashboard', { replace: true });
       toast({
         title: "Welcome",

@@ -18,6 +18,8 @@ export function useAuth(requiredRole?: UserRole) {
   // Consolidated function to fetch or create user profile
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
+      
       // Try to fetch existing profile
       const { data: profile, error: fetchError } = await supabase
         .from('profiles')
@@ -26,7 +28,10 @@ export function useAuth(requiredRole?: UserRole) {
         .single();
 
       if (fetchError) {
+        console.log('Profile fetch error:', fetchError);
+        
         if (fetchError.code === 'PGRST116') {
+          console.log('Profile not found, creating new one');
           // Profile doesn't exist, create one
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
@@ -39,12 +44,18 @@ export function useAuth(requiredRole?: UserRole) {
             .select()
             .single();
 
-          if (createError) throw createError;
+          if (createError) {
+            console.error('Profile creation error:', createError);
+            throw createError;
+          }
+          
+          console.log('New profile created:', newProfile);
           return newProfile;
         }
         throw fetchError;
       }
 
+      console.log('Existing profile found:', profile);
       return profile;
     } catch (err) {
       console.error("Error in fetchUserProfile:", err);
@@ -89,12 +100,18 @@ export function useAuth(requiredRole?: UserRole) {
 
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
         setIsLoading(true);
         setError(null);
 
         // Get current session
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw sessionError;
+        }
+
+        console.log('Current session:', currentSession);
 
         if (currentSession?.user) {
           setSession(currentSession);
@@ -103,10 +120,15 @@ export function useAuth(requiredRole?: UserRole) {
           // Fetch or create profile
           const profile = await fetchUserProfile(currentSession.user.id);
           if (profile) {
+            console.log('Setting user role:', profile.role);
             setUserRole(profile.role);
+          } else {
+            console.error('No profile returned for user');
+            setError('Failed to load user profile');
           }
         }
       } catch (err: any) {
+        console.error('Auth initialization error:', err);
         if (mounted) {
           setError(err.message || "Failed to initialize authentication");
           toast({
@@ -128,13 +150,18 @@ export function useAuth(requiredRole?: UserRole) {
     authListener = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
 
+      console.log('Auth state changed:', event, newSession);
       setSession(newSession);
 
       if (event === 'SIGNED_IN' && newSession?.user) {
         setUser(newSession.user);
         const profile = await fetchUserProfile(newSession.user.id);
         if (profile) {
+          console.log('Setting user role from auth state change:', profile.role);
           setUserRole(profile.role);
+        } else {
+          console.error('No profile returned after sign in');
+          setError('Failed to load user profile after sign in');
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
