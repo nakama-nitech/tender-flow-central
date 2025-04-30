@@ -8,8 +8,10 @@ export const useEmailCheck = () => {
   
   // Define checkEmailExists using useCallback to maintain reference stability
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
-    console.log("checkEmailExists called with:", email);
+    console.log("useEmailCheck: checkEmailExists called with email:", email);
+    
     if (!email || !email.trim() || isChecking) {
+      console.log("useEmailCheck: email empty or already checking, returning current state:", emailAlreadyExists);
       return emailAlreadyExists;
     }
     
@@ -25,30 +27,33 @@ export const useEmailCheck = () => {
         }
       });
       
-      console.log("Email check response:", data, error);
+      console.log("useEmailCheck: Email check response:", data, error);
       
       // If we get an error about email already registered, the email exists
       if (error && (
         error.message.includes("already been registered") ||
         error.message.includes("Email already registered")
       )) {
-        console.log("Email already exists in the system");
+        console.log("useEmailCheck: Email already exists in the system");
         setEmailAlreadyExists(true);
         return true;
       } else {
-        console.log("Email doesn't exist in the system");
+        console.log("useEmailCheck: Email doesn't exist in the system");
         setEmailAlreadyExists(false);
         return false;
       }
     } catch (err) {
       // If we get an error, log it but assume the email doesn't exist
       // to let the registration attempt go through
-      console.error("Error checking email:", err);
+      console.error("useEmailCheck: Error checking email:", err);
       return emailAlreadyExists;
     } finally {
       setIsChecking(false);
     }
   }, [emailAlreadyExists, isChecking]);
+
+  // Add debug logging to verify function existence when the hook is first used
+  console.log("useEmailCheck: Initialized with checkEmailExists function:", !!checkEmailExists, typeof checkEmailExists);
 
   return {
     emailAlreadyExists,

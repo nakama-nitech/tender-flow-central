@@ -34,7 +34,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   
   // Add debug logging to verify function presence
-  console.log("Step1AccountDetails received checkEmailExists:", !!checkEmailExists, typeof checkEmailExists);
+  console.log("Step1AccountDetails: checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
   
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
@@ -42,26 +42,31 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     ) : null;
   };
   
-  // Define a safer email check handler with error handling and a fallback
+  // Define a safer email check handler with proper fallback
   const handleEmailBlur = useCallback(async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
-    if (email && email.trim()) {
-      console.log("Checking email existence for:", email);
-      setIsCheckingEmail(true);
-      try {
-        // Create a safer function call with fallback
-        if (typeof checkEmailExists === 'function') {
-          await checkEmailExists(email);
-        } else {
-          console.error("checkEmailExists is not available in Step1AccountDetails");
-        }
-      } catch (err) {
-        console.error("Error in handleEmailBlur:", err);
-      } finally {
-        setIsCheckingEmail(false);
-      }
+    if (!email || !email.trim() || isCheckingEmail) {
+      return;
     }
-  }, [checkEmailExists]);
+    
+    console.log("handleEmailBlur: Checking email existence for:", email);
+    setIsCheckingEmail(true);
+    
+    try {
+      // Create a safer function call with fallback
+      if (typeof checkEmailExists === 'function') {
+        await checkEmailExists(email);
+        console.log("Email check completed successfully");
+      } else {
+        // If the function doesn't exist, log an error but don't break the UI
+        console.error("checkEmailExists function not available in Step1AccountDetails");
+      }
+    } catch (err) {
+      console.error("Error in handleEmailBlur:", err);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }, [checkEmailExists, isCheckingEmail]);
   
   return (
     <div className="space-y-6">

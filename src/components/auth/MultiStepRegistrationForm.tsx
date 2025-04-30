@@ -42,7 +42,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
   // Add debug logging to verify function presence
-  console.log("MultiStepRegistrationForm checkEmailExists is defined:", !!checkEmailExists, typeof checkEmailExists);
+  console.log("MultiStepRegistrationForm: checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
   
   const nextStep = async () => {
     let canProceed = true;
@@ -61,18 +61,19 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       // Check if email exists before proceeding
       if (registerForm.email && !errors.email) {
         try {
-          // Create a safer function call with fallback
-          const checkEmail = typeof checkEmailExists === 'function' 
-            ? checkEmailExists 
-            : async () => {
-                console.error("checkEmailExists function is missing in MultiStepRegistrationForm");
-                return false;
-              };
+          console.log("nextStep: About to check email existence");
           
-          const exists = await checkEmail(registerForm.email);
-          if (exists) {
-            console.log("Email exists, preventing next step");
-            canProceed = false;
+          if (typeof checkEmailExists === 'function') {
+            console.log("nextStep: checkEmailExists is a function, calling it");
+            const exists = await checkEmailExists(registerForm.email);
+            if (exists) {
+              console.log("nextStep: Email exists, preventing next step");
+              canProceed = false;
+            }
+          } else {
+            console.error("nextStep: checkEmailExists is not a function!", checkEmailExists);
+            // If checkEmailExists is not available, we'll proceed anyway
+            // but log a warning
           }
         } catch (error) {
           console.error("Error checking email in nextStep:", error);

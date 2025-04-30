@@ -31,7 +31,7 @@ export const useRegisterForm = (
   const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
   const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
   
-  // Use our custom hooks
+  // Get email check functionality from our custom hook
   const { 
     emailAlreadyExists, 
     setEmailAlreadyExists, 
@@ -48,22 +48,34 @@ export const useRegisterForm = (
     registerFormErrors
   );
 
-  console.log("useRegisterForm checkEmailExists is defined:", !!checkEmailExists, typeof checkEmailExists);
+  // Add debug logging to verify the function exists
+  console.log("useRegisterForm: checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
+
+  // Create a stable wrapper around checkEmailExists to prevent unnecessary rerenders
+  // and ensure we're always passing a function even if something goes wrong
+  const safeCheckEmailExists = useCallback(async (email: string): Promise<boolean> => {
+    console.log("safeCheckEmailExists called with:", email);
+    if (typeof checkEmailExists !== 'function') {
+      console.error("checkEmailExists is not available in useRegisterForm!", checkEmailExists);
+      return false;
+    }
+    
+    try {
+      return await checkEmailExists(email);
+    } catch (error) {
+      console.error("Error in safeCheckEmailExists:", error);
+      return false;
+    }
+  }, [checkEmailExists]);
 
   // Wrap the onSubmit function in useCallback to prevent unnecessary rerenders
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Ensure we have a valid checkEmailExists function
-    if (typeof checkEmailExists !== 'function') {
-      console.error("checkEmailExists is not a function:", checkEmailExists);
-      return;
-    }
-    
-    // Check if email exists before proceeding with validation
+    // Use our safe wrapper function instead
     if (registerForm.email) {
       try {
-        const emailExists = await checkEmailExists(registerForm.email);
+        const emailExists = await safeCheckEmailExists(registerForm.email);
         
         // If email exists, don't proceed with form validation and submission
         if (emailExists) {
@@ -84,7 +96,7 @@ export const useRegisterForm = (
     window.registerFormState = registerForm;
     
     await handleRegisterSubmit(e);
-  }, [registerForm, checkEmailExists, validateRegisterForm, handleRegisterSubmit]);
+  }, [registerForm, safeCheckEmailExists, validateRegisterForm, handleRegisterSubmit]);
 
   return {
     registerForm,
@@ -94,7 +106,7 @@ export const useRegisterForm = (
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists,
+    checkEmailExists: safeCheckEmailExists, // Return our safe wrapper instead of the original
     isChecking,
     loginForm,
     setLoginForm,
