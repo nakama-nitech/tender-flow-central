@@ -10,10 +10,13 @@ export const RedirectHandler = () => {
   const { isLoading, error, user, userRole, isAdmin, isSupplier } = useAuth();
   const { toast } = useToast();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectAttempts, setRedirectAttempts] = useState(0);
 
   useEffect(() => {
+    // Don't proceed if we're still loading or already redirecting
     if (isRedirecting || isLoading) return;
 
+    // Handle errors
     if (error) {
       toast({
         title: "Authentication Error",
@@ -24,7 +27,27 @@ export const RedirectHandler = () => {
       return;
     }
 
+    // If no user, redirect to auth
     if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    // If we have a user but no role yet, wait a bit and try again
+    if (!userRole && redirectAttempts < 5) {
+      const timer = setTimeout(() => {
+        setRedirectAttempts(prev => prev + 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    // If we still don't have a role after multiple attempts, show error
+    if (!userRole) {
+      toast({
+        title: "Authentication Error",
+        description: "Unable to determine your role. Please contact support.",
+        variant: "destructive",
+      });
       navigate('/auth');
       return;
     }
@@ -52,7 +75,7 @@ export const RedirectHandler = () => {
         description: "You have been redirected to your dashboard",
       });
     }
-  }, [isLoading, error, user, isAdmin, isSupplier, navigate, toast, isRedirecting]);
+  }, [isLoading, error, user, userRole, isAdmin, isSupplier, navigate, toast, isRedirecting, redirectAttempts]);
 
   if (isLoading) {
     return (

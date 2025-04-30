@@ -2,12 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Database } from '@/integrations/supabase/types';
 
-export function useAuth(requiredRole?: 'admin' | 'supplier') {
+type UserRole = Database['public']['Enums']['user_role'];
+
+export function useAuth(requiredRole?: UserRole) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +22,7 @@ export function useAuth(requiredRole?: 'admin' | 'supplier') {
       const { data: profile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (fetchError) {
@@ -28,7 +31,7 @@ export function useAuth(requiredRole?: 'admin' | 'supplier') {
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert([{ 
-              user_id: userId, 
+              id: userId, 
               role: 'supplier',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -82,7 +85,7 @@ export function useAuth(requiredRole?: 'admin' | 'supplier') {
   // Initialize auth state
   useEffect(() => {
     let mounted = true;
-    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
+    let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
     const initializeAuth = async () => {
       try {
@@ -141,8 +144,8 @@ export function useAuth(requiredRole?: 'admin' | 'supplier') {
 
     return () => {
       mounted = false;
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
+      if (authListener?.data.subscription) {
+        authListener.data.subscription.unsubscribe();
       }
     };
   }, [toast]);
