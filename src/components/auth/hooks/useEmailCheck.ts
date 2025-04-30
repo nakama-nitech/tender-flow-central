@@ -6,13 +6,13 @@ export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   
-  // Define checkEmailExists using useCallback to maintain reference stability
+  // Define checkEmailExists using useCallback but avoid the circular reference
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
     console.log("[useEmailCheck] checkEmailExists called with email:", email);
     
     if (!email || !email.trim()) {
-      console.log("[useEmailCheck] Email empty, returning current state:", emailAlreadyExists);
-      return emailAlreadyExists;
+      console.log("[useEmailCheck] Email empty, returning false");
+      return false;
     }
     
     if (isChecking) {
@@ -32,7 +32,7 @@ export const useEmailCheck = () => {
       
       if (error) {
         console.error("[useEmailCheck] Error checking email existence:", error);
-        return emailAlreadyExists;
+        return false;
       }
       
       const exists = !!data;
@@ -41,11 +41,11 @@ export const useEmailCheck = () => {
       return exists;
     } catch (err) {
       console.error("[useEmailCheck] Error checking email:", err);
-      return emailAlreadyExists;
+      return false;
     } finally {
       setIsChecking(false);
     }
-  }, [emailAlreadyExists, isChecking]);
+  }, [isChecking]); // Remove emailAlreadyExists from dependencies to avoid circular reference
 
   return {
     emailAlreadyExists,
