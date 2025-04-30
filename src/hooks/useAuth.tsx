@@ -46,6 +46,21 @@ export function useAuth(requiredRole?: UserRole) {
 
           if (createError) {
             console.error('Profile creation error:', createError);
+            if (createError.code === '23505') { // Unique violation
+              console.log('Profile already exists, retrying fetch');
+              // Retry fetching the profile
+              const { data: retryProfile, error: retryError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+              
+              if (retryError) {
+                console.error('Retry fetch error:', retryError);
+                throw retryError;
+              }
+              return retryProfile;
+            }
             throw createError;
           }
           
@@ -55,10 +70,24 @@ export function useAuth(requiredRole?: UserRole) {
         throw fetchError;
       }
 
+      if (!profile) {
+        console.error('Profile fetch returned null data');
+        throw new Error('Profile data is null');
+      }
+
       console.log('Existing profile found:', profile);
       return profile;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error in fetchUserProfile:", err);
+      if (err.message) {
+        console.error("Error message:", err.message);
+      }
+      if (err.code) {
+        console.error("Error code:", err.code);
+      }
+      if (err.details) {
+        console.error("Error details:", err.details);
+      }
       return null;
     }
   };
@@ -124,16 +153,18 @@ export function useAuth(requiredRole?: UserRole) {
             setUserRole(profile.role);
           } else {
             console.error('No profile returned for user');
-            setError('Failed to load user profile');
+            setError('Failed to load user profile. Please try logging in again.');
           }
         }
       } catch (err: any) {
         console.error('Auth initialization error:', err);
         if (mounted) {
-          setError(err.message || "Failed to initialize authentication");
+          const errorMessage = err.message || "Failed to initialize authentication";
+          console.error('Setting error state:', errorMessage);
+          setError(errorMessage);
           toast({
             title: "Authentication Error",
-            description: err.message || "Failed to authenticate user",
+            description: errorMessage,
             variant: "destructive",
           });
         }
