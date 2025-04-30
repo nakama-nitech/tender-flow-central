@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Search, CheckCircle, XCircle, Eye, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Supplier {
   id: string;
@@ -33,7 +32,7 @@ const AdminSupplierList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin } = useAuth('admin');
   
   const { data: suppliers, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['suppliers'],

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useTenderBids } from '@/hooks/admin/useTenderBids';
 import { Bid } from '@/types/tender';
 import { format } from 'date-fns';
@@ -60,7 +59,7 @@ const getBidStatusBadge = (status: Bid['status']) => {
 };
 
 const AdminTenderBids: React.FC = () => {
-  useAdminAuth(); // This ensures only admins can access this page
+  useAuth('admin'); // This ensures only admins can access this page
   const navigate = useNavigate();
   const { tenderId } = useParams<{ tenderId: string }>();
   const { bids, isLoading, error, updateBidStatus, tender, refreshBids } = useTenderBids(tenderId!);

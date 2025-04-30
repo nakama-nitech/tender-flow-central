@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
@@ -6,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-// import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
-  const { isLoading, error, userRole, handleRetry, handleSignOut } = useAdminAuth();
+  const { isLoading, error, userRole, handleSignOut, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
 
   const onSignOut = async () => {
@@ -42,22 +41,15 @@ const AdminLayout = () => {
             >
               Back to login
             </Button>
-            <Button 
-              onClick={handleRetry}
-              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
-            >
-              Retry
-            </Button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Remove this redirect to allow admins to use supplier view
-  // if (userRole && userRole !== 'admin') {
-  //   return <Navigate to="/supplier/dashboard" replace />;
-  // }
+  if (!isAdmin) {
+    return <Navigate to="/supplier/dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen flex w-full bg-gradient-to-r from-gray-50 to-slate-100">

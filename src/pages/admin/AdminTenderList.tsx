@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { TenderCategory, TenderStatus, Tender } from '@/types/tender';
 import { supabase } from '@/integrations/supabase/client';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { TenderListHeader } from '@/components/admin/tenders/TenderListHeader';
 import { TenderFilters } from '@/components/admin/tenders/TenderFilters';
 import { TenderCard } from '@/components/admin/tenders/TenderCard';
@@ -12,7 +11,7 @@ import { EmptyTenderState } from '@/components/admin/tenders/EmptyTenderState';
 import { LoadingState } from '@/components/admin/tenders/LoadingState';
 
 const AdminTenderList: React.FC = () => {
-  useAdminAuth(); // This ensures only admins can access this page
+  useAuth('admin'); // This ensures only admins can access this page
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
