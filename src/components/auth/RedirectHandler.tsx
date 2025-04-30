@@ -1,5 +1,4 @@
-
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,92 +10,73 @@ export const RedirectHandler = () => {
   const location = useLocation();
   const { isLoading, error, user, userRole, session } = useAuth();
   const { toast } = useToast();
-  const [hasRedirected, setHasRedirected] = useState(false);
-  const [redirectTimer, setRedirectTimer] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Create a memoized redirect function to prevent unnecessary rerenders
-  const redirectUser = useCallback(() => {
-    // Only attempt redirection if we have all the information needed and haven't already redirected
-    if (!isLoading && !hasRedirected) {
-      console.log("RedirectHandler: Redirection check - User:", !!user, "Role:", userRole);
-      
-      // Clear any existing timers
-      if (redirectTimer !== null) {
-        window.clearTimeout(redirectTimer);
-      }
+  // Main redirection effect
+  useEffect(() => {
+    // Guard against running this effect while already redirecting
+    if (isRedirecting) return;
 
+    // Only try to redirect when we have enough information
+    if (!isLoading) {
+      // Debug logs
+      console.log("RedirectHandler: Auth state -", { 
+        user: !!user, 
+        userRole, 
+        isLoading, 
+        retryCount 
+      });
+
+      // Handle the authenticated user case
       if (user) {
-        // We have a user, redirect based on role
-        console.log("RedirectHandler: Redirecting authenticated user with role:", userRole);
-        
-        // Use a slight delay before redirecting to ensure all auth states are settled
-        const timer = window.setTimeout(() => {
-          setHasRedirected(true);
+        // If we have a user but no role and haven't retried too many times, wait
+        if (!userRole && retryCount < 5) {
+          console.log(`Role not yet available, retry attempt ${retryCount + 1}...`);
           
-          if (userRole === 'admin') {
-            navigate('/admin', { replace: true });
-            toast({
-              title: "Welcome back, Admin",
-              description: "You have been redirected to the admin dashboard",
-            });
-          } else if (userRole === 'supplier') {
-            // Always redirect supplier to the supplier dashboard
-            console.log("Redirecting supplier to dashboard");
-            navigate('/supplier/dashboard', { replace: true });
-            toast({
-              title: "Welcome back, Supplier",
-              description: "You have been redirected to the supplier dashboard",
-            });
-          } else if (user && !userRole) {
-            // If we have a user but no role yet, wait a moment longer
-            console.log("User found but role not yet determined, waiting...");
-            setHasRedirected(false); // Reset to allow another attempt
-          } else {
-            // If role is not recognized, default to supplier dashboard
-            console.warn("Unknown user role:", userRole, "defaulting to supplier dashboard");
-            navigate('/supplier/dashboard', { replace: true });
-            toast({
-              title: "Welcome",
-              description: "You have been logged in successfully",
-            });
-          }
-        }, 100);
+          // Set a timer to retry with exponential backoff
+          const retryTimer = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, Math.min(500 * Math.pow(1.5, retryCount), 3000));
+          
+          return () => clearTimeout(retryTimer);
+        }
         
-        setRedirectTimer(timer);
-      } else if (!isLoading && !user && !error && location.pathname === '/redirect' && !hasRedirected) {
-        // No user found, redirect to auth
-        console.log("RedirectHandler: No user found, redirecting to auth page");
-        setHasRedirected(true);
+        // We have a user, proceed with redirection based on role
+        console.log("Redirecting authenticated user with role:", userRole);
+        setIsRedirecting(true);
+        
+        if (userRole === 'admin') {
+          navigate('/admin', { replace: true });
+          toast({
+            title: "Welcome back, Admin",
+            description: "You have been redirected to the admin dashboard",
+          });
+        } else if (userRole === 'supplier') {
+          navigate('/supplier/dashboard', { replace: true });
+          toast({
+            title: "Welcome back, Supplier",
+            description: "You have been redirected to the supplier dashboard",
+          });
+        } else {
+          // Default case - we have a user but role is still unknown or not supported
+          console.warn("Unknown/missing user role:", userRole, "defaulting to supplier dashboard");
+          navigate('/supplier/dashboard', { replace: true });
+          toast({
+            title: "Welcome",
+            description: "You have been logged in successfully",
+          });
+        }
+      } else {
+        // No authenticated user found, redirect to auth page
+        console.log("No authenticated user, redirecting to login");
+        setIsRedirecting(true);
         navigate('/auth', { replace: true });
       }
     }
-  }, [isLoading, user, userRole, navigate, error, toast, location.pathname, hasRedirected, redirectTimer]);
+  }, [isLoading, user, userRole, navigate, toast, retryCount, isRedirecting]);
 
-  useEffect(() => {
-    redirectUser();
-    
-    // Cleanup function
-    return () => {
-      if (redirectTimer !== null) {
-        window.clearTimeout(redirectTimer);
-      }
-    };
-  }, [redirectUser, redirectTimer]);
-
-  // Add a second effect for role-specific handling
-  useEffect(() => {
-    // If we have a user but the role is not set yet, wait and then try again
-    if (!isLoading && user && !userRole && !hasRedirected) {
-      console.log("User found but role not determined yet, setting timeout");
-      const roleCheckTimer = window.setTimeout(() => {
-        console.log("Checking role again");
-        setHasRedirected(false); // Reset so redirectUser can try again
-      }, 500);
-      
-      return () => window.clearTimeout(roleCheckTimer);
-    }
-  }, [isLoading, user, userRole, hasRedirected]);
-
+  // Display loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -106,6 +86,7 @@ export const RedirectHandler = () => {
     );
   }
 
+  // Display error state if there's an authentication error
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -117,10 +98,13 @@ export const RedirectHandler = () => {
     );
   }
 
+  // Default loading view while we redirect
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-      <p className="text-lg text-gray-700 animate-pulse">Redirecting you to your dashboard...</p>
+      <p className="text-lg text-gray-700 animate-pulse">
+        {retryCount > 0 ? `Finalizing your profile... (attempt ${retryCount})` : "Redirecting to your dashboard..."}
+      </p>
     </div>
   );
 };

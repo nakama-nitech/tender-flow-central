@@ -1,191 +1,154 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthState } from '@/hooks/useAuthState';
+import { useToast } from '@/hooks/use-toast';
 
-export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
-  // Use the core auth state for session management
-  const { 
-    isLoading: authLoading, 
-    error: authError, 
-    user, 
-    session, 
-    handleRetry, 
-    handleSignOut,
-    setError 
-  } = useAuthState();
-  
+export function useAuth(requiredRole?: 'admin' | 'supplier') {
+  const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [profileLoaded, setProfileLoaded] = useState(false);
-  const [loadingAttempts, setLoadingAttempts] = useState(0);
-  const [lastCheckTimestamp, setLastCheckTimestamp] = useState(0);
+  const [session, setSession] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Debounce profile checks to prevent excessive database calls
-  useEffect(() => {
-    if (!user) {
-      setUserRole(null);
-      setProfileLoaded(false);
-      return;
+  // Define a function to fetch user role from the profiles table
+  const fetchUserRole = async (userId: string) => {
+    try {
+      console.log("Fetching user role for user:", userId);
+      
+      // Assuming you have a profiles table with a role field
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching user role:", error);
+        throw error;
+      }
+      
+      if (data) {
+        console.log("User role data:", data);
+        return data.role;
+      } else {
+        console.warn("No role found for user:", userId);
+        return null;
+      }
+    } catch (err) {
+      console.error("Error in fetchUserRole:", err);
+      return null;
     }
+  };
 
-    if (profileLoaded) return;
-    
-    // Skip duplicate profile checks within a short time window
-    const now = Date.now();
-    if (now - lastCheckTimestamp < 2000) return;
-    
-    setLastCheckTimestamp(now);
-    
-    const checkUserRole = async () => {
+  useEffect(() => {
+    const getInitialSession = async () => {
       try {
-        setLoadingAttempts(prev => prev + 1);
-        console.log("Attempt", loadingAttempts + 1, "to determine role for user", user.id);
+        setIsLoading(true);
+        setError(null);
         
-        // First, check user metadata for role
-        const metadataRole = user.user_metadata?.role;
+        // Get the current session
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
-        if (metadataRole) {
-          console.log("Found role in user metadata:", metadataRole);
-          setUserRole(metadataRole);
-          setProfileLoaded(true);
-          return;
+        if (sessionError) {
+          throw sessionError;
         }
         
-        // If no role in metadata, check profiles table
-        console.log("Checking profiles table for user ID:", user.id);
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
+        setSession(currentSession);
         
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error("Error fetching profile data:", profileError);
-          throw profileError;
-        }
-        
-        if (profileData && profileData.role) {
-          console.log("User found in profiles table with role:", profileData.role);
-          setUserRole(profileData.role);
-          setProfileLoaded(true);
+        if (currentSession?.user) {
+          setUser(currentSession.user);
           
-          // Update metadata to cache the role
-          try {
-            await supabase.auth.updateUser({
-              data: { role: profileData.role }
-            });
-          } catch (e) {
-            console.warn("Could not update metadata with role:", e);
-          }
+          // Fetch the user's role
+          const role = await fetchUserRole(currentSession.user.id);
+          setUserRole(role);
+          console.log("Initial auth state:", { user: !!currentSession.user, role });
         } else {
-          // Check if user is in suppliers table
-          console.log("Checking suppliers table");
-          const { data: supplierData, error: supplierError } = await supabase
-            .from('suppliers')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-          
-          if (supplierError && supplierError.code !== 'PGRST116') {
-            console.error("Error fetching supplier data:", supplierError);
-            throw supplierError;
-          }
-          
-          if (supplierData) {
-            console.log("User found in suppliers table");
-            setUserRole('supplier');
-            setProfileLoaded(true);
-            
-            // Update metadata to cache the role
-            try {
-              await supabase.auth.updateUser({
-                data: { role: 'supplier' }
-              });
-            } catch (e) {
-              console.warn("Could not update metadata with role:", e);
-            }
-          } else {
-            // Default to supplier role if not found
-            console.log("User not found in role tables, defaulting to supplier");
-            setUserRole('supplier');
-            setProfileLoaded(true);
-            
-            // Try to create a profile entry
-            try {
-              await supabase.rpc('upsert_profile', {
-                user_id: user.id,
-                user_role: 'supplier',
-                first_name: '',
-                last_name: ''
-              });
-              
-              // Update metadata to cache the role
-              await supabase.auth.updateUser({
-                data: { role: 'supplier' }
-              });
-            } catch (e) {
-              console.warn("Could not create profile or update metadata:", e);
-            }
-          }
+          setUser(null);
+          setUserRole(null);
         }
-      } catch (error: any) {
-        console.error("Error determining user role:", error);
-        if (loadingAttempts >= 3) {
-          setError(error.message || "Failed to determine user role");
-        }
+      } catch (err: any) {
+        console.error("Auth initialization error:", err);
+        setError(err.message || "Failed to initialize authentication");
+        toast({
+          title: "Authentication Error",
+          description: err.message || "Failed to authenticate user",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    checkUserRole();
-  }, [user, loadingAttempts, lastCheckTimestamp, profileLoaded, setError]);
+    getInitialSession();
+    
+    // Set up the auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log("Auth state changed:", event, "Session exists:", !!newSession);
+      
+      setSession(newSession);
+      
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        setUser(newSession.user);
+        setIsLoading(true);
+        
+        try {
+          // Fetch the user's role when they sign in
+          const role = await fetchUserRole(newSession.user.id);
+          setUserRole(role);
+          console.log("User signed in, role:", role);
+        } catch (err) {
+          console.error("Error fetching user role on sign-in:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserRole(null);
+        console.log("User signed out");
+      }
+    });
 
-  // Memoize role checking functions to prevent unnecessary re-renders
-  const hasRequiredRole = useCallback((): boolean => {
+    return () => {
+      // Clean up the auth listener
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, [toast]);
+
+  // Function to check if the user has the required role
+  const hasRequiredRole = () => {
     if (!requiredRole) return true;
-    if (!userRole) return false;
-    
-    // Special case: admins can access supplier routes
-    if (requiredRole === 'supplier' && userRole === 'admin') {
-      return true;
-    }
-    
     return userRole === requiredRole;
-  }, [requiredRole, userRole]);
+  };
 
-  // Add isAdmin function for components that need it
-  const isAdmin = useCallback((): boolean => {
-    return userRole === 'admin';
-  }, [userRole]);
-
-  // Calculate final loading state - only done loading when auth AND profile are loaded
-  const isLoading = useMemo(() => {
-    // If auth is still loading, we're loading
-    if (authLoading) return true;
-    
-    // If auth finished loading and there's no user, we're done loading
-    if (!user) return false;
-    
-    // If we have a user but no profile and haven't reached max attempts, we're still loading
-    if (user && !profileLoaded && loadingAttempts < 5) return true;
-    
-    // Otherwise we're done loading
-    return false;
-  }, [authLoading, user, profileLoaded, loadingAttempts]);
-
-  // Consolidated error handling
-  const error = useMemo(() => {
-    return authError;
-  }, [authError]);
+  // Function to manually refresh the user's role
+  const refreshRole = async () => {
+    if (user) {
+      try {
+        setIsLoading(true);
+        const role = await fetchUserRole(user.id);
+        setUserRole(role);
+        return role;
+      } catch (err) {
+        console.error("Error refreshing user role:", err);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    return null;
+  };
 
   return {
+    user,
+    userRole,
+    session,
     isLoading,
     error,
-    user,
-    session,
-    userRole,
     hasRequiredRole,
-    handleRetry,
-    handleSignOut,
-    setError,
-    isAdmin
+    refreshRole
   };
-};
+}
