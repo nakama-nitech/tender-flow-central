@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Tender, TenderStatus } from '@/types/tender';
 
 export const useTenderDetails = (tenderId: string) => {
-  const [tender, setTender] = useState<any>(null);
+  const [tender, setTender] = useState<Tender | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -26,7 +27,7 @@ export const useTenderDetails = (tenderId: string) => {
       
       if (error) throw error;
       
-      setTender(data);
+      setTender(data as Tender);
     } catch (err) {
       console.error('Error fetching tender details:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch tender details');
@@ -40,7 +41,7 @@ export const useTenderDetails = (tenderId: string) => {
     }
   };
   
-  const updateTenderStatus = async (status: string) => {
+  const updateTenderStatus = async (status: TenderStatus) => {
     try {
       const { error } = await supabase
         .from('tenders')
