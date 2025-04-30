@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTenderDetails } from '../../hooks/useTenderDetails';
 
@@ -13,6 +14,12 @@ const AdminTenderDetails: React.FC = () => {
     error: tenderError, 
     updateTenderStatus 
   } = useTenderDetails(tenderId!);
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      navigate('/auth');
+    }
+  }, [authLoading, isAdmin, navigate]);
 
   return (
     <div>Admin Tender Details</div>

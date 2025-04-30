@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -19,38 +20,6 @@ const AdminTenderList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<TenderCategory[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  
-  // Fetch tenders from Supabase
-  useEffect(() => {
-    const fetchTenders = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase.from('tenders').select('*');
-        
-        if (error) throw error;
-        
-        // Map database fields to our interface
-        const formattedTenders: Tender[] = data?.map(tender => ({
-          ...tender,
-          createdAt: tender.created_at,
-          created_by: tender.created_by
-        })) || [];
-        
-        setTenders(formattedTenders);
-      } catch (err: any) {
-        console.error('Error fetching tenders:', err);
-        toast({
-          title: 'Error',
-          description: err.message || 'Failed to load tenders',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchTenders();
-  }, [toast]);
   
   // Filter tenders based on search term and selected filters
   const filteredTenders = tenders.filter((tender) => {
@@ -79,6 +48,13 @@ const AdminTenderList: React.FC = () => {
         : [...prev, category]
     );
   };
+
+  useEffect(() => {
+    // Redirect if not admin
+    if (!authLoading && !isAdmin) {
+      navigate('/auth');
+    }
+  }, [authLoading, isAdmin, navigate]);
 
   return (
     <div className="space-y-6">

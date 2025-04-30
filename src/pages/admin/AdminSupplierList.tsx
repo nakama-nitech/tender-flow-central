@@ -49,7 +49,7 @@ const AdminSupplierList = () => {
       
       return data as Supplier[];
     },
-    enabled: !!isAdmin()
+    enabled: !!isAdmin
   });
 
   const filteredSuppliers = suppliers?.filter(supplier => 

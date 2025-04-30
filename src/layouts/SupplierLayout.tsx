@@ -11,8 +11,13 @@ import { useSupplierAuth } from '@/hooks/useSupplierAuth';
 const SupplierLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
-  const { isLoading, error, userRole, handleRetry, handleSignOut } = useSupplierAuth();
+  const { isLoading, error, userRole, handleSignOut } = useSupplierAuth();
   const navigate = useNavigate();
+
+  const handleRetry = () => {
+    // Refresh the page to retry authentication
+    window.location.reload();
+  };
 
   const onSignOut = async () => {
     await handleSignOut();
