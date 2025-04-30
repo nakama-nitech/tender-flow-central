@@ -5,12 +5,12 @@ import { useNavigate } from 'react-router-dom';
 const AdminUsers: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
-
-  // ... rest of the component code ...
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   return (
-    // ... render component code ...
+    <div>Admin Users</div>
   );
 };
 
-export default AdminUsers; 
+export default AdminUsers;

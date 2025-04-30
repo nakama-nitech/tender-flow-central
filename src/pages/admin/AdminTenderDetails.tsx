@@ -7,13 +7,16 @@ const AdminTenderDetails: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
   const { tenderId } = useParams<{ tenderId: string }>();
-  const { tender, isLoading, error, updateTenderStatus } = useTenderDetails(tenderId!);
-
-  // ... rest of the component code ...
+  const { 
+    tender, 
+    isLoading: tenderLoading, 
+    error: tenderError, 
+    updateTenderStatus 
+  } = useTenderDetails(tenderId!);
 
   return (
-    // ... render component code ...
+    <div>Admin Tender Details</div>
   );
 };
 
-export default AdminTenderDetails; 
+export default AdminTenderDetails;

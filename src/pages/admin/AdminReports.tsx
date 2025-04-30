@@ -5,12 +5,25 @@ import { useNavigate } from 'react-router-dom';
 const AdminReports: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
+  const [reportsLoading, setReportsLoading] = useState(true);
+  const [reportsError, setReportsError] = useState<string | null>(null);
 
-  // ... rest of the component code ...
+  useEffect(() => {
+    if (!authLoading) {
+      setReportsLoading(false);
+    }
+    if (authError) {
+      setReportsError(authError);
+    }
+
+    if (!isAdmin) {
+      navigate('/auth');
+    }
+  }, [authLoading, authError, isAdmin, navigate]);
 
   return (
-    // ... render component code ...
+    <div>Admin Reports</div>
   );
 };
 
-export default AdminReports; 
+export default AdminReports;

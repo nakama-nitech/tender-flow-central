@@ -6,15 +6,13 @@ import { useTenderList } from '../../contexts/TenderListContext';
 const AdminDashboard: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
-  const { tenders, isLoading, error } = useTenderList();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // ... rest of the component code ...
+  const { tenders, isLoading: tendersLoading, error: tendersError } = useTenderList();
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   return (
-    // ... render code ...
+    <div>Admin Dashboard</div>
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
