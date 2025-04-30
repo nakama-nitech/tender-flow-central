@@ -6,6 +6,8 @@ import { Database } from '@/integrations/supabase/types';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
+const ADMIN_EMAILS = ['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com'];
+
 export function useAuth(requiredRole?: UserRole) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -14,6 +16,7 @@ export function useAuth(requiredRole?: UserRole) {
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Consolidated function to fetch or create user profile
   const fetchUserProfile = async (userId: string) => {
@@ -28,68 +31,55 @@ export function useAuth(requiredRole?: UserRole) {
         .single();
 
       if (fetchError) {
-        console.log('Profile fetch error:', fetchError);
-        
         if (fetchError.code === 'PGRST116') {
-          console.log('Profile not found, creating new one');
           // Profile doesn't exist, create one
-          const { data: newProfile, error: createError } = await supabase
+          const newProfile = {
+            id: userId,
+            role: 'supplier' as UserRole,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const { data, error: createError } = await supabase
             .from('profiles')
-            .insert([{ 
-              id: userId, 
-              role: 'supplier',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }])
+            .insert(newProfile)
             .select()
             .single();
 
-          if (createError) {
-            console.error('Profile creation error:', createError);
-            if (createError.code === '23505') { // Unique violation
-              console.log('Profile already exists, retrying fetch');
-              // Retry fetching the profile
-              const { data: retryProfile, error: retryError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-              
-              if (retryError) {
-                console.error('Retry fetch error:', retryError);
-                throw retryError;
-              }
-              return retryProfile;
-            }
-            throw createError;
-          }
-          
-          console.log('New profile created:', newProfile);
-          return newProfile;
+          if (createError) throw createError;
+          return data;
         }
         throw fetchError;
       }
 
-      if (!profile) {
-        console.error('Profile fetch returned null data');
-        throw new Error('Profile data is null');
-      }
-
-      console.log('Existing profile found:', profile);
       return profile;
     } catch (err: any) {
       console.error("Error in fetchUserProfile:", err);
-      if (err.message) {
-        console.error("Error message:", err.message);
-      }
-      if (err.code) {
-        console.error("Error code:", err.code);
-      }
-      if (err.details) {
-        console.error("Error details:", err.details);
-      }
       return null;
     }
+  };
+
+  // Determine user role based on multiple factors
+  const determineUserRole = async (user: any, profile: any): Promise<UserRole> => {
+    // Check if user is in admin emails list
+    if (user?.email && ADMIN_EMAILS.includes(user.email)) {
+      // Update profile to admin if not already
+      if (profile?.role !== 'admin') {
+        await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', user.id);
+      }
+      return 'admin';
+    }
+
+    // Return role from profile if exists
+    if (profile?.role) {
+      return profile.role;
+    }
+
+    // Default to supplier
+    return 'supplier';
   };
 
   // Handle sign out
@@ -149,8 +139,10 @@ export function useAuth(requiredRole?: UserRole) {
           // Fetch or create profile
           const profile = await fetchUserProfile(currentSession.user.id);
           if (profile) {
-            console.log('Setting user role:', profile.role);
-            setUserRole(profile.role);
+            // Determine user role
+            const role = await determineUserRole(currentSession.user, profile);
+            console.log('Setting user role:', role);
+            setUserRole(role);
           } else {
             console.error('No profile returned for user');
             setError('Failed to load user profile. Please try logging in again.');
@@ -171,6 +163,7 @@ export function useAuth(requiredRole?: UserRole) {
       } finally {
         if (mounted) {
           setIsLoading(false);
+          setIsInitialized(true);
         }
       }
     };
@@ -188,8 +181,9 @@ export function useAuth(requiredRole?: UserRole) {
         setUser(newSession.user);
         const profile = await fetchUserProfile(newSession.user.id);
         if (profile) {
-          console.log('Setting user role from auth state change:', profile.role);
-          setUserRole(profile.role);
+          const role = await determineUserRole(newSession.user, profile);
+          console.log('Setting user role from auth state change:', role);
+          setUserRole(role);
         } else {
           console.error('No profile returned after sign in');
           setError('Failed to load user profile after sign in');
@@ -223,6 +217,7 @@ export function useAuth(requiredRole?: UserRole) {
     hasRequiredRole,
     handleSignOut,
     isAdmin: userRole === 'admin',
-    isSupplier: userRole === 'supplier'
+    isSupplier: userRole === 'supplier',
+    isInitialized
   };
 }
