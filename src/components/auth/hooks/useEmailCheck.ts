@@ -1,24 +1,28 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface EmailCheckState {
+  emailAlreadyExists: boolean;
+  isChecking: boolean;
+}
+
 export const useEmailCheck = () => {
-  const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
+  const [state, setState] = useState<EmailCheckState>({
+    emailAlreadyExists: false,
+    isChecking: false
+  });
   
-  // Define checkEmailExists using useCallback to maintain reference stability
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
     console.log("useEmailCheck: checkEmailExists called with email:", email);
     
-    if (!email || !email.trim() || isChecking) {
-      console.log("useEmailCheck: email empty or already checking, returning current state:", emailAlreadyExists);
-      return emailAlreadyExists;
+    if (!email || !email.trim() || state.isChecking) {
+      console.log("useEmailCheck: email empty or already checking, returning current state:", state.emailAlreadyExists);
+      return state.emailAlreadyExists;
     }
     
     try {
-      setIsChecking(true);
-      // A different approach to check if email exists since signInWithOtp is causing issues
-      // Check if we can get an auth error when trying to sign up directly
+      setState(prev => ({ ...prev, isChecking: true }));
+      
       const { data, error } = await supabase.auth.signUp({
         email: email,
         password: `temp-${Date.now()}${Math.random()}`,
@@ -29,36 +33,28 @@ export const useEmailCheck = () => {
       
       console.log("useEmailCheck: Email check response:", data, error);
       
-      // If we get an error about email already registered, the email exists
-      if (error && (
+      const emailExists = error && (
         error.message.includes("already been registered") ||
         error.message.includes("Email already registered")
-      )) {
-        console.log("useEmailCheck: Email already exists in the system");
-        setEmailAlreadyExists(true);
-        return true;
-      } else {
-        console.log("useEmailCheck: Email doesn't exist in the system");
-        setEmailAlreadyExists(false);
-        return false;
-      }
+      );
+      
+      setState(prev => ({
+        ...prev,
+        emailAlreadyExists: emailExists,
+        isChecking: false
+      }));
+      
+      return emailExists;
     } catch (err) {
-      // If we get an error, log it but assume the email doesn't exist
-      // to let the registration attempt go through
       console.error("useEmailCheck: Error checking email:", err);
-      return emailAlreadyExists;
-    } finally {
-      setIsChecking(false);
+      setState(prev => ({ ...prev, isChecking: false }));
+      return state.emailAlreadyExists;
     }
-  }, [emailAlreadyExists, isChecking]);
-
-  // Add debug logging to verify function existence when the hook is first used
-  console.log("useEmailCheck: Initialized with checkEmailExists function:", !!checkEmailExists, typeof checkEmailExists);
+  }, [state.emailAlreadyExists, state.isChecking]);
 
   return {
-    emailAlreadyExists,
-    setEmailAlreadyExists,
-    checkEmailExists,
-    isChecking
+    emailAlreadyExists: state.emailAlreadyExists,
+    isChecking: state.isChecking,
+    checkEmailExists
   };
 };
