@@ -28,8 +28,8 @@ export const useAuthState = () => {
           console.log("User signed out");
           setSession(null);
           setUser(null);
-        } else if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && sessionData) {
-          console.log("User signed in or token refreshed");
+        } else if (sessionData) {
+          console.log("Auth event:", event, "with session");
           setSession(sessionData);
           setUser(sessionData.user);
         }
@@ -54,6 +54,8 @@ export const useAuthState = () => {
         
         if (!sessionData.session) {
           console.log("No active session");
+          setSession(null);
+          setUser(null);
           setIsLoading(false);
           return;
         }
@@ -61,6 +63,11 @@ export const useAuthState = () => {
         console.log("Active session found");
         setSession(sessionData.session);
         setUser(sessionData.session.user);
+        
+        // Also immediately check if there's cached role info in user metadata
+        const metadata = sessionData.session.user.user_metadata;
+        console.log("User metadata:", metadata);
+        
         setIsLoading(false);
       } catch (e) {
         if (!mounted) return;

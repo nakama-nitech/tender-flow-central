@@ -48,19 +48,17 @@ export const useRegisterForm = (
     registerFormErrors
   );
 
-  // Add debug logging to verify the function exists
-  console.log("useRegisterForm: checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
-
   // Create a stable wrapper around checkEmailExists to prevent unnecessary rerenders
   // and ensure we're always passing a function even if something goes wrong
   const safeCheckEmailExists = useCallback(async (email: string): Promise<boolean> => {
     console.log("safeCheckEmailExists called with:", email);
-    if (typeof checkEmailExists !== 'function') {
-      console.error("checkEmailExists is not available in useRegisterForm!", checkEmailExists);
-      return false;
+    if (!checkEmailExists) {
+      console.error("checkEmailExists is not available! Using fallback");
+      return false; // Fallback behavior
     }
     
     try {
+      // Call the actual function from useEmailCheck
       return await checkEmailExists(email);
     } catch (error) {
       console.error("Error in safeCheckEmailExists:", error);
@@ -72,8 +70,11 @@ export const useRegisterForm = (
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Use our safe wrapper function instead
-    if (registerForm.email) {
+    // Ensure the email check function exists
+    console.log("onSubmit: checkEmailExists available:", !!safeCheckEmailExists);
+    
+    // Use our safe wrapper function
+    if (registerForm.email && safeCheckEmailExists) {
       try {
         const emailExists = await safeCheckEmailExists(registerForm.email);
         
@@ -85,6 +86,8 @@ export const useRegisterForm = (
         console.error("Error checking if email exists:", error);
         // Continue with form submission even if email check fails
       }
+    } else {
+      console.warn("Cannot check if email exists - function not available or email empty");
     }
     
     if (!validateRegisterForm(registerForm)) {
@@ -92,11 +95,12 @@ export const useRegisterForm = (
     }
     
     // Store the form state in window for access in the submit handler
-    // This works around the TypeScript argument mismatch error
     window.registerFormState = registerForm;
     
     await handleRegisterSubmit(e);
   }, [registerForm, safeCheckEmailExists, validateRegisterForm, handleRegisterSubmit]);
+
+  console.log("useRegisterForm hook initialized with checkEmailExists:", !!checkEmailExists);
 
   return {
     registerForm,
@@ -106,7 +110,7 @@ export const useRegisterForm = (
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists: safeCheckEmailExists, // Return our safe wrapper instead of the original
+    checkEmailExists: safeCheckEmailExists, // Return our safe wrapper
     isChecking,
     loginForm,
     setLoginForm,

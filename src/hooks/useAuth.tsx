@@ -38,6 +38,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     const checkUserRole = async () => {
       try {
         setLoadingAttempts(prev => prev + 1);
+        console.log("Attempt", loadingAttempts + 1, "to determine role for user", user.id);
         
         // First, check user metadata for role
         const metadataRole = user.user_metadata?.role;
@@ -66,6 +67,15 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
           console.log("User found in profiles table with role:", profileData.role);
           setUserRole(profileData.role);
           setProfileLoaded(true);
+          
+          // Update metadata to cache the role
+          try {
+            await supabase.auth.updateUser({
+              data: { role: profileData.role }
+            });
+          } catch (e) {
+            console.warn("Could not update metadata with role:", e);
+          }
         } else {
           // Check if user is in suppliers table
           console.log("Checking suppliers table");
@@ -84,11 +94,37 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
             console.log("User found in suppliers table");
             setUserRole('supplier');
             setProfileLoaded(true);
+            
+            // Update metadata to cache the role
+            try {
+              await supabase.auth.updateUser({
+                data: { role: 'supplier' }
+              });
+            } catch (e) {
+              console.warn("Could not update metadata with role:", e);
+            }
           } else {
             // Default to supplier role if not found
             console.log("User not found in role tables, defaulting to supplier");
             setUserRole('supplier');
             setProfileLoaded(true);
+            
+            // Try to create a profile entry
+            try {
+              await supabase.rpc('upsert_profile', {
+                user_id: user.id,
+                user_role: 'supplier',
+                first_name: '',
+                last_name: ''
+              });
+              
+              // Update metadata to cache the role
+              await supabase.auth.updateUser({
+                data: { role: 'supplier' }
+              });
+            } catch (e) {
+              console.warn("Could not create profile or update metadata:", e);
+            }
           }
         }
       } catch (error: any) {
@@ -129,7 +165,7 @@ export const useAuth = (requiredRole?: 'admin' | 'supplier') => {
     if (!user) return false;
     
     // If we have a user but no profile and haven't reached max attempts, we're still loading
-    if (user && !profileLoaded && loadingAttempts < 3) return true;
+    if (user && !profileLoaded && loadingAttempts < 5) return true;
     
     // Otherwise we're done loading
     return false;
