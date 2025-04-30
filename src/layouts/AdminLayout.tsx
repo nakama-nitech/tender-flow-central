@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+// import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
