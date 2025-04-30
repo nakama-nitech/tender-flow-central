@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useRegisterForm } from './hooks/useRegisterForm';
@@ -6,7 +7,8 @@ import { CompanyType, Category, CountryLocations } from './RegisterFormTypes';
 import { Step1AccountDetails } from './registration-steps/Step1AccountDetails';
 import { Step2CompanyInfo } from './registration-steps/Step2CompanyInfo';
 import { Step3ContactCategories } from './registration-steps/Step3ContactCategories';
-import { Progress } from '@/components/ui/progress';
+import { RegistrationProgress } from './registration-steps/RegistrationProgress';
+import { RegistrationNavigation } from './registration-steps/RegistrationNavigation';
 
 interface MultiStepRegistrationFormProps {
   companyTypes: CompanyType[];
@@ -36,12 +38,6 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     loginForm,
     setLoginForm
   } = useRegisterForm(setSearchParams);
-  
-  // Log to verify checkEmailExists is provided
-  useEffect(() => {
-    console.log("[MultiStepRegistrationForm] checkEmailExists is available:", 
-      !!checkEmailExists, typeof checkEmailExists);
-  }, [checkEmailExists]);
   
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
@@ -128,10 +124,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
   
   return (
     <div className="space-y-6">
-      <div className="mb-8">
-        <h3 className="text-xl font-medium mb-2">Step {registerForm.currentStep} of 3</h3>
-        <Progress value={progressPercentage} className="h-2" />
-      </div>
+      <RegistrationProgress currentStep={registerForm.currentStep} progressPercentage={progressPercentage} />
       
       <form onSubmit={handleSubmit}>
         {registerForm.currentStep === 1 && (
@@ -170,52 +163,15 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           />
         )}
         
-        <div className="flex items-center justify-between mt-8">
-          <div className="flex items-center">
-            {registerForm.currentStep > 1 && (
-              <Button type="button" variant="outline" onClick={prevStep}>
-                Previous
-              </Button>
-            )}
-            {registerForm.currentStep === 1 && (
-              <div className="flex items-center">
-                <span className="text-sm">Already have an account?</span>
-                <Button variant="link" className="p-0 ml-1" type="button" onClick={() => {
-                  setSearchParams(params => {
-                    const newParams = new URLSearchParams(params);
-                    newParams.set('tab', 'login');
-                    return newParams;
-                  });
-                }}>
-                  Sign In
-                </Button>
-              </div>
-            )}
-          </div>
-          
-          {registerForm.currentStep < 3 ? (
-            <Button 
-              type="button" 
-              onClick={nextStep}
-              disabled={isSubmitting || isChecking || emailAlreadyExists}
-            >
-              {isChecking ? "Checking..." : "Next"}
-            </Button>
-          ) : (
-            <Button 
-              type="submit" 
-              disabled={isSubmitting} 
-              className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                  Creating account...
-                </>
-              ) : "Sign Up"}
-            </Button>
-          )}
-        </div>
+        <RegistrationNavigation 
+          currentStep={registerForm.currentStep}
+          prevStep={prevStep}
+          nextStep={nextStep}
+          isSubmitting={isSubmitting}
+          isChecking={isChecking}
+          emailAlreadyExists={emailAlreadyExists}
+          setSearchParams={setSearchParams}
+        />
       </form>
     </div>
   );

@@ -22,34 +22,24 @@ export const useEmailCheck = () => {
     
     try {
       setIsChecking(true);
-      // A different approach to check if email exists since signInWithOtp is causing issues
-      // Check if we can get an auth error when trying to sign up directly
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: `temp-${Date.now()}${Math.random()}`,
-        options: {
-          data: { checkOnly: true }
-        }
-      });
       
-      console.log("[useEmailCheck] Email check response:", data, error);
+      // Use a safer approach to check if email exists
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
       
-      // If we get an error about email already registered, the email exists
-      if (error && (
-        error.message.includes("already been registered") ||
-        error.message.includes("Email already registered")
-      )) {
-        console.log("[useEmailCheck] Email already exists in the system");
-        setEmailAlreadyExists(true);
-        return true;
-      } else {
-        console.log("[useEmailCheck] Email doesn't exist in the system");
-        setEmailAlreadyExists(false);
-        return false;
+      if (error) {
+        console.error("[useEmailCheck] Error checking email existence:", error);
+        return emailAlreadyExists;
       }
+      
+      const exists = !!data;
+      console.log("[useEmailCheck] Email exists check result:", exists);
+      setEmailAlreadyExists(exists);
+      return exists;
     } catch (err) {
-      // If we get an error, log it but assume the email doesn't exist
-      // to let the registration attempt go through
       console.error("[useEmailCheck] Error checking email:", err);
       return emailAlreadyExists;
     } finally {
@@ -57,12 +47,10 @@ export const useEmailCheck = () => {
     }
   }, [emailAlreadyExists, isChecking]);
 
-  console.log("[useEmailCheck] Hook initialized with checkEmailExists function:", !!checkEmailExists);
-
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
-    checkEmailExists, // Export the function so it can be used by other components
+    checkEmailExists,
     isChecking
   };
 };
