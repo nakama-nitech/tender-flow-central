@@ -35,7 +35,7 @@ export const useRegisterForm = (
   const { 
     emailAlreadyExists, 
     setEmailAlreadyExists, 
-    checkEmailExists, 
+    checkEmailExists: originalCheckEmailExists, 
     isChecking 
   } = useEmailCheck();
   
@@ -49,45 +49,54 @@ export const useRegisterForm = (
   );
 
   // Create a stable wrapper around checkEmailExists to prevent unnecessary rerenders
-  // and ensure we're always passing a function even if something goes wrong
-  const safeCheckEmailExists = useCallback(async (email: string): Promise<boolean> => {
-    console.log("safeCheckEmailExists called with:", email);
-    if (!checkEmailExists) {
-      console.error("checkEmailExists is not available! Using fallback");
-      return false; // Fallback behavior
+  const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
+    console.log("[useRegisterForm] checkEmailExists called with:", email);
+    
+    if (!email || !email.trim()) {
+      console.log("[useRegisterForm] Email empty, skipping check");
+      return false;
     }
     
     try {
-      // Call the actual function from useEmailCheck
-      return await checkEmailExists(email);
+      if (typeof originalCheckEmailExists !== 'function') {
+        console.error("[useRegisterForm] originalCheckEmailExists is not a function!");
+        return false;
+      }
+      
+      const exists = await originalCheckEmailExists(email);
+      console.log("[useRegisterForm] Email exists check result:", exists);
+      return exists;
     } catch (error) {
-      console.error("Error in safeCheckEmailExists:", error);
+      console.error("[useRegisterForm] Error in email check:", error);
       return false;
     }
-  }, [checkEmailExists]);
+  }, [originalCheckEmailExists]);
 
   // Wrap the onSubmit function in useCallback to prevent unnecessary rerenders
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Ensure the email check function exists
-    console.log("onSubmit: checkEmailExists available:", !!safeCheckEmailExists);
+    // Debug check - ensure the function exists
+    console.log("[useRegisterForm] onSubmit: checkEmailExists available:", !!checkEmailExists);
     
-    // Use our safe wrapper function
-    if (registerForm.email && safeCheckEmailExists) {
+    // Only check email if we have one
+    if (registerForm.email && typeof checkEmailExists === 'function') {
       try {
-        const emailExists = await safeCheckEmailExists(registerForm.email);
+        const emailExists = await checkEmailExists(registerForm.email);
         
         // If email exists, don't proceed with form validation and submission
         if (emailExists) {
+          console.log("[useRegisterForm] Email exists, stopping submission");
+          setRegisterFormErrors({
+            ...registerFormErrors,
+            email: 'Email is already registered'
+          });
           return;
         }
       } catch (error) {
-        console.error("Error checking if email exists:", error);
+        console.error("[useRegisterForm] Error checking email:", error);
         // Continue with form submission even if email check fails
       }
-    } else {
-      console.warn("Cannot check if email exists - function not available or email empty");
     }
     
     if (!validateRegisterForm(registerForm)) {
@@ -98,9 +107,7 @@ export const useRegisterForm = (
     window.registerFormState = registerForm;
     
     await handleRegisterSubmit(e);
-  }, [registerForm, safeCheckEmailExists, validateRegisterForm, handleRegisterSubmit]);
-
-  console.log("useRegisterForm hook initialized with checkEmailExists:", !!checkEmailExists);
+  }, [registerForm, checkEmailExists, validateRegisterForm, handleRegisterSubmit, registerFormErrors, setRegisterFormErrors]);
 
   return {
     registerForm,
@@ -110,7 +117,7 @@ export const useRegisterForm = (
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists: safeCheckEmailExists, // Return our safe wrapper
+    checkEmailExists,
     isChecking,
     loginForm,
     setLoginForm,

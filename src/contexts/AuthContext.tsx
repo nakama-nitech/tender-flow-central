@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ interface AuthContextType {
   isSupplier: boolean;
   handleSignOut: () => Promise<void>;
   hasRequiredRole: (role?: UserRole) => boolean;
+  handleRetry: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,42 +32,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadAttempts, setLoadAttempts] = useState(0);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
     try {
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-          const newProfile: ProfileInsert = {
-            id: userId,
-            role: 'supplier',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          const { data, error: createError } = await supabase
-            .from('profiles')
-            .insert(newProfile)
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          return data;
-        }
-        throw fetchError;
+      console.log("Fetching profile for user", userId);
+      
+      // First try to get the user role directly
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_profile_role', { user_id: userId });
+      
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+        throw roleError;
       }
+      
+      if (roleData) {
+        console.log("User role fetched successfully:", roleData);
+        setUserRole(roleData as UserRole);
+        return true;
+      }
+      
+      // If no role found, fallback to creating a default profile
+      const newProfile: ProfileInsert = {
+        id: userId,
+        role: 'supplier',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      return profile;
-    } catch (err) {
+      // Use RPC function to safely create profile
+      const { error: createError } = await supabase
+        .rpc('upsert_profile', {
+          user_id: userId,
+          user_role: 'supplier',
+          first_name: '',
+          last_name: ''
+        });
+
+      if (createError) {
+        console.error("Error creating profile:", createError);
+        throw createError;
+      }
+      
+      setUserRole('supplier');
+      return true;
+    } catch (err: any) {
       console.error("Error in fetchUserProfile:", err);
-      return null;
+      if (loadAttempts < 3) {
+        setLoadAttempts(prev => prev + 1);
+      } else {
+        setError("Failed to load your profile. Please try again.");
+        toast({
+          title: "Profile Error",
+          description: "Failed to load your profile. Please try again.",
+          variant: "destructive",
+        });
+      }
+      return false;
     }
-  };
+  }, [toast, loadAttempts]);
+
+  const handleRetry = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setError(null);
+    setIsLoading(true);
+    
+    try {
+      const success = await fetchUserProfile(user.id);
+      if (!success) {
+        throw new Error("Failed to load profile");
+      }
+    } catch (error: any) {
+      setError("Failed to load profile after retry");
+      toast({
+        title: "Retry Failed",
+        description: "Please sign out and sign in again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, fetchUserProfile, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -112,9 +161,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(currentSession);
           setUser(currentSession.user);
 
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (profile) {
-            setUserRole(profile.role);
+          // Process user profile outside the auth state change callback
+          try {
+            await fetchUserProfile(currentSession.user.id);
+          } catch (profileError) {
+            console.error("Profile loading error:", profileError);
+            // Handle profile loading error but don't break auth
           }
         }
       } catch (err: any) {
@@ -135,17 +187,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    authListener = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    // Set up auth listener FIRST before doing any operations
+    authListener = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
 
+      console.log("Auth state changed:", event);
       setSession(newSession);
 
       if (event === 'SIGNED_IN' && newSession?.user) {
         setUser(newSession.user);
-        const profile = await fetchUserProfile(newSession.user.id);
-        if (profile) {
-          setUserRole(profile.role);
-        }
+        
+        // Use setTimeout to avoid any potential deadlock with the auth listener
+        setTimeout(() => {
+          if (mounted) {
+            fetchUserProfile(newSession.user.id);
+          }
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserRole(null);
@@ -158,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authListener.data.subscription.unsubscribe();
       }
     };
-  }, [toast]);
+  }, [toast, fetchUserProfile]);
 
   const hasRequiredRole = (role?: UserRole) => {
     if (!role) return true;
@@ -175,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isSupplier: userRole === 'supplier',
     handleSignOut,
     hasRequiredRole,
+    handleRetry,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -191,4 +249,4 @@ export const useAuth = (requiredRole?: UserRole) => {
     ...rest,
     hasRequiredRole: () => hasRequiredRole(requiredRole),
   };
-}; 
+};

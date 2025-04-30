@@ -1,16 +1,30 @@
+
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 const AdminUsers: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
-  // ... rest of the component code ...
+  useEffect(() => {
+    if (!authLoading) {
+      setUsersLoading(false);
+    }
+    if (authError) {
+      setUsersError(authError);
+    }
+    
+    if (!isAdmin) {
+      navigate('/auth');
+    }
+  }, [authLoading, authError, isAdmin, navigate]);
 
   return (
-    // ... render component code ...
+    <div>Admin Users</div>
   );
 };
 
-export default AdminUsers; 
+export default AdminUsers;

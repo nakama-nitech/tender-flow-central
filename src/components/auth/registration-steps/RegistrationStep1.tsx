@@ -1,29 +1,31 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
-import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 
-interface Step1Props {
+interface RegistrationStep1Props {
   registerForm: RegisterFormState;
   setRegisterForm: React.Dispatch<React.SetStateAction<RegisterFormState>>;
   registerFormErrors: RegisterFormErrors;
   setRegisterFormErrors: React.Dispatch<React.SetStateAction<RegisterFormErrors>>;
   emailAlreadyExists: boolean;
+  setEmailAlreadyExists: React.Dispatch<React.SetStateAction<boolean>>;
   checkEmailExists?: (email: string) => Promise<boolean>;
   loginForm: { email: string; password: string };
   setLoginForm: React.Dispatch<React.SetStateAction<{ email: string; password: string }>>;
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>;
 }
 
-export const Step1AccountDetails: React.FC<Step1Props> = ({
+export const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
   registerForm,
   setRegisterForm,
   registerFormErrors,
   setRegisterFormErrors,
   emailAlreadyExists,
+  setEmailAlreadyExists,
   checkEmailExists,
   loginForm,
   setLoginForm,
@@ -31,12 +33,6 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  
-  // Log to verify checkEmailExists is received
-  useEffect(() => {
-    console.log("[Step1AccountDetails] checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
-  }, [checkEmailExists]);
   
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
@@ -44,44 +40,14 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     ) : null;
   };
   
-  // Define a safer email check handler with proper fallback
-  const handleEmailBlur = useCallback(async (e: React.FocusEvent<HTMLInputElement>) => {
-    const email = e.target.value;
-    if (!email || !email.trim() || isCheckingEmail) {
-      return;
-    }
-    
-    console.log("[Step1AccountDetails] handleEmailBlur: Checking email existence for:", email);
-    setIsCheckingEmail(true);
-    
-    try {
-      // Create a safer function call with fallback
-      if (typeof checkEmailExists === 'function') {
-        await checkEmailExists(email);
-        console.log("[Step1AccountDetails] Email check completed successfully");
-      } else {
-        // If the function doesn't exist, log an error but don't break the UI
-        console.error("[Step1AccountDetails] checkEmailExists function not available");
-      }
-    } catch (err) {
-      console.error("[Step1AccountDetails] Error in handleEmailBlur:", err);
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  }, [checkEmailExists, isCheckingEmail]);
-  
   return (
     <div className="space-y-6">
-      <div className="text-lg font-medium mb-4">
-        <h3 className="text-xl font-bold">Create Your Account</h3>
-        <p className="text-muted-foreground text-sm mt-1">
-          Enter your email and create a password to get started
-        </p>
-      </div>
-      
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+          <Label htmlFor="email" className="flex items-center">
+            <Mail className="h-4 w-4 mr-2 text-primary" />
+            Email Address <span className="text-red-500">*</span>
+          </Label>
           <Input 
             id="email" 
             type="email" 
@@ -90,16 +56,23 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
             onChange={(e) => {
               setRegisterForm({...registerForm, email: e.target.value});
               setRegisterFormErrors({...registerFormErrors, email: ''});
+              // Clear the emailAlreadyExists flag when the user edits the email field
+              if (emailAlreadyExists) {
+                setEmailAlreadyExists(false);
+              }
             }}
-            onBlur={handleEmailBlur}
+            onBlur={(e) => {
+              if (e.target.value && typeof checkEmailExists === 'function') {
+                checkEmailExists(e.target.value).catch(error => {
+                  console.error("Error checking email:", error);
+                });
+              }
+            }}
             required
             className={`border-primary/20 ${registerFormErrors.email || emailAlreadyExists ? 'border-red-500' : ''}`}
           />
           {getFieldError('email')}
-          {isCheckingEmail && (
-            <p className="text-xs text-blue-600">Checking if email is available...</p>
-          )}
-          {emailAlreadyExists && !registerFormErrors.email && !isCheckingEmail && (
+          {emailAlreadyExists && !registerFormErrors.email && (
             <div className="flex items-center mt-1">
               <p className="text-xs text-blue-600">
                 Email already registered. 
@@ -122,9 +95,12 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
             </div>
           )}
         </div>
-        
+
         <div className="space-y-2">
-          <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+          <Label htmlFor="password" className="flex items-center">
+            <Lock className="h-4 w-4 mr-2 text-primary" />
+            Password <span className="text-red-500">*</span>
+          </Label>
           <div className="relative">
             <Input 
               id="password" 
@@ -155,7 +131,10 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+          <Label htmlFor="confirmPassword" className="flex items-center">
+            <Lock className="h-4 w-4 mr-2 text-primary" />
+            Confirm Password <span className="text-red-500">*</span>
+          </Label>
           <div className="relative">
             <Input 
               id="confirmPassword" 

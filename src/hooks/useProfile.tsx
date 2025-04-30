@@ -10,6 +10,7 @@ export const useProfile = (userId: string | undefined, session: any) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [loadAttempts, setLoadAttempts] = useState(0);
   const { toast } = useToast();
 
   // Fetch profile data
@@ -30,38 +31,41 @@ export const useProfile = (userId: string | undefined, session: any) => {
         throw roleError;
       }
       
-      // Fetch only the profile data we need, avoiding fields that might trigger recursive policies
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .eq('id', userId)
-        .maybeSingle();
+      // If we got a role, we have a profile
+      if (userRoleData) {
+        console.log("User role retrieved:", userRoleData);
         
-      if (profileError) {
-        console.error("Profile query error:", profileError);
-        throw profileError;
-      }
-      
-      // If profile exists, combine it with the role
-      if (profileData) {
+        // Fetch basic profile info
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .eq('id', userId)
+          .maybeSingle();
+          
+        if (profileError) {
+          console.warn("Profile fetch warning:", profileError);
+          // Continue anyway, as we already have the role
+        }
+        
         const profile = {
-          ...profileData,
+          ...(profileData || { first_name: '', last_name: '' }),
+          id: userId,
           role: userRoleData
         };
         
-        console.log("Existing profile found:", profile);
-        setIsProfileLoading(false);
+        console.log("Profile data:", profile);
         return profile;
       }
       
-      // If no profile exists, get role from user metadata
-      const { data: userData } = await supabase.auth.getUser();
-      const metadataRole = userData?.user?.user_metadata?.role || 'supplier'; // Default to supplier
+      // If no role/profile found, create one
+      console.log("No profile found, creating default profile");
       
-      console.log("Creating new profile with role:", metadataRole);
+      // Get role from user metadata if available
+      const { data: userData } = await supabase.auth.getUser();
+      const metadataRole = userData?.user?.user_metadata?.role || 'supplier'; 
       
       // Create a new profile with direct insert, avoiding RLS issues
-      const { data: newProfile, error: insertError } = await supabase.rpc('upsert_profile', {
+      const { error: insertError } = await supabase.rpc('upsert_profile', {
         user_id: userId,
         user_role: metadataRole,
         first_name: '',
@@ -73,36 +77,36 @@ export const useProfile = (userId: string | undefined, session: any) => {
         throw insertError;
       }
       
-      // Use a safe query to fetch profile data
-      const { data: createdProfile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (fetchError) {
-        console.error("Error fetching created profile:", fetchError);
-        throw fetchError;
-      }
+      console.log("New profile created with role:", metadataRole);
       
-      // Combine with role from previous RPC call
-      const fullProfile = {
-        ...createdProfile,
+      // Return the new profile
+      const profile = {
+        id: userId,
+        first_name: '',
+        last_name: '',
         role: metadataRole
       };
       
-      console.log("New profile created:", fullProfile);
       toast({
         title: "Profile created",
         description: "Your profile has been set up successfully",
       });
       
-      setIsProfileLoading(false);
-      return fullProfile;
+      return profile;
     } catch (e: any) {
       console.error("Profile fetch/create error:", e);
       setProfileError(e.message || "Error with profile data");
-      setIsProfileLoading(false);
+      
+      // Only increment load attempts if there was a real error
+      if (loadAttempts < 3) {
+        setLoadAttempts(prev => prev + 1);
+      } else {
+        toast({
+          title: "Profile Error",
+          description: "Could not load your profile. Please try again.",
+          variant: "destructive",
+        });
+      }
       
       // Create a fallback profile object
       return {
@@ -111,8 +115,10 @@ export const useProfile = (userId: string | undefined, session: any) => {
         first_name: '',
         last_name: ''
       };
+    } finally {
+      setIsProfileLoading(false);
     }
-  }, [toast]);
+  }, [toast, loadAttempts]);
 
   const loadUserProfile = useCallback(async () => {
     if (!userId) return null;
@@ -136,6 +142,12 @@ export const useProfile = (userId: string | undefined, session: any) => {
     setUserRole,
     loadUserProfile,
     isProfileLoading,
-    profileError
+    profileError,
+    loadAttempts,
+    retryLoading: () => {
+      setLoadAttempts(0);
+      setProfileError(null);
+      return loadUserProfile();
+    }
   };
 };

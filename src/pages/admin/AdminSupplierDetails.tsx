@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -53,7 +54,7 @@ const AdminSupplierDetails = () => {
       setIsVerified(data.verified);
       return data as SupplierDetails;
     },
-    enabled: !!supplierId && !!isAdmin()
+    enabled: !!supplierId && !!isAdmin
   });
 
   const handleVerificationChange = async (verified: boolean) => {
@@ -124,7 +125,7 @@ const AdminSupplierDetails = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">{supplier.company_name}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{supplier?.company_name}</h2>
             <p className="text-muted-foreground">Supplier details and verification</p>
           </div>
         </div>

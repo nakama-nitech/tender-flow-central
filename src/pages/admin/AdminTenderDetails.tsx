@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTenderDetails } from '../../hooks/useTenderDetails';
 
@@ -7,13 +8,22 @@ const AdminTenderDetails: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
   const { tenderId } = useParams<{ tenderId: string }>();
-  const { tender, isLoading, error, updateTenderStatus } = useTenderDetails(tenderId!);
+  const { 
+    tender, 
+    isLoading: tenderLoading, 
+    error: tenderError, 
+    updateTenderStatus 
+  } = useTenderDetails(tenderId!);
 
-  // ... rest of the component code ...
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      navigate('/auth');
+    }
+  }, [authLoading, isAdmin, navigate]);
 
   return (
-    // ... render component code ...
+    <div>Admin Tender Details</div>
   );
 };
 
-export default AdminTenderDetails; 
+export default AdminTenderDetails;
