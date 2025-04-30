@@ -31,13 +31,18 @@ export const RedirectHandler = () => {
       // Handle the authenticated user case
       if (user) {
         // If we have a user but no role and haven't retried too many times, wait
-        if (!userRole && retryCount < 5) {
+        if (!userRole && retryCount < 3) {
           console.log(`Role not yet available, retry attempt ${retryCount + 1}...`);
+          
+          toast({
+            title: "Setting up your account",
+            description: "Please wait while we prepare your dashboard...",
+          });
           
           // Set a timer to retry with exponential backoff
           const retryTimer = setTimeout(() => {
             setRetryCount(prev => prev + 1);
-          }, Math.min(500 * Math.pow(1.5, retryCount), 3000));
+          }, Math.min(1000 * Math.pow(2, retryCount), 5000));
           
           return () => clearTimeout(retryTimer);
         }
@@ -46,25 +51,20 @@ export const RedirectHandler = () => {
         console.log("Redirecting authenticated user with role:", userRole);
         setIsRedirecting(true);
         
-        if (userRole === 'admin') {
+        // Default to supplier role if no role is assigned after retries
+        const effectiveRole = userRole || 'supplier';
+        
+        if (effectiveRole === 'admin') {
           navigate('/admin', { replace: true });
           toast({
             title: "Welcome back, Admin",
             description: "You have been redirected to the admin dashboard",
           });
-        } else if (userRole === 'supplier') {
-          navigate('/supplier/dashboard', { replace: true });
-          toast({
-            title: "Welcome back, Supplier",
-            description: "You have been redirected to the supplier dashboard",
-          });
         } else {
-          // Default case - we have a user but role is still unknown or not supported
-          console.warn("Unknown/missing user role:", userRole, "defaulting to supplier dashboard");
           navigate('/supplier/dashboard', { replace: true });
           toast({
-            title: "Welcome",
-            description: "You have been logged in successfully",
+            title: "Welcome back",
+            description: "You have been redirected to your dashboard",
           });
         }
       } else {

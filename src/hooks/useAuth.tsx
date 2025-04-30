@@ -23,6 +23,21 @@ export function useAuth(requiredRole?: 'admin' | 'supplier') {
         .single();
       
       if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile not found, create one with default role 'supplier'
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([{ user_id: userId, role: 'supplier' }])
+            .select('role')
+            .single();
+            
+          if (createError) {
+            console.error("Error creating user profile:", createError);
+            throw createError;
+          }
+          
+          return newProfile?.role || 'supplier';
+        }
         console.error("Error fetching user role:", error);
         throw error;
       }
@@ -32,11 +47,11 @@ export function useAuth(requiredRole?: 'admin' | 'supplier') {
         return data.role;
       } else {
         console.warn("No role found for user:", userId);
-        return null;
+        return 'supplier'; // Default to supplier role if no role is set
       }
     } catch (err) {
       console.error("Error in fetchUserRole:", err);
-      return null;
+      return 'supplier'; // Default to supplier role on error
     }
   };
 
