@@ -6,7 +6,7 @@ export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   
-  // Define checkEmailExists using useCallback but avoid the circular reference
+  // Define checkEmailExists without referencing its own state in logic
   const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
     console.log("[useEmailCheck] checkEmailExists called with email:", email);
     
@@ -15,9 +15,10 @@ export const useEmailCheck = () => {
       return false;
     }
     
+    // If already checking, just return without doing another check
     if (isChecking) {
-      console.log("[useEmailCheck] Already checking, returning current state:", emailAlreadyExists);
-      return emailAlreadyExists;
+      console.log("[useEmailCheck] Already checking, skipping duplicate check");
+      return false; // Return false instead of current state to break circular reference
     }
     
     try {
@@ -32,6 +33,7 @@ export const useEmailCheck = () => {
       
       if (error) {
         console.error("[useEmailCheck] Error checking email existence:", error);
+        setEmailAlreadyExists(false); // Reset state on error
         return false;
       }
       
@@ -41,16 +43,23 @@ export const useEmailCheck = () => {
       return exists;
     } catch (err) {
       console.error("[useEmailCheck] Error checking email:", err);
+      setEmailAlreadyExists(false); // Reset state on error
       return false;
     } finally {
       setIsChecking(false);
     }
-  }, [isChecking]); // Remove emailAlreadyExists from dependencies to avoid circular reference
+  }, [isChecking]); // Only depend on isChecking, not on state that would create circular reference
+
+  // Reset function for clearing email check state
+  const resetEmailCheck = useCallback(() => {
+    setEmailAlreadyExists(false);
+  }, []);
 
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
     checkEmailExists,
+    resetEmailCheck,
     isChecking
   };
 };
