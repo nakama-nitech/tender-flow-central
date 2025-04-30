@@ -62,7 +62,7 @@ export const useEmailCheck = () => {
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
-    checkEmailExists,
+    checkEmailExists, // Export the function so it can be used by other components
     isChecking
   };
 };

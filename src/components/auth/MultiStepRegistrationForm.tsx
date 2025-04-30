@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -62,22 +61,13 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       setRegisterFormErrors(errors);
       
       // Check if email exists before proceeding
-      if (registerForm.email && !errors.email) {
+      if (registerForm.email && !errors.email && typeof checkEmailExists === 'function') {
         try {
           console.log("[MultiStepRegistrationForm] About to check email existence");
-          
-          // Safety check before calling
-          if (typeof checkEmailExists === 'function') {
-            console.log("[MultiStepRegistrationForm] checkEmailExists is a function, calling it");
-            const exists = await checkEmailExists(registerForm.email);
-            if (exists) {
-              console.log("[MultiStepRegistrationForm] Email exists, preventing next step");
-              canProceed = false;
-            }
-          } else {
-            console.error("[MultiStepRegistrationForm] checkEmailExists is not a function!", checkEmailExists);
-            // If checkEmailExists is not available, we'll proceed anyway
-            // but log a warning
+          const exists = await checkEmailExists(registerForm.email);
+          if (exists) {
+            console.log("[MultiStepRegistrationForm] Email exists, preventing next step");
+            canProceed = false;
           }
         } catch (error) {
           console.error("[MultiStepRegistrationForm] Error checking email in nextStep:", error);
