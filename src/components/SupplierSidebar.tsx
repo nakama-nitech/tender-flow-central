@@ -53,7 +53,7 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
 
   // Function to switch to admin dashboard if user has admin privileges
   const switchToAdmin = () => {
-    navigate('/admin/tenders');
+    navigate('/admin');
     toast({
       title: "Admin Dashboard",
       description: "Switched to admin dashboard view",
