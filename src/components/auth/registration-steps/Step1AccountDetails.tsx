@@ -34,9 +34,6 @@ export const Step1AccountDetails: React.FC<Step1AccountDetailsProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isChecking } = useEmailCheck(); // Get isChecking from the hook
   
-  // Console log to check if checkEmailExists is defined
-  console.log("[Step1AccountDetails] checkEmailExists:", typeof checkEmailExists);
-  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setRegisterForm({ ...registerForm, [id]: value });
@@ -50,37 +47,31 @@ export const Step1AccountDetails: React.FC<Step1AccountDetailsProps> = ({
   const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
     
-    if (!email || !email.trim()) {
-      console.log("[Step1AccountDetails] Email is empty, skipping check");
-      return;
-    }
-    
-    if (typeof checkEmailExists !== 'function') {
-      console.error("[Step1AccountDetails] checkEmailExists is not a function!", checkEmailExists);
-      return;
-    }
-    
-    console.log("[Step1AccountDetails] handleEmailBlur: About to check email", email);
-    try {
-      const exists = await checkEmailExists(email);
-      console.log("[Step1AccountDetails] handleEmailBlur: Email check result:", exists);
-      if (exists) {
-        setRegisterFormErrors({ 
-          ...registerFormErrors, 
-          email: 'Email is already registered. Please login instead.' 
-        });
-        
-        // Pre-populate the login form with the email
-        setLoginForm({
-          ...loginForm,
-          email: email
-        });
-        
-        // Add a button to switch to login tab
-        document.getElementById('switch-to-login')?.classList.remove('hidden');
+    if (email && typeof checkEmailExists === 'function') {
+      console.log("[Step1AccountDetails] handleEmailBlur: About to check email", email);
+      try {
+        const exists = await checkEmailExists(email);
+        console.log("[Step1AccountDetails] handleEmailBlur: Email check result:", exists);
+        if (exists) {
+          setRegisterFormErrors({ 
+            ...registerFormErrors, 
+            email: 'Email is already registered. Please login instead.' 
+          });
+          
+          // Pre-populate the login form with the email
+          setLoginForm({
+            ...loginForm,
+            email: email
+          });
+          
+          // Add a button to switch to login tab
+          document.getElementById('switch-to-login')?.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('[Step1AccountDetails] Error checking email:', error);
       }
-    } catch (error) {
-      console.error('[Step1AccountDetails] Error checking email:', error);
+    } else {
+      console.warn("[Step1AccountDetails] Unable to check email - either email is empty or checkEmailExists function is not available");
     }
   };
   

@@ -39,9 +39,6 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     setLoginForm
   } = useRegisterForm(setSearchParams);
   
-  // Verify checkEmailExists is available
-  console.log("[MultiStepRegistrationForm] checkEmailExists type:", typeof checkEmailExists);
-  
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
@@ -73,11 +70,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           // Continue even if email check fails
         }
       } else {
-        console.warn("[MultiStepRegistrationForm] Unable to check email - either email is empty or checkEmailExists function is not available:", {
-          email: registerForm.email,
-          hasErrors: !!errors.email,
-          checkEmailExistsType: typeof checkEmailExists
-        });
+        console.warn("[MultiStepRegistrationForm] Unable to check email - either email is empty or checkEmailExists function is not available");
       }
       
       canProceed = canProceed && Object.keys(errors).length === 0 && !emailAlreadyExists;
@@ -146,7 +139,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists}
+            checkEmailExists={checkEmailExists!}
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}

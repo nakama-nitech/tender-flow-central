@@ -48,22 +48,6 @@ export const useRegisterForm = (
     registerFormErrors
   );
   
-  // Create a wrapper for checkEmailExists to ensure it's always a function
-  const safeCheckEmailExists = async (email: string): Promise<boolean> => {
-    console.log("[useRegisterForm] safeCheckEmailExists called with:", email);
-    if (typeof checkEmailExists === 'function') {
-      try {
-        return await checkEmailExists(email);
-      } catch (error) {
-        console.error("[useRegisterForm] Error in safeCheckEmailExists:", error);
-        return false;
-      }
-    } else {
-      console.error("[useRegisterForm] checkEmailExists is not a function!");
-      return false;
-    }
-  };
-  
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -108,7 +92,7 @@ export const useRegisterForm = (
     emailAlreadyExists,
     setEmailAlreadyExists,
     isSubmitting,
-    checkEmailExists: safeCheckEmailExists, // Return the safe wrapper instead
+    checkEmailExists,
     isChecking,
     loginForm,
     setLoginForm,
