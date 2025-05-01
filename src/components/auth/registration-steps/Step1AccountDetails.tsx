@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -35,7 +34,8 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   
   // Log to verify checkEmailExists is received
   useEffect(() => {
-    console.log("[Step1AccountDetails] checkEmailExists function exists:", !!checkEmailExists, typeof checkEmailExists);
+    console.log("[Step1AccountDetails] checkEmailExists function exists:", 
+                !!checkEmailExists, typeof checkEmailExists);
   }, [checkEmailExists]);
   
   const getFieldError = (field: string) => {
@@ -44,8 +44,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     ) : null;
   };
   
-  // Define a safer email check handler with proper fallback
-  const handleEmailBlur = useCallback(async (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
     if (!email || !email.trim() || isCheckingEmail) {
       return;
@@ -55,12 +54,10 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     setIsCheckingEmail(true);
     
     try {
-      // Create a safer function call with fallback
       if (typeof checkEmailExists === 'function') {
         await checkEmailExists(email);
         console.log("[Step1AccountDetails] Email check completed successfully");
       } else {
-        // If the function doesn't exist, log an error but don't break the UI
         console.error("[Step1AccountDetails] checkEmailExists function not available");
       }
     } catch (err) {
@@ -68,7 +65,7 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     } finally {
       setIsCheckingEmail(false);
     }
-  }, [checkEmailExists, isCheckingEmail]);
+  };
   
   return (
     <div className="space-y-6">

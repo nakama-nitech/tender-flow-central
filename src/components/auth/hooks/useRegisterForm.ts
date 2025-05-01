@@ -35,7 +35,7 @@ export const useRegisterForm = (
   const { 
     emailAlreadyExists, 
     setEmailAlreadyExists, 
-    checkEmailExists: originalCheckEmailExists, 
+    checkEmailExists, 
     isChecking 
   } = useEmailCheck();
   
@@ -48,36 +48,15 @@ export const useRegisterForm = (
     registerFormErrors
   );
 
-  // Create a stable wrapper around checkEmailExists to prevent unnecessary rerenders
-  const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
-    console.log("[useRegisterForm] checkEmailExists called with:", email);
-    
-    if (!email || !email.trim()) {
-      console.log("[useRegisterForm] Email empty, skipping check");
-      return false;
-    }
-    
-    try {
-      if (typeof originalCheckEmailExists !== 'function') {
-        console.error("[useRegisterForm] originalCheckEmailExists is not a function!");
-        return false;
-      }
-      
-      const exists = await originalCheckEmailExists(email);
-      console.log("[useRegisterForm] Email exists check result:", exists);
-      return exists;
-    } catch (error) {
-      console.error("[useRegisterForm] Error in email check:", error);
-      return false;
-    }
-  }, [originalCheckEmailExists]);
-
+  // Log to verify checkEmailExists is available
+  console.log('[useRegisterForm] checkEmailExists available:', typeof checkEmailExists);
+  
   // Wrap the onSubmit function in useCallback to prevent unnecessary rerenders
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Debug check - ensure the function exists
-    console.log("[useRegisterForm] onSubmit: checkEmailExists available:", !!checkEmailExists);
+    console.log("[useRegisterForm] onSubmit: checkEmailExists available:", typeof checkEmailExists);
     
     // Only check email if we have one
     if (registerForm.email && typeof checkEmailExists === 'function') {

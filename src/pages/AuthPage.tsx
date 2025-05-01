@@ -108,6 +108,8 @@ const AuthPage = () => {
     });
   };
 
+  console.log('[AuthPage] Rendering with tab:', defaultTab);
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 to-blue-100">
       <header className="py-4 px-6 md:px-10 flex justify-between items-center border-b bg-white shadow-sm">

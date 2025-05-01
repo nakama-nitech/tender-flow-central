@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -122,6 +121,9 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     }
   };
   
+  // Log to verify checkEmailExists function exists
+  console.log("[MultiStepRegistrationForm] checkEmailExists function:", typeof checkEmailExists);
+  
   return (
     <div className="space-y-6">
       <RegistrationProgress currentStep={registerForm.currentStep} progressPercentage={progressPercentage} />
@@ -134,7 +136,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists}
+            checkEmailExists={checkEmailExists} // Explicitly pass this function
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}
