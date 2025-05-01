@@ -35,6 +35,9 @@ export const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   
+  // Debug - check if checkEmailExists is available
+  console.log("[RegistrationStep1] checkEmailExists type:", typeof checkEmailExists);
+  
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
       <p className="text-xs text-red-500 mt-1">{registerFormErrors[field]}</p>
@@ -57,7 +60,10 @@ export const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
     try {
       const exists = await checkEmailExists(email);
       console.log("[RegistrationStep1] Email check result:", exists);
-      // Intentionally not updating any state here as the parent component uses emailAlreadyExists state
+      // Update emailAlreadyExists state if the email exists
+      if (exists) {
+        setEmailAlreadyExists(true);
+      }
     } catch (err) {
       console.error("[RegistrationStep1] Error checking email:", err);
     } finally {

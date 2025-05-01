@@ -1,13 +1,21 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(false);
+  const [lastCheckedEmail, setLastCheckedEmail] = useState<string>('');
+  const [errorOccurred, setErrorOccurred] = useState<boolean>(false);
   
-  const checkEmailExists = async (email: string): Promise<boolean> => {
+  const checkEmailExists = useCallback(async (email: string): Promise<boolean> => {
     console.log("[useEmailCheck] checkEmailExists called with email:", email);
+    
+    // Return cached result if we've already checked this email and no error occurred
+    if (email === lastCheckedEmail && !errorOccurred) {
+      console.log("[useEmailCheck] Using cached result for email:", emailAlreadyExists);
+      return emailAlreadyExists;
+    }
     
     if (!email || !email.trim()) {
       console.log("[useEmailCheck] Email empty, returning false");
@@ -23,6 +31,8 @@ export const useEmailCheck = () => {
     
     try {
       setIsChecking(true);
+      setErrorOccurred(false);
+      setLastCheckedEmail(email);
       
       // Check if email exists by attempting a signup
       const { data, error } = await supabase.auth.signUp({
@@ -50,11 +60,12 @@ export const useEmailCheck = () => {
       }
     } catch (err) {
       console.error("[useEmailCheck] Error checking email:", err);
+      setErrorOccurred(true);
       return false;
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [emailAlreadyExists, isChecking, lastCheckedEmail, errorOccurred]);
 
   return {
     emailAlreadyExists,
