@@ -58,7 +58,7 @@ export const useRegisterForm = (
     console.log("[useRegisterForm] onSubmit: checkEmailExists available:", typeof checkEmailExists);
     
     // Only check email if we have one
-    if (registerForm.email && checkEmailExists) {
+    if (registerForm.email && typeof checkEmailExists === 'function') {
       try {
         const emailExists = await checkEmailExists(registerForm.email);
         
