@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,12 +34,14 @@ export const RedirectHandler = () => {
 
     // If no user, redirect to auth
     if (!user) {
+      console.log('No user found, redirecting to auth page');
       navigate('/auth', { replace: true });
       return;
     }
 
     // If we have a user but no role, show error
     if (!userRole) {
+      console.log('User has no role, showing error');
       toast({
         title: "Authentication Error",
         description: "Unable to determine your role. Please try logging in again or contact support if the issue persists.",
@@ -53,10 +56,19 @@ export const RedirectHandler = () => {
     setIsRedirecting(true);
 
     // Determine the appropriate dashboard based on role
-    const targetPath = isAdmin ? '/admin' : '/supplier/dashboard';
+    let targetPath = '/supplier/dashboard';
+    
+    if (isAdmin) {
+      console.log('User is admin, redirecting to admin dashboard');
+      targetPath = '/admin';
+    } else if (isSupplier) {
+      console.log('User is supplier, redirecting to supplier dashboard');
+      targetPath = '/supplier/dashboard';
+    }
     
     // Only redirect if we're not already on the target path
     if (location.pathname !== targetPath) {
+      console.log(`Redirecting to ${targetPath}`);
       navigate(targetPath, { replace: true });
       toast({
         title: isAdmin ? "Welcome back, Admin" : "Welcome back",

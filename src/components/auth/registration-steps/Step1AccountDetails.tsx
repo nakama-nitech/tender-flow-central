@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,12 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
   
   const handleEmailBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const email = e.target.value;
-    if (!email || !email.trim() || isCheckingEmail) {
+    if (!email || !email.trim()) {
+      return;
+    }
+    
+    if (!checkEmailExists) {
+      console.error("[Step1AccountDetails] checkEmailExists function is not available!");
       return;
     }
     
@@ -54,12 +60,8 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     setIsCheckingEmail(true);
     
     try {
-      if (typeof checkEmailExists === 'function') {
-        await checkEmailExists(email);
-        console.log("[Step1AccountDetails] Email check completed successfully");
-      } else {
-        console.error("[Step1AccountDetails] checkEmailExists function not available");
-      }
+      await checkEmailExists(email);
+      console.log("[Step1AccountDetails] Email check completed successfully");
     } catch (err) {
       console.error("[Step1AccountDetails] Error in handleEmailBlur:", err);
     } finally {

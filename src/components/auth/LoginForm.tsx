@@ -34,6 +34,8 @@ export const LoginForm = () => {
     }
     
     try {
+      console.log("Attempting login with email:", loginForm.email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
@@ -53,7 +55,14 @@ export const LoginForm = () => {
       
     } catch (error: any) {
       console.error("Login error:", error);
-      setLoginError(error.message || "Please check your credentials and try again");
+      
+      // Handle specific error cases
+      if (error.message.includes('Invalid login credentials')) {
+        setLoginError("Invalid email or password. Please try again.");
+      } else {
+        setLoginError(error.message || "Please check your credentials and try again");
+      }
+      
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again",

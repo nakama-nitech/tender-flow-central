@@ -11,16 +11,16 @@ export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(false);
   
-  // Define checkEmailExists as a regular function instead of useCallback
-  // to avoid circular dependency issues with TypeScript
   const checkEmailExists = async (email: string): Promise<boolean> => {
     console.log("[useEmailCheck] checkEmailExists called with email:", email);
     
     if (!email || !email.trim()) {
       console.log("[useEmailCheck] Email empty, returning false");
+      setEmailAlreadyExists(false);
       return false;
     }
     
+    // Don't check if we're already checking
     if (isChecking) {
       console.log("[useEmailCheck] Already checking, returning current state:", emailAlreadyExists);
       return emailAlreadyExists;
@@ -54,7 +54,6 @@ export const useEmailCheck = () => {
         return false;
       }
     } catch (err) {
-      // Log error but assume email doesn't exist
       console.error("[useEmailCheck] Error checking email:", err);
       return false;
     } finally {
@@ -65,7 +64,7 @@ export const useEmailCheck = () => {
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
-    checkEmailExists,
+    checkEmailExists, // Make sure this is properly exported
     isChecking
   };
 };
