@@ -59,7 +59,7 @@ const App = () => (
               </ProtectedRoute>
             }
           >
-            <Route index element={<AdminTenderList />} />
+            <Route index element={<Navigate to="/admin/tenders" replace />} />
             <Route path="tenders" element={<AdminTenderList />} />
             <Route path="create-tender" element={<AdminTenderCreate />} />
             <Route path="edit-tender/:tenderId" element={<AdminTenderCreate />} />
@@ -87,7 +87,7 @@ const App = () => (
           </Route>
           
           {/* Redirects */}
-          <Route path="/admin/*" element={<Navigate to="/admin" />} />
+          <Route path="/admin/*" element={<Navigate to="/admin/tenders" />} />
           <Route path="/supplier" element={<Navigate to="/supplier/dashboard" />} />
           
           {/* Replace /select-role with /redirect */}
