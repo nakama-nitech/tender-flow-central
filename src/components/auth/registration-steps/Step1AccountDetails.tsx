@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -59,8 +60,8 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
     setIsCheckingEmail(true);
     
     try {
-      await checkEmailExists(email);
-      console.log("[Step1AccountDetails] Email check completed successfully");
+      const exists = await checkEmailExists(email);
+      console.log("[Step1AccountDetails] Email check completed successfully:", exists);
     } catch (err) {
       console.error("[Step1AccountDetails] Error in handleEmailBlur:", err);
     } finally {

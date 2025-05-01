@@ -18,69 +18,78 @@ export function useAuth(requiredRole?: UserRole) {
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Consolidated function to fetch or create user profile
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      console.log('Fetching profile for user:', userId);
-      
-      // Try to fetch existing profile
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-          // Profile doesn't exist, create one
-          const newProfile = {
-            id: userId,
-            role: 'supplier' as UserRole,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          const { data, error: createError } = await supabase
-            .from('profiles')
-            .insert(newProfile)
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          return data;
-        }
-        throw fetchError;
-      }
-
-      return profile;
-    } catch (err: any) {
-      console.error("Error in fetchUserProfile:", err);
-      return null;
-    }
-  };
-
-  // Determine user role based on multiple factors
-  const determineUserRole = async (user: any, profile: any): Promise<UserRole> => {
-    // Check if user is in admin emails list
+  // Get role directly from user metadata if available
+  const getRoleFromUserMetadata = (user: any): UserRole | null => {
     if (user?.email && ADMIN_EMAILS.includes(user.email)) {
-      // Update profile to admin if not already
-      if (profile?.role !== 'admin') {
-        await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', user.id);
-      }
       return 'admin';
     }
-
-    // Return role from profile if exists
-    if (profile?.role) {
-      return profile.role;
+    
+    // Check user_metadata first
+    const metadataRole = user?.user_metadata?.role;
+    if (metadataRole) {
+      return metadataRole as UserRole;
     }
-
-    // Default to supplier
-    return 'supplier';
+    
+    return 'supplier'; // Default role
   };
+
+  // Fetch user profile with fallback to user metadata
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      console.log('Attempting to get role using RPC function');
+      
+      // Try to get role using the RPC function as it's more reliable
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_profile_role', { user_id: userId });
+      
+      if (roleError) {
+        console.warn("RPC function error:", roleError);
+        throw roleError;
+      }
+      
+      if (roleData) {
+        console.log("Role obtained from RPC:", roleData);
+        return {
+          id: userId,
+          role: roleData as UserRole,
+        };
+      }
+      
+      throw new Error("Role not found via RPC");
+    } catch (err) {
+      console.warn("Error fetching profile with RPC:", err);
+      
+      // Fallback to user metadata
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const role = getRoleFromUserMetadata(userData.user);
+        console.log("Using role from metadata:", role);
+        
+        // Try to create profile if it doesn't exist
+        try {
+          await supabase.rpc('upsert_profile', {
+            user_id: userId,
+            user_role: role || 'supplier',
+            first_name: userData.user.user_metadata?.first_name || '',
+            last_name: userData.user.user_metadata?.last_name || ''
+          });
+          console.log("Profile created/updated via RPC");
+        } catch (createErr) {
+          console.error("Error creating profile via RPC:", createErr);
+        }
+        
+        return {
+          id: userId,
+          role: role as UserRole,
+        };
+      }
+      
+      return {
+        id: userId,
+        role: 'supplier' as UserRole, // Default fallback
+      };
+    }
+  }, []);
 
   // Handle sign out
   const handleSignOut = useCallback(async () => {
@@ -136,16 +145,33 @@ export function useAuth(requiredRole?: UserRole) {
           setSession(currentSession);
           setUser(currentSession.user);
 
-          // Fetch or create profile
-          const profile = await fetchUserProfile(currentSession.user.id);
-          if (profile) {
-            // Determine user role
-            const role = await determineUserRole(currentSession.user, profile);
-            console.log('Setting user role:', role);
-            setUserRole(role);
-          } else {
-            console.error('No profile returned for user');
-            setError('Failed to load user profile. Please try logging in again.');
+          try {
+            // First try to get role from user metadata for immediate UI response
+            const initialRole = getRoleFromUserMetadata(currentSession.user);
+            if (initialRole) {
+              setUserRole(initialRole);
+            }
+            
+            // Then try to fetch or create profile
+            const profile = await fetchUserProfile(currentSession.user.id);
+            if (profile && profile.role) {
+              console.log("Setting final user role:", profile.role);
+              setUserRole(profile.role);
+            } else {
+              console.error('No role returned after profile fetch');
+              // Keep using the role from metadata
+            }
+          } catch (profileErr: any) {
+            console.error('Profile loading error:', profileErr);
+            // If we failed to load the profile, but we have a role from metadata, we can still function
+            if (!userRole) {
+              const fallbackRole = getRoleFromUserMetadata(currentSession.user);
+              setUserRole(fallbackRole);
+              
+              if (!fallbackRole) {
+                setError('Failed to determine your role. Please try logging in again.');
+              }
+            }
           }
         }
       } catch (err: any) {
@@ -179,15 +205,26 @@ export function useAuth(requiredRole?: UserRole) {
 
       if (event === 'SIGNED_IN' && newSession?.user) {
         setUser(newSession.user);
-        const profile = await fetchUserProfile(newSession.user.id);
-        if (profile) {
-          const role = await determineUserRole(newSession.user, profile);
-          console.log('Setting user role from auth state change:', role);
-          setUserRole(role);
-        } else {
-          console.error('No profile returned after sign in');
-          setError('Failed to load user profile after sign in');
+        
+        // First set role from metadata for immediate UI update
+        const initialRole = getRoleFromUserMetadata(newSession.user);
+        if (initialRole) {
+          setUserRole(initialRole);
         }
+        
+        // Then fetch or create profile in background
+        setTimeout(async () => {
+          try {
+            const profile = await fetchUserProfile(newSession.user.id);
+            if (profile && profile.role && mounted) {
+              console.log('Setting user role from auth state change:', profile.role);
+              setUserRole(profile.role);
+            }
+          } catch (profileErr) {
+            console.error('Error loading profile after sign in:', profileErr);
+            // Keep using role from metadata
+          }
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserRole(null);
@@ -200,11 +237,17 @@ export function useAuth(requiredRole?: UserRole) {
         authListener.data.subscription.unsubscribe();
       }
     };
-  }, [toast]);
+  }, [toast, fetchUserProfile]);
 
   // Check if user has required role
   const hasRequiredRole = useCallback(() => {
     if (!requiredRole) return true;
+    
+    // Special case: admins can access supplier pages
+    if (requiredRole === 'supplier' && userRole === 'admin') {
+      return true;
+    }
+    
     return userRole === requiredRole;
   }, [requiredRole, userRole]);
 

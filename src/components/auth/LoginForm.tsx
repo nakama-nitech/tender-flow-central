@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,22 @@ export const LoginForm = () => {
         title: "Login successful",
         description: "Redirecting to your dashboard...",
       });
+      
+      // Check if this is a known admin to ensure they get proper access
+      const adminEmails = ['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com'];
+      
+      if (adminEmails.includes(loginForm.email)) {
+        // For admin emails, update user_metadata to ensure admin role
+        try {
+          await supabase.auth.updateUser({
+            data: { role: 'admin' }
+          });
+          console.log("Updated user metadata with admin role");
+        } catch (metadataError) {
+          console.warn("Couldn't update user metadata:", metadataError);
+          // Continue anyway, we'll handle this in the redirect handler
+        }
+      }
       
       // Redirect to the handler which will determine where to send the user based on their role
       navigate('/redirect', { replace: true });
