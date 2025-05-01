@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { RegisterFormErrors } from '../types/formTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const useRegisterSubmit = (
   setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>,
@@ -10,118 +11,166 @@ export const useRegisterSubmit = (
   registerFormErrors: RegisterFormErrors
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!window.registerFormState) {
-      console.error('Register form state not found');
-      return;
-    }
-    
-    const formData = window.registerFormState;
+    setIsSubmitting(true);
     
     try {
-      setIsSubmitting(true);
+      console.log("Attempting registration with form data:", window.registerFormState);
       
-      // Create Auth user
+      if (!window.registerFormState) {
+        throw new Error("Registration form data not found");
+      }
+
+      const { 
+        email, 
+        password, 
+        companyName, 
+        companyType, 
+        location, 
+        country, 
+        contactName, 
+        phoneNumber,
+        kraPin,
+        physicalAddress,
+        websiteUrl,
+        categoriesOfInterest,
+        supplyLocations
+      } = window.registerFormState;
+
+      // Attempt to create the user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email,
+        password,
         options: {
           data: {
-            role: 'supplier',
-            first_name: formData.contactName?.split(' ')[0] || '',
-            last_name: formData.contactName?.split(' ').slice(1).join(' ') || ''
-          },
-        },
+            company_name: companyName,
+            contact_name: contactName,
+            phone_number: phoneNumber,
+            role: 'supplier', // Default role
+            first_name: contactName.split(' ')[0] || '',
+            last_name: contactName.split(' ').slice(1).join(' ') || ''
+          }
+        }
       });
-      
+
       if (authError) {
+        console.error("Auth error:", authError);
         throw authError;
       }
-      
-      // If auth user creation was successful, create the supplier record
-      if (authData?.user) {
+
+      if (!authData.user) {
+        throw new Error("User account could not be created");
+      }
+
+      console.log("User created successfully:", authData.user);
+
+      // Create a profile in the supplier table
+      try {
         const { error: supplierError } = await supabase
           .from('suppliers')
           .insert({
             id: authData.user.id,
-            company_name: formData.companyName,
-            location: formData.location,
-            country: formData.country,
-            phone_number: formData.phoneNumber,
-            kra_pin: formData.kraPin || null,
-            physical_address: formData.physicalAddress || null,
-            website_url: formData.websiteUrl || null,
-            company_type_id: formData.companyType ? parseInt(formData.companyType) : null,
+            company_name: companyName,
+            company_type_id: parseInt(companyType) || null,
+            location,
+            country,
+            phone_number: phoneNumber,
+            kra_pin: kraPin,
+            physical_address: physicalAddress,
+            website_url: websiteUrl
           });
-        
+
         if (supplierError) {
-          throw supplierError;
+          console.error("Error creating supplier profile:", supplierError);
+          toast({
+            title: "Registration issue",
+            description: "Account created but profile details couldn't be saved. Please update your profile later.",
+            variant: "destructive"
+          });
         }
-        
-        // Add supplier categories if any were selected
-        if (formData.categoriesOfInterest && formData.categoriesOfInterest.length > 0) {
-          const supplierCategories = formData.categoriesOfInterest.map((categoryId) => ({
+
+        // Add categories
+        if (categoriesOfInterest.length > 0) {
+          const categoryMappings = categoriesOfInterest.map(catId => ({
             supplier_id: authData.user!.id,
-            category_id: parseInt(categoryId),
+            category_id: parseInt(catId.toString())
           }));
           
           const { error: categoriesError } = await supabase
             .from('supplier_categories')
-            .insert(supplierCategories);
-            
+            .insert(categoryMappings);
+
           if (categoriesError) {
-            console.error('Error adding supplier categories:', categoriesError);
+            console.error("Error adding categories:", categoriesError);
           }
         }
-        
-        // Add supplier locations if any were selected
-        if (formData.supplyLocations && formData.supplyLocations.length > 0) {
-          const supplierLocations = formData.supplyLocations.map((locationId) => ({
+
+        // Add locations
+        if (supplyLocations.length > 0) {
+          const locationMappings = supplyLocations.map(locId => ({
             supplier_id: authData.user!.id,
-            location_id: parseInt(locationId),
+            location_id: parseInt(locId.toString())
           }));
           
           const { error: locationsError } = await supabase
             .from('supplier_locations')
-            .insert(supplierLocations);
-            
+            .insert(locationMappings);
+
           if (locationsError) {
-            console.error('Error adding supplier locations:', locationsError);
+            console.error("Error adding locations:", locationsError);
           }
         }
-        
-        // Pre-populate the login form with the registration email and password
-        setLoginForm({
-          email: formData.email,
-          password: formData.password,
-        });
-        
-        // Switch to login tab and show success message
-        setSearchParams((params) => {
-          const newParams = new URLSearchParams(params);
-          newParams.set('tab', 'login');
-          newParams.set('registered', 'true');
-          return newParams;
+
+      } catch (profileError) {
+        console.error("Error in profile creation:", profileError);
+        toast({
+          title: "Registration issue",
+          description: "Account created but profile couldn't be completed. You can update your profile later.",
+          variant: "destructive"
         });
       }
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      setRegisterFormErrors({
-        ...registerFormErrors,
-        general: error.message || 'Registration failed. Please try again.',
+
+      // Sign out the user after registration (since we want them to verify their email if required)
+      await supabase.auth.signOut();
+
+      // Set the login form with the registered email to make it easier for the user
+      setLoginForm({ email, password });
+      
+      // Registration success message
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created. Please sign in with your credentials.",
       });
+      
+      // Redirect to login tab
+      setSearchParams(new URLSearchParams({ tab: 'login' }));
+      
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      // Handle specific error cases
+      if (error.message.includes('already registered')) {
+        setRegisterFormErrors({
+          ...registerFormErrors,
+          email: 'This email is already registered'
+        });
+      } else {
+        toast({
+          title: "Registration failed",
+          description: error.message || "There was a problem with your registration",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
-      // Clear the form state from window for security
+      
+      // Clear form data from window after submission
       delete window.registerFormState;
     }
   };
 
-  return {
-    isSubmitting,
-    handleRegisterSubmit
-  };
+  return { isSubmitting, handleRegisterSubmit };
 };

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, FileText, Send, Clock, Bell, Settings, Menu, X, FileSearch, LogOut, ShoppingCart } from 'lucide-react';
+import { Home, FileText, Send, Clock, Bell, Settings, Menu, X, FileSearch, LogOut, ShoppingCart, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -54,6 +54,10 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
   // Function to switch to admin dashboard if user has admin privileges
   const switchToAdmin = () => {
     navigate('/admin');
+    toast({
+      title: "Admin Dashboard",
+      description: "Switched to admin dashboard view",
+    });
   };
 
   return (
@@ -131,7 +135,7 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
               className="w-full justify-start mb-2 bg-amber-600 text-white hover:bg-amber-700" 
               onClick={switchToAdmin}
             >
-              <Home className="mr-2 h-4 w-4" />
+              <Shield className="mr-2 h-4 w-4" />
               <span className={cn(!isOpen && "md:hidden")}>Admin Dashboard</span>
             </Button>
           )}
