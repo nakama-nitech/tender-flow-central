@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -136,7 +137,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists} // Explicitly pass this function
+            checkEmailExists={checkEmailExists}
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}

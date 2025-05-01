@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
@@ -51,8 +51,8 @@ export const Step1AccountDetails: React.FC<Step1Props> = ({
       return;
     }
     
-    if (!checkEmailExists) {
-      console.error("[Step1AccountDetails] checkEmailExists function is not available!");
+    if (typeof checkEmailExists !== 'function') {
+      console.error("[Step1AccountDetails] checkEmailExists function is not available or not a function!");
       return;
     }
     

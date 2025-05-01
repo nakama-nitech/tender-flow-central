@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 import { useEmailCheck } from './useEmailCheck';
 import { useFormValidation } from './useFormValidation';
@@ -51,8 +51,7 @@ export const useRegisterForm = (
   // Log to verify checkEmailExists is available
   console.log('[useRegisterForm] checkEmailExists available:', typeof checkEmailExists);
   
-  // Wrap the onSubmit function in useCallback to prevent unnecessary rerenders
-  const onSubmit = useCallback(async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Debug check - ensure the function exists
@@ -86,7 +85,7 @@ export const useRegisterForm = (
     window.registerFormState = registerForm;
     
     await handleRegisterSubmit(e);
-  }, [registerForm, checkEmailExists, validateRegisterForm, handleRegisterSubmit, registerFormErrors, setRegisterFormErrors]);
+  };
 
   return {
     registerForm,

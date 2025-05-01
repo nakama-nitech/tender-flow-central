@@ -2,11 +2,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface EmailCheckState {
-  emailAlreadyExists: boolean;
-  isChecking: boolean;
-}
-
 export const useEmailCheck = () => {
   const [emailAlreadyExists, setEmailAlreadyExists] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(false);
@@ -64,7 +59,7 @@ export const useEmailCheck = () => {
   return {
     emailAlreadyExists,
     setEmailAlreadyExists,
-    checkEmailExists, // Make sure this is properly exported
+    checkEmailExists,
     isChecking
   };
 };
