@@ -69,8 +69,6 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           console.error("[MultiStepRegistrationForm] Error checking email in nextStep:", error);
           // Continue even if email check fails
         }
-      } else {
-        console.warn("[MultiStepRegistrationForm] Unable to check email - either email is empty or checkEmailExists function is not available");
       }
       
       canProceed = canProceed && Object.keys(errors).length === 0 && !emailAlreadyExists;
@@ -139,7 +137,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
             registerFormErrors={registerFormErrors}
             setRegisterFormErrors={setRegisterFormErrors}
             emailAlreadyExists={emailAlreadyExists}
-            checkEmailExists={checkEmailExists!}
+            checkEmailExists={checkEmailExists}
             loginForm={loginForm}
             setLoginForm={setLoginForm}
             setSearchParams={setSearchParams}
