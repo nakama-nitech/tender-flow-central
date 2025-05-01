@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -52,9 +53,11 @@ export const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
     }
     
     setIsCheckingEmail(true);
+    console.log("[RegistrationStep1] Checking email:", email);
     try {
       const exists = await checkEmailExists(email);
       console.log("[RegistrationStep1] Email check result:", exists);
+      // Intentionally not updating any state here as the parent component uses emailAlreadyExists state
     } catch (err) {
       console.error("[RegistrationStep1] Error checking email:", err);
     } finally {

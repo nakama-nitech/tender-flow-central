@@ -48,8 +48,10 @@ export const Step1AccountDetails: React.FC<Step1AccountDetailsProps> = ({
     const email = e.target.value;
     
     if (email && typeof checkEmailExists === 'function') {
+      console.log("[Step1AccountDetails] handleEmailBlur: About to check email", email);
       try {
         const exists = await checkEmailExists(email);
+        console.log("[Step1AccountDetails] handleEmailBlur: Email check result:", exists);
         if (exists) {
           setRegisterFormErrors({ 
             ...registerFormErrors, 
@@ -66,8 +68,10 @@ export const Step1AccountDetails: React.FC<Step1AccountDetailsProps> = ({
           document.getElementById('switch-to-login')?.classList.remove('hidden');
         }
       } catch (error) {
-        console.error('Error checking email:', error);
+        console.error('[Step1AccountDetails] Error checking email:', error);
       }
+    } else {
+      console.warn("[Step1AccountDetails] Unable to check email - either email is empty or checkEmailExists function is not available");
     }
   };
   

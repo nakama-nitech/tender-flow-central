@@ -41,6 +41,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setLoginForm
   } = useRegisterForm(setSearchParams, navigate);
 
+  // Check if checkEmailExists is defined
+  console.log("[RegistrationForm] checkEmailExists available:", typeof checkEmailExists);
+
   const validateStep = (step: number) => {
     const errors: Record<string, string> = {};
     
@@ -123,8 +126,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             return; // Don't proceed if email exists
           }
         } catch (error) {
-          console.error("Error checking email:", error);
+          console.error("[RegistrationForm] Error checking email:", error);
         }
+      } else {
+        console.warn("[RegistrationForm] checkEmailExists not available or email empty when attempting to check");
       }
     }
     
