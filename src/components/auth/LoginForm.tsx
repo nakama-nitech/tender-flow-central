@@ -73,7 +73,7 @@ export const LoginForm = () => {
       console.error("Login error:", error);
       
       // Handle specific error cases
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.message?.includes('Invalid login credentials')) {
         setLoginError("Invalid email or password. Please try again.");
       } else {
         setLoginError(error.message || "Please check your credentials and try again");

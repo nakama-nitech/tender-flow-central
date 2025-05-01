@@ -50,25 +50,7 @@ export const RedirectHandler = () => {
       return;
     }
 
-    // If we have a user but no role, try to get it from user metadata
-    if (user && !userRole && !isLoading && !error) {
-      const metadata = user?.user_metadata || {};
-      if (metadata.role === 'admin') {
-        navigate('/admin', { replace: true });
-        toast({
-          title: "Welcome back, Admin",
-          description: "Using role from your account metadata",
-        });
-        return;
-      } else if (metadata.role === 'supplier') {
-        navigate('/supplier/dashboard', { replace: true });
-        toast({
-          title: "Welcome back",
-          description: "Using role from your account metadata",
-        });
-        return;
-      }
-    }
+    console.log("RedirectHandler - Current state:", { user, userRole, isLoading, error, isAdmin, isSupplier });
 
     // Handle errors
     if (error) {
@@ -114,6 +96,8 @@ export const RedirectHandler = () => {
           ? "You have been redirected to the admin dashboard"
           : "You have been redirected to your dashboard",
       });
+    } else {
+      console.log(`Already on target path: ${targetPath}, no redirect needed`);
     }
   }, [isLoading, error, user, userRole, isAdmin, isSupplier, navigate, toast, isRedirecting, isInitialized, location.pathname, hasRetried]);
 
