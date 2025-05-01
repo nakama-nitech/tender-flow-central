@@ -17,7 +17,6 @@ export function useAuth(requiredRole?: UserRole) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [loadAttempts, setLoadAttempts] = useState(0);
 
   // Get role directly from user metadata if available
   const getRoleFromUserMetadata = (user: any): UserRole | null => {
@@ -31,7 +30,7 @@ export function useAuth(requiredRole?: UserRole) {
       return metadataRole as UserRole;
     }
     
-    return null; // Return null instead of default role to trigger proper handling
+    return 'supplier'; // Default role
   };
 
   // Fetch user profile with fallback to user metadata
@@ -66,38 +65,31 @@ export function useAuth(requiredRole?: UserRole) {
         const role = getRoleFromUserMetadata(userData.user);
         console.log("Using role from metadata:", role);
         
-        // If no role from metadata, default to supplier
-        const finalRole = role || 'supplier';
-        
         // Try to create profile if it doesn't exist
         try {
           await supabase.rpc('upsert_profile', {
             user_id: userId,
-            user_role: finalRole,
+            user_role: role || 'supplier',
             first_name: userData.user.user_metadata?.first_name || '',
             last_name: userData.user.user_metadata?.last_name || ''
           });
           console.log("Profile created/updated via RPC");
         } catch (createErr) {
           console.error("Error creating profile via RPC:", createErr);
-          if (loadAttempts < 2) {
-            setLoadAttempts(prev => prev + 1);
-          }
         }
         
         return {
           id: userId,
-          role: finalRole as UserRole,
+          role: role as UserRole,
         };
       }
       
-      // Last resort fallback
       return {
         id: userId,
-        role: 'supplier' as UserRole,
+        role: 'supplier' as UserRole, // Default fallback
       };
     }
-  }, [loadAttempts]);
+  }, []);
 
   // Handle sign out
   const handleSignOut = useCallback(async () => {
@@ -140,43 +132,6 @@ export function useAuth(requiredRole?: UserRole) {
         setIsLoading(true);
         setError(null);
 
-        // Set up auth listener FIRST (to avoid race conditions)
-        authListener = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          if (!mounted) return;
-
-          console.log('Auth state changed:', event, !!newSession);
-          setSession(newSession);
-
-          if (event === 'SIGNED_IN' && newSession?.user) {
-            setUser(newSession.user);
-            
-            // First try to get role from user metadata for immediate UI response
-            const initialRole = getRoleFromUserMetadata(newSession.user);
-            if (initialRole) {
-              setUserRole(initialRole);
-            }
-            
-            // Then try to fetch or create profile in background
-            setTimeout(async () => {
-              try {
-                if (mounted) {
-                  const profile = await fetchUserProfile(newSession.user.id);
-                  if (profile && profile.role && mounted) {
-                    console.log('Setting user role from auth state change:', profile.role);
-                    setUserRole(profile.role);
-                  }
-                }
-              } catch (profileErr) {
-                console.error('Error loading profile after sign in:', profileErr);
-                // Keep using role from metadata
-              }
-            }, 0);
-          } else if (event === 'SIGNED_OUT') {
-            setUser(null);
-            setUserRole(null);
-          }
-        });
-
         // Get current session
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
@@ -184,7 +139,7 @@ export function useAuth(requiredRole?: UserRole) {
           throw sessionError;
         }
 
-        console.log('Current session:', !!currentSession);
+        console.log('Current session:', currentSession);
 
         if (currentSession?.user) {
           setSession(currentSession);
@@ -199,15 +154,18 @@ export function useAuth(requiredRole?: UserRole) {
             
             // Then try to fetch or create profile
             const profile = await fetchUserProfile(currentSession.user.id);
-            if (profile && profile.role && mounted) {
+            if (profile && profile.role) {
               console.log("Setting final user role:", profile.role);
               setUserRole(profile.role);
+            } else {
+              console.error('No role returned after profile fetch');
+              // Keep using the role from metadata
             }
           } catch (profileErr: any) {
             console.error('Profile loading error:', profileErr);
             // If we failed to load the profile, but we have a role from metadata, we can still function
             if (!userRole) {
-              const fallbackRole = getRoleFromUserMetadata(currentSession.user) || 'supplier';
+              const fallbackRole = getRoleFromUserMetadata(currentSession.user);
               setUserRole(fallbackRole);
               
               if (!fallbackRole) {
@@ -238,13 +196,48 @@ export function useAuth(requiredRole?: UserRole) {
 
     initializeAuth();
 
+    // Set up auth state listener
+    authListener = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      console.log('Auth state changed:', event, newSession);
+      setSession(newSession);
+
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        setUser(newSession.user);
+        
+        // First set role from metadata for immediate UI update
+        const initialRole = getRoleFromUserMetadata(newSession.user);
+        if (initialRole) {
+          setUserRole(initialRole);
+        }
+        
+        // Then fetch or create profile in background
+        setTimeout(async () => {
+          try {
+            const profile = await fetchUserProfile(newSession.user.id);
+            if (profile && profile.role && mounted) {
+              console.log('Setting user role from auth state change:', profile.role);
+              setUserRole(profile.role);
+            }
+          } catch (profileErr) {
+            console.error('Error loading profile after sign in:', profileErr);
+            // Keep using role from metadata
+          }
+        }, 0);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserRole(null);
+      }
+    });
+
     return () => {
       mounted = false;
       if (authListener?.data.subscription) {
         authListener.data.subscription.unsubscribe();
       }
     };
-  }, [toast, fetchUserProfile, userRole]);
+  }, [toast, fetchUserProfile]);
 
   // Check if user has required role
   const hasRequiredRole = useCallback(() => {
@@ -268,7 +261,6 @@ export function useAuth(requiredRole?: UserRole) {
     handleSignOut,
     isAdmin: userRole === 'admin',
     isSupplier: userRole === 'supplier',
-    isInitialized,
-    loadAttempts
+    isInitialized
   };
 }
