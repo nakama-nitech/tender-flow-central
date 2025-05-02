@@ -39,6 +39,10 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     setLoginForm
   } = useRegisterForm(setSearchParams);
   
+  // Debug log to confirm checkEmailExists is available
+  console.log("[MultiStepRegistrationForm] checkEmailExists function exists:", 
+              !!checkEmailExists, typeof checkEmailExists);
+  
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
@@ -121,9 +125,6 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       }
     }
   };
-  
-  // Log to verify checkEmailExists function exists
-  console.log("[MultiStepRegistrationForm] checkEmailExists function:", typeof checkEmailExists);
   
   return (
     <div className="space-y-6">

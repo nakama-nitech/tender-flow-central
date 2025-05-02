@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,10 @@ export const RegistrationStep1: React.FC<RegistrationStep1Props> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  
+  // Debug log to confirm checkEmailExists is received
+  console.log("[RegistrationStep1] checkEmailExists function exists:", 
+              !!checkEmailExists, typeof checkEmailExists);
   
   const getFieldError = (field: string) => {
     return registerFormErrors[field] ? (
