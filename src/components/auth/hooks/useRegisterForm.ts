@@ -39,6 +39,9 @@ export const useRegisterForm = (
     isChecking 
   } = useEmailCheck();
   
+  // Log to verify checkEmailExists is available
+  console.log('[useRegisterForm] checkEmailExists available:', typeof checkEmailExists);
+  
   const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
   
   const { isSubmitting, handleRegisterSubmit } = useRegisterSubmit(
@@ -47,9 +50,6 @@ export const useRegisterForm = (
     setRegisterFormErrors,
     registerFormErrors
   );
-
-  // Log to verify checkEmailExists is available
-  console.log('[useRegisterForm] checkEmailExists available:', typeof checkEmailExists);
   
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
