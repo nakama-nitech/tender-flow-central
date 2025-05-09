@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Shield } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -26,6 +28,11 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, descrip
     }
   };
 
+  const handleAdminRedirect = () => {
+    setUserRole('admin');
+    navigate('/admin');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -42,15 +49,27 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, descrip
           </div>
         )}
         <Card className="w-full">
-          <CardHeader className="space-y-1">
+          <CardHeader className="space-y-1 px-6 py-4">
             <CardTitle className="text-2xl font-bold text-center">{title}</CardTitle>
             <CardDescription className="text-center">{description}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="pt-0">
             {children}
           </CardContent>
         </Card>
+        {isAdmin && userRole !== 'admin' && (
+          <div className="mt-4 flex justify-center">
+            <Button 
+              variant="secondary" 
+              className="flex items-center gap-2 bg-amber-600 text-white hover:bg-amber-700"
+              onClick={handleAdminRedirect}
+            >
+              <Shield className="h-4 w-4" />
+              <span>Switch to Admin Dashboard</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
-}; 
+};

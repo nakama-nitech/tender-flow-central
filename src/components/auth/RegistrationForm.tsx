@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegisterForm } from './hooks/useRegisterForm';
@@ -19,7 +20,7 @@ export const RegistrationForm = () => {
   } = useRegisterForm(undefined, navigate);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-6 px-4 py-6">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
