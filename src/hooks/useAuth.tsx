@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Database } from '@/integrations/supabase/types';
-import { useRoleManagement } from './useRoleManagement';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -12,13 +11,62 @@ const ADMIN_EMAILS = ['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com'];
 export function useAuth(requiredRole?: UserRole) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getRoleFromUserMetadata, ensureUserProfile } = useRoleManagement();
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  const getRoleFromUserMetadata = useCallback((user: any): UserRole | null => {
+    if (!user?.user_metadata) return null;
+    
+    // Check if user is in admin list
+    if (ADMIN_EMAILS.includes(user.email)) {
+      return 'admin';
+    }
+    
+    // Get role from metadata
+    return user.user_metadata.role || 'supplier';
+  }, []);
+
+  const ensureUserProfile = useCallback(async (userId: string, email: string): Promise<UserRole> => {
+    try {
+      // First try to get the user role directly
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_profile_role', { user_id: userId });
+      
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+        throw roleError;
+      }
+      
+      if (roleData) {
+        return roleData as UserRole;
+      }
+      
+      // If no role found, create a default profile
+      const role = ADMIN_EMAILS.includes(email) ? 'admin' : 'supplier';
+      
+      const { error: createError } = await supabase
+        .rpc('upsert_profile', {
+          user_id: userId,
+          user_role: role,
+          first_name: '',
+          last_name: ''
+        });
+
+      if (createError) {
+        console.error("Error creating profile:", createError);
+        throw createError;
+      }
+      
+      return role;
+    } catch (err) {
+      console.error("Error in ensureUserProfile:", err);
+      throw err;
+    }
+  }, []);
 
   // Handle sign out
   const handleSignOut = useCallback(async () => {
@@ -57,18 +105,12 @@ export function useAuth(requiredRole?: UserRole) {
 
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...');
         setIsLoading(true);
         setError(null);
 
         // Get current session
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          throw sessionError;
-        }
-
-        console.log('Current session:', currentSession);
+        if (sessionError) throw sessionError;
 
         if (currentSession?.user) {
           setSession(currentSession);
@@ -88,7 +130,6 @@ export function useAuth(requiredRole?: UserRole) {
             );
             
             if (mounted) {
-              console.log("Setting final user role:", finalRole);
               setUserRole(finalRole);
             }
           } catch (profileErr: any) {
@@ -105,14 +146,11 @@ export function useAuth(requiredRole?: UserRole) {
           }
         }
       } catch (err: any) {
-        console.error('Auth initialization error:', err);
         if (mounted) {
-          const errorMessage = err.message || "Failed to initialize authentication";
-          console.error('Setting error state:', errorMessage);
-          setError(errorMessage);
+          setError(err.message || "Failed to initialize authentication");
           toast({
             title: "Authentication Error",
-            description: errorMessage,
+            description: err.message || "Failed to authenticate user",
             variant: "destructive",
           });
         }
@@ -130,7 +168,6 @@ export function useAuth(requiredRole?: UserRole) {
     authListener = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
 
-      console.log('Auth state changed:', event, newSession);
       setSession(newSession);
 
       if (event === 'SIGNED_IN' && newSession?.user) {
@@ -143,22 +180,19 @@ export function useAuth(requiredRole?: UserRole) {
         }
         
         // Then ensure profile exists and get final role
-        setTimeout(async () => {
-          try {
-            const finalRole = await ensureUserProfile(
-              newSession.user.id,
-              newSession.user.email
-            );
-            
-            if (mounted) {
-              console.log('Setting user role from auth state change:', finalRole);
-              setUserRole(finalRole);
-            }
-          } catch (profileErr) {
-            console.error('Error loading profile after sign in:', profileErr);
-            // Keep using role from metadata
+        try {
+          const finalRole = await ensureUserProfile(
+            newSession.user.id,
+            newSession.user.email
+          );
+          
+          if (mounted) {
+            setUserRole(finalRole);
           }
-        }, 0);
+        } catch (profileErr) {
+          console.error('Error loading profile after sign in:', profileErr);
+          // Keep using role from metadata
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setUserRole(null);

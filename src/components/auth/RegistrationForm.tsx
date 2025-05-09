@@ -1,25 +1,11 @@
-import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRegisterForm } from './hooks/useRegisterForm';
-import { CompanyType, Category, CountryLocations } from './RegisterFormTypes';
-import { RegistrationStepIndicator } from './registration-steps/RegistrationStepIndicator';
-import { RegistrationStepTitle } from './registration-steps/RegistrationStepTitle';
-import { RegistrationStep1 } from './registration-steps/RegistrationStep1';
-import { RegistrationStep2 } from './registration-steps/RegistrationStep2';
-import { RegistrationStep3 } from './registration-steps/RegistrationStep3';
-import { RegistrationFormNavigation } from './registration-steps/RegistrationFormNavigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-
-interface RegistrationFormProps {
-  companyTypes: CompanyType[];
-  categories: Category[];
-  availableLocations: string[];
-  countryLocations: CountryLocations;
-}
 
 export const RegistrationForm = () => {
   const navigate = useNavigate();
