@@ -1,105 +1,123 @@
-
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 import { useEmailCheck } from './useEmailCheck';
 import { useFormValidation } from './useFormValidation';
 import { useRegisterSubmit } from './useRegisterSubmit';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-const initialFormState: RegisterFormState = {
+interface RegisterFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  phoneNumber: string;
+}
+
+const initialFormState: RegisterFormData = {
   email: '',
   password: '',
   confirmPassword: '',
-  companyType: '',
+  firstName: '',
+  lastName: '',
   companyName: '',
-  location: '',
-  country: 'Kenya',
-  contactName: '',
-  phoneNumber: '',
-  kraPin: '',
-  physicalAddress: '',
-  websiteUrl: '',
-  categoriesOfInterest: [],
-  supplyLocations: [],
-  agreeToTerms: false,
-  currentStep: 1  // Start at step 1
+  phoneNumber: ''
 };
 
 export const useRegisterForm = (
-  setSearchParams: React.Dispatch<React.SetStateAction<URLSearchParams>>,
-  navigate?: any // Make navigate optional
+  setSearchParams?: (params: URLSearchParams) => void,
+  navigate?: (path: string) => void
 ) => {
-  const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialFormState);
-  const [loginForm, setLoginForm] = useState<{ email: string; password: string }>({ email: '', password: '' });
-  
-  // Get email check functionality from our custom hook
-  const { 
-    emailAlreadyExists, 
-    setEmailAlreadyExists, 
-    checkEmailExists, 
-    isChecking 
-  } = useEmailCheck();
-  
-  // Log to verify checkEmailExists is available
-  console.log('[useRegisterForm] checkEmailExists available:', typeof checkEmailExists);
-  
-  const { registerFormErrors, setRegisterFormErrors, validateRegisterForm } = useFormValidation();
-  
-  const { isSubmitting, handleRegisterSubmit } = useRegisterSubmit(
-    setSearchParams,
-    setLoginForm,
-    setRegisterFormErrors,
-    registerFormErrors
-  );
-  
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Debug check - ensure the function exists
-    console.log("[useRegisterForm] onSubmit: checkEmailExists available:", typeof checkEmailExists);
-    
-    // Only check email if we have one
-    if (registerForm.email && typeof checkEmailExists === 'function') {
-      try {
-        const emailExists = await checkEmailExists(registerForm.email);
-        
-        // If email exists, don't proceed with form validation and submission
-        if (emailExists) {
-          console.log("[useRegisterForm] Email exists, stopping submission");
-          setRegisterFormErrors({
-            ...registerFormErrors,
-            email: 'Email is already registered'
-          });
-          return;
-        }
-      } catch (error) {
-        console.error("[useRegisterForm] Error checking email:", error);
-        // Continue with form submission even if email check fails
-      }
+  const [formData, setFormData] = useState<RegisterFormData>(initialFormState);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { checkEmailExists, isChecking } = useEmailCheck();
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
+  }, []);
+
+  const validateForm = useCallback(() => {
+    if (!formData.email || !formData.password || !formData.confirmPassword) {
+      setError('All fields are required');
+      return false;
     }
-    
-    if (!validateRegisterForm(registerForm)) {
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return false;
+    }
+
+    return true;
+  }, [formData]);
+
+  const onSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!validateForm()) {
       return;
     }
-    
-    // Store the form state in window for access in the submit handler
-    window.registerFormState = registerForm;
-    
-    await handleRegisterSubmit(e);
-  };
+
+    try {
+      setIsLoading(true);
+
+      // Check if email exists
+      const emailExists = await checkEmailExists(formData.email);
+      if (emailExists) {
+        setError('Email already registered. Please use a different email or try logging in.');
+        return;
+      }
+
+      // Proceed with registration
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            company_name: formData.companyName,
+            phone_number: formData.phoneNumber
+          }
+        }
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      toast.success('Registration successful! Please check your email to verify your account.');
+      setFormData(initialFormState);
+
+      // Navigate to login page if navigation is available
+      if (navigate) {
+        navigate('/login');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred during registration');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [formData, validateForm, checkEmailExists, navigate]);
 
   return {
-    registerForm,
-    setRegisterForm,
-    registerFormErrors,
-    setRegisterFormErrors,
-    emailAlreadyExists,
-    setEmailAlreadyExists,
-    isSubmitting,
-    checkEmailExists,
-    isChecking,
-    loginForm,
-    setLoginForm,
-    handleRegisterSubmit: onSubmit
+    formData,
+    handleChange,
+    onSubmit,
+    isLoading,
+    error,
+    isChecking
   };
 };
 

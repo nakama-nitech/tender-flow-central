@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useRegisterForm } from './hooks/useRegisterForm';
@@ -9,6 +8,11 @@ import { RegistrationStep1 } from './registration-steps/RegistrationStep1';
 import { RegistrationStep2 } from './registration-steps/RegistrationStep2';
 import { RegistrationStep3 } from './registration-steps/RegistrationStep3';
 import { RegistrationFormNavigation } from './registration-steps/RegistrationFormNavigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 interface RegistrationFormProps {
   companyTypes: CompanyType[];
@@ -17,203 +21,137 @@ interface RegistrationFormProps {
   countryLocations: CountryLocations;
 }
 
-export const RegistrationForm: React.FC<RegistrationFormProps> = ({ 
-  companyTypes, 
-  categories, 
-  availableLocations,
-  countryLocations
-}) => {
-  const [searchParams, setSearchParams] = useSearchParams();
+export const RegistrationForm = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  
   const {
-    registerForm,
-    setRegisterForm,
-    registerFormErrors,
-    setRegisterFormErrors,
-    emailAlreadyExists,
-    setEmailAlreadyExists,
-    isSubmitting,
-    checkEmailExists,
-    isChecking,
-    handleRegisterSubmit,
-    loginForm,
-    setLoginForm
-  } = useRegisterForm(setSearchParams, navigate);
-
-  // Debug log to confirm checkEmailExists is available
-  console.log('[RegistrationForm] checkEmailExists is available:', typeof checkEmailExists);
-
-  const validateStep = (step: number) => {
-    const errors: Record<string, string> = {};
-    
-    if (step === 1) {
-      // Email validation
-      if (!registerForm.email) {
-        errors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(registerForm.email)) {
-        errors.email = 'Please enter a valid email address';
-      }
-      
-      // Password validation
-      if (!registerForm.password) {
-        errors.password = 'Password is required';
-      } else if (registerForm.password.length < 6) {
-        errors.password = 'Password must be at least 6 characters long';
-      }
-      
-      // Confirm password
-      if (!registerForm.confirmPassword) {
-        errors.confirmPassword = 'Please confirm your password';
-      } else if (registerForm.password !== registerForm.confirmPassword) {
-        errors.confirmPassword = 'Passwords do not match';
-      }
-    } else if (step === 2) {
-      // Company type validation
-      if (!registerForm.companyType) {
-        errors.companyType = 'Please select a company type';
-      }
-      
-      // Company name validation
-      if (!registerForm.companyName) {
-        errors.companyName = 'Company name is required';
-      }
-      
-      // Location validation
-      if (!registerForm.location) {
-        errors.location = 'Location is required';
-      }
-      
-      // KRA PIN validation
-      if (!registerForm.kraPin) {
-        errors.kraPin = 'KRA PIN is required';
-      }
-    } else if (step === 3) {
-      // Contact name validation
-      if (!registerForm.contactName) {
-        errors.contactName = 'Contact name is required';
-      }
-      
-      // Phone number validation
-      if (!registerForm.phoneNumber) {
-        errors.phoneNumber = 'Phone number is required';
-      } else if (!/^\d+$/.test(registerForm.phoneNumber)) {
-        errors.phoneNumber = 'Phone number must contain only digits';
-      }
-      
-      // Categories validation
-      if (registerForm.categoriesOfInterest.length === 0) {
-        errors.categoriesOfInterest = 'Please select at least one category';
-      }
-      
-      // Terms validation
-      if (!registerForm.agreeToTerms) {
-        errors.agreeToTerms = 'You must agree to the terms and conditions';
-      }
-    }
-    
-    setRegisterFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleNextStep = async () => {
-    if (currentStep === 1) {
-      // Check if email exists before proceeding to next step
-      if (typeof checkEmailExists === 'function' && registerForm.email) {
-        try {
-          console.log("[RegistrationForm] Checking email existence");
-          const emailExists = await checkEmailExists(registerForm.email);
-          if (emailExists) {
-            console.log("[RegistrationForm] Email exists, not proceeding");
-            return; // Don't proceed if email exists
-          }
-        } catch (error) {
-          console.error("[RegistrationForm] Error checking email:", error);
-          // Continue anyway if check fails
-        }
-      } else {
-        console.warn("[RegistrationForm] checkEmailExists not available or email empty");
-      }
-    }
-    
-    const isValid = validateStep(currentStep);
-    if (isValid) {
-      setCurrentStep(currentStep + 1);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  const handlePreviousStep = () => {
-    setCurrentStep(currentStep - 1);
-    window.scrollTo(0, 0);
-  };
-
-  const submitForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    const isValid = validateStep(currentStep);
-    if (isValid) {
-      handleRegisterSubmit(e);
-    }
-  };
-
-  const renderCurrentStep = () => {
-    switch(currentStep) {
-      case 1:
-        return (
-          <RegistrationStep1
-            registerForm={registerForm}
-            setRegisterForm={setRegisterForm}
-            registerFormErrors={registerFormErrors}
-            setRegisterFormErrors={setRegisterFormErrors}
-            emailAlreadyExists={emailAlreadyExists}
-            setEmailAlreadyExists={setEmailAlreadyExists}
-            checkEmailExists={checkEmailExists}
-            loginForm={loginForm}
-            setLoginForm={setLoginForm}
-            setSearchParams={setSearchParams}
-          />
-        );
-      case 2:
-        return (
-          <RegistrationStep2
-            registerForm={registerForm}
-            setRegisterForm={setRegisterForm}
-            registerFormErrors={registerFormErrors}
-            setRegisterFormErrors={setRegisterFormErrors}
-            companyTypes={companyTypes}
-            countryLocations={countryLocations}
-          />
-        );
-      case 3:
-        return (
-          <RegistrationStep3
-            registerForm={registerForm}
-            setRegisterForm={setRegisterForm}
-            registerFormErrors={registerFormErrors}
-            setRegisterFormErrors={setRegisterFormErrors}
-            categories={categories}
-            availableLocations={availableLocations}
-          />
-        );
-      default:
-        return null;
-    }
-  };
+    formData,
+    handleChange,
+    onSubmit,
+    isLoading,
+    error,
+    isChecking
+  } = useRegisterForm(undefined, navigate);
 
   return (
-    <form onSubmit={submitForm}>
-      <RegistrationStepIndicator currentStep={currentStep} />
-      <RegistrationStepTitle currentStep={currentStep} />
-      {renderCurrentStep()}
-      <RegistrationFormNavigation 
-        currentStep={currentStep}
-        handlePreviousStep={handlePreviousStep}
-        handleNextStep={handleNextStep}
-        isSubmitting={isSubmitting}
-        emailAlreadyExists={emailAlreadyExists}
-        setSearchParams={setSearchParams}
-      />
+    <form onSubmit={onSubmit} className="space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Enter your email"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Enter your password"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          placeholder="Confirm your password"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="firstName">First Name</Label>
+        <Input
+          id="firstName"
+          name="firstName"
+          type="text"
+          value={formData.firstName}
+          onChange={handleChange}
+          placeholder="Enter your first name"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="lastName">Last Name</Label>
+        <Input
+          id="lastName"
+          name="lastName"
+          type="text"
+          value={formData.lastName}
+          onChange={handleChange}
+          placeholder="Enter your last name"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="companyName">Company Name</Label>
+        <Input
+          id="companyName"
+          name="companyName"
+          type="text"
+          value={formData.companyName}
+          onChange={handleChange}
+          placeholder="Enter your company name"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phoneNumber">Phone Number</Label>
+        <Input
+          id="phoneNumber"
+          name="phoneNumber"
+          type="tel"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          placeholder="Enter your phone number"
+          required
+          disabled={isLoading || isChecking}
+        />
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading || isChecking}
+      >
+        {(isLoading || isChecking) ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {isChecking ? 'Checking email...' : 'Registering...'}
+          </>
+        ) : (
+          'Register'
+        )}
+      </Button>
     </form>
   );
 };
