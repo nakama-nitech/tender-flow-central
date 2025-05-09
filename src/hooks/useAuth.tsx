@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Database } from '@/integrations/supabase/types';
+import { useRoleManagement } from './useRoleManagement';
 
 type UserRole = Database['public']['Enums']['user_role'];
 
@@ -11,85 +12,13 @@ const ADMIN_EMAILS = ['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com'];
 export function useAuth(requiredRole?: UserRole) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getRoleFromUserMetadata, ensureUserProfile } = useRoleManagement();
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [session, setSession] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // Get role directly from user metadata if available
-  const getRoleFromUserMetadata = (user: any): UserRole | null => {
-    if (user?.email && ADMIN_EMAILS.includes(user.email)) {
-      return 'admin';
-    }
-    
-    // Check user_metadata first
-    const metadataRole = user?.user_metadata?.role;
-    if (metadataRole) {
-      return metadataRole as UserRole;
-    }
-    
-    return 'supplier'; // Default role
-  };
-
-  // Fetch user profile with fallback to user metadata
-  const fetchUserProfile = useCallback(async (userId: string) => {
-    try {
-      console.log('Attempting to get role using RPC function');
-      
-      // Try to get role using the RPC function as it's more reliable
-      const { data: roleData, error: roleError } = await supabase
-        .rpc('get_profile_role', { user_id: userId });
-      
-      if (roleError) {
-        console.warn("RPC function error:", roleError);
-        throw roleError;
-      }
-      
-      if (roleData) {
-        console.log("Role obtained from RPC:", roleData);
-        return {
-          id: userId,
-          role: roleData as UserRole,
-        };
-      }
-      
-      throw new Error("Role not found via RPC");
-    } catch (err) {
-      console.warn("Error fetching profile with RPC:", err);
-      
-      // Fallback to user metadata
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        const role = getRoleFromUserMetadata(userData.user);
-        console.log("Using role from metadata:", role);
-        
-        // Try to create profile if it doesn't exist
-        try {
-          await supabase.rpc('upsert_profile', {
-            user_id: userId,
-            user_role: role || 'supplier',
-            first_name: userData.user.user_metadata?.first_name || '',
-            last_name: userData.user.user_metadata?.last_name || ''
-          });
-          console.log("Profile created/updated via RPC");
-        } catch (createErr) {
-          console.error("Error creating profile via RPC:", createErr);
-        }
-        
-        return {
-          id: userId,
-          role: role as UserRole,
-        };
-      }
-      
-      return {
-        id: userId,
-        role: 'supplier' as UserRole, // Default fallback
-      };
-    }
-  }, []);
 
   // Handle sign out
   const handleSignOut = useCallback(async () => {
@@ -152,14 +81,15 @@ export function useAuth(requiredRole?: UserRole) {
               setUserRole(initialRole);
             }
             
-            // Then try to fetch or create profile
-            const profile = await fetchUserProfile(currentSession.user.id);
-            if (profile && profile.role) {
-              console.log("Setting final user role:", profile.role);
-              setUserRole(profile.role);
-            } else {
-              console.error('No role returned after profile fetch');
-              // Keep using the role from metadata
+            // Then ensure profile exists and get final role
+            const finalRole = await ensureUserProfile(
+              currentSession.user.id,
+              currentSession.user.email
+            );
+            
+            if (mounted) {
+              console.log("Setting final user role:", finalRole);
+              setUserRole(finalRole);
             }
           } catch (profileErr: any) {
             console.error('Profile loading error:', profileErr);
@@ -212,13 +142,17 @@ export function useAuth(requiredRole?: UserRole) {
           setUserRole(initialRole);
         }
         
-        // Then fetch or create profile in background
+        // Then ensure profile exists and get final role
         setTimeout(async () => {
           try {
-            const profile = await fetchUserProfile(newSession.user.id);
-            if (profile && profile.role && mounted) {
-              console.log('Setting user role from auth state change:', profile.role);
-              setUserRole(profile.role);
+            const finalRole = await ensureUserProfile(
+              newSession.user.id,
+              newSession.user.email
+            );
+            
+            if (mounted) {
+              console.log('Setting user role from auth state change:', finalRole);
+              setUserRole(finalRole);
             }
           } catch (profileErr) {
             console.error('Error loading profile after sign in:', profileErr);
@@ -237,7 +171,7 @@ export function useAuth(requiredRole?: UserRole) {
         authListener.data.subscription.unsubscribe();
       }
     };
-  }, [toast, fetchUserProfile]);
+  }, [toast, getRoleFromUserMetadata, ensureUserProfile]);
 
   // Check if user has required role
   const hasRequiredRole = useCallback(() => {

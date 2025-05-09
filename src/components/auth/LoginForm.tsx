@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const LoginForm = () => {
   const navigate = useNavigate();
@@ -50,26 +50,6 @@ export const LoginForm = () => {
         description: "Redirecting to your dashboard...",
       });
       
-      // Check if this is a known admin to ensure they get proper access
-      const adminEmails = ['jeffmnjogu@gmail.com', 'astropeter42@yahoo.com'];
-      
-      if (adminEmails.includes(loginForm.email)) {
-        // For admin emails, update user_metadata to ensure admin role
-        try {
-          await supabase.auth.updateUser({
-            data: { role: 'admin' }
-          });
-          console.log("Updated user metadata with admin role");
-          
-          // Redirect admin users directly to the admin dashboard
-          navigate('/admin', { replace: true });
-          return;
-        } catch (metadataError) {
-          console.warn("Couldn't update user metadata:", metadataError);
-          // Continue with the regular redirect
-        }
-      }
-      
       // Redirect to the handler which will determine where to send the user based on their role
       navigate('/redirect', { replace: true });
       
@@ -77,15 +57,21 @@ export const LoginForm = () => {
       console.error("Login error:", error);
       
       // Handle specific error cases
+      let errorMessage = "An error occurred during login. Please try again.";
+      
       if (error.message.includes('Invalid login credentials')) {
-        setLoginError("Invalid email or password. Please try again.");
-      } else {
-        setLoginError(error.message || "Please check your credentials and try again");
+        errorMessage = "Invalid email or password. Please check your credentials and try again.";
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = "Please verify your email address before logging in.";
+      } else if (error.message.includes('Too many requests')) {
+        errorMessage = "Too many login attempts. Please try again later.";
       }
+      
+      setLoginError(errorMessage);
       
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -154,9 +140,9 @@ export const LoginForm = () => {
         </div>
         
         {loginError && (
-          <div className="text-sm text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-200">
-            {loginError}
-          </div>
+          <Alert variant="destructive" className="mt-2">
+            <AlertDescription>{loginError}</AlertDescription>
+          </Alert>
         )}
       </CardContent>
       
