@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, FileText, Users, Settings, Menu, X, PlusCircle, Store, LogOut, Shield } from 'lucide-react';
+import { Home, FileText, Users, Settings, Menu, X, PlusCircle, Store, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, handleSignOut, setUserRole } = useAuth();
+  const { user, handleSignOut } = useAuth();
   
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/admin' },
@@ -51,12 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Function to switch to supplier dashboard
   const switchToSupplier = () => {
-    setUserRole('supplier');
     navigate('/supplier/dashboard');
-    toast({
-      title: "Supplier Dashboard",
-      description: "Switched to supplier dashboard view",
-    });
   };
 
   return (
@@ -134,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={switchToSupplier}
           >
             <Store className="mr-2 h-4 w-4" />
-            <span className={cn(!isOpen && "md:hidden")}>Switch to Supplier</span>
+            <span className={cn(!isOpen && "md:hidden")}>Supplier View</span>
           </Button>
           
           <Button 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, FileText, DollarSign, Upload, Calendar, CheckCircle2, AlertCircle, Save, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tender, TenderDocument } from '@/types/tender';
-import { RequireCompanyProfile } from '@/components/supplier/RequireCompanyProfile';
 
 // Mock data for the selected tender
 const mockTenderDetails: Record<string, Tender> = {
@@ -69,7 +69,7 @@ const mockTenderDetails: Record<string, Tender> = {
   }
 };
 
-const BidPreparationContent: React.FC = () => {
+const BidPreparation: React.FC = () => {
   const { tenderId } = useParams<{ tenderId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -647,14 +647,6 @@ const BidPreparationContent: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-const BidPreparation: React.FC = () => {
-  return (
-    <RequireCompanyProfile>
-      <BidPreparationContent />
-    </RequireCompanyProfile>
   );
 };
 

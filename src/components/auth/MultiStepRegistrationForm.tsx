@@ -39,6 +39,10 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
     setLoginForm
   } = useRegisterForm(setSearchParams);
   
+  // Debug log to confirm checkEmailExists is available
+  console.log("[MultiStepRegistrationForm] checkEmailExists function exists:", 
+              !!checkEmailExists, typeof checkEmailExists);
+  
   // Calculate progress percentage
   const progressPercentage = ((registerForm.currentStep) / 3) * 100;
   
@@ -57,7 +61,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
       setRegisterFormErrors(errors);
       
       // Check if email exists before proceeding
-      if (registerForm.email && !errors.email && checkEmailExists) {
+      if (registerForm.email && !errors.email && typeof checkEmailExists === 'function') {
         try {
           console.log("[MultiStepRegistrationForm] About to check email existence");
           const exists = await checkEmailExists(registerForm.email);

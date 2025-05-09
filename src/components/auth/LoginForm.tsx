@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -94,7 +93,7 @@ export const LoginForm = () => {
 
   return (
     <form onSubmit={handleLoginSubmit} className="space-y-6">
-      <CardContent className="space-y-6 pt-6 px-6">
+      <CardContent className="space-y-6 pt-6">
         {loginError && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{loginError}</AlertDescription>
@@ -143,7 +142,7 @@ export const LoginForm = () => {
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-col space-y-4 px-6 pb-6">
+      <CardFooter className="flex flex-col space-y-4">
         <Button
           type="submit"
           className="w-full"

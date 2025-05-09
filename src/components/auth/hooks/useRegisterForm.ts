@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { RegisterFormState, RegisterFormErrors } from '../types/formTypes';
 import { useEmailCheck } from './useEmailCheck';
@@ -27,27 +26,6 @@ const initialFormState: RegisterFormData = {
   phoneNumber: ''
 };
 
-const initialRegisterFormState: RegisterFormState = {
-  email: '',
-  password: '',
-  confirmPassword: '',
-  companyType: '',
-  companyName: '',
-  location: '',
-  country: '',
-  contactName: '',
-  phoneNumber: '',
-  kraPin: '',
-  physicalAddress: '',
-  websiteUrl: '',
-  categoriesOfInterest: [],
-  supplyLocations: [],
-  agreeToTerms: false,
-  currentStep: 1
-};
-
-const initialRegisterFormErrors: RegisterFormErrors = {};
-
 export const useRegisterForm = (
   setSearchParams?: (params: URLSearchParams) => void,
   navigate?: (path: string) => void
@@ -55,38 +33,7 @@ export const useRegisterForm = (
   const [formData, setFormData] = useState<RegisterFormData>(initialFormState);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // MultiStepRegistrationForm related states
-  const [registerForm, setRegisterForm] = useState<RegisterFormState>(initialRegisterFormState);
-  const [registerFormErrors, setRegisterFormErrors] = useState<RegisterFormErrors>(initialRegisterFormErrors);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { 
-    emailAlreadyExists, 
-    setEmailAlreadyExists, 
-    checkEmailExists, 
-    isChecking 
-  } = useEmailCheck();
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Registration submission logic
-    setIsSubmitting(true);
-    
-    try {
-      // Submit registration
-      console.log("Form submitted");
-      setIsSubmitting(false);
-      
-      if (navigate) {
-        navigate('/supplier/dashboard');
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      setIsSubmitting(false);
-    }
-  };
+  const { checkEmailExists, isChecking } = useEmailCheck();
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -125,13 +72,10 @@ export const useRegisterForm = (
       setIsLoading(true);
 
       // Check if email exists
-      if (checkEmailExists) {
-        const emailExists = await checkEmailExists(formData.email);
-        if (emailExists) {
-          setError('Email already registered. Please use a different email or try logging in.');
-          setIsLoading(false);
-          return;
-        }
+      const emailExists = await checkEmailExists(formData.email);
+      if (emailExists) {
+        setError('Email already registered. Please use a different email or try logging in.');
+        return;
       }
 
       // Proceed with registration
@@ -168,25 +112,12 @@ export const useRegisterForm = (
   }, [formData, validateForm, checkEmailExists, navigate]);
 
   return {
-    // Original props
     formData,
     handleChange,
     onSubmit,
     isLoading,
     error,
-    isChecking,
-    
-    // Added props for MultiStepRegistrationForm
-    registerForm,
-    setRegisterForm,
-    registerFormErrors,
-    setRegisterFormErrors,
-    emailAlreadyExists,
-    isSubmitting,
-    handleRegisterSubmit,
-    checkEmailExists,
-    loginForm,
-    setLoginForm
+    isChecking
   };
 };
 
