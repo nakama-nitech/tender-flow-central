@@ -17,6 +17,7 @@ import { ArrowUpRight, DollarSign, FileText, Calendar, Upload, Send } from 'luci
 import { format } from 'date-fns';
 import { Tender } from '@/types/tender';
 import { cn } from '@/lib/utils';
+import { RequireCompanyProfile } from '@/components/supplier/RequireCompanyProfile';
 
 const activeTenders: Tender[] = [
   {
@@ -51,7 +52,7 @@ const activeTenders: Tender[] = [
   }
 ];
 
-const BidSubmission: React.FC = () => {
+const BidSubmissionContent: React.FC = () => {
   const { toast } = useToast();
   const [selectedTenderId, setSelectedTenderId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
@@ -268,6 +269,14 @@ const BidSubmission: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const BidSubmission: React.FC = () => {
+  return (
+    <RequireCompanyProfile>
+      <BidSubmissionContent />
+    </RequireCompanyProfile>
   );
 };
 

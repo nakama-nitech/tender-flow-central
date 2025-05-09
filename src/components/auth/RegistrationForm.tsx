@@ -20,7 +20,7 @@ export const RegistrationForm = () => {
   } = useRegisterForm(undefined, navigate);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6 px-4 py-6">
+    <form onSubmit={onSubmit} className="space-y-6 px-6 py-8">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
