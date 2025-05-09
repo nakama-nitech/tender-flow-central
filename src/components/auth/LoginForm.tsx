@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,9 +60,13 @@ export const LoginForm = () => {
             data: { role: 'admin' }
           });
           console.log("Updated user metadata with admin role");
+          
+          // Redirect admin users directly to the admin dashboard
+          navigate('/admin', { replace: true });
+          return;
         } catch (metadataError) {
           console.warn("Couldn't update user metadata:", metadataError);
-          // Continue anyway, we'll handle this in the redirect handler
+          // Continue with the regular redirect
         }
       }
       
@@ -101,9 +105,9 @@ export const LoginForm = () => {
 
   return (
     <form onSubmit={handleLoginSubmit}>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5 pt-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <Input 
             id="email" 
             type="email" 
@@ -111,14 +115,14 @@ export const LoginForm = () => {
             value={loginForm.email}
             onChange={handleInputChange}
             required
-            className={`border-primary/20 focus:border-primary ${loginError ? 'border-red-500' : ''}`}
+            className={`border-primary/20 focus:border-primary ${loginError ? 'border-red-500' : ''} transition-all duration-200`}
             disabled={isSubmitting}
           />
         </div>
         
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
             <a href="#" className="text-xs text-primary hover:underline">
               Forgot password?
             </a>
@@ -131,7 +135,7 @@ export const LoginForm = () => {
               value={loginForm.password}
               onChange={handleInputChange}
               required
-              className={`border-primary/20 focus:border-primary pr-10 ${loginError ? 'border-red-500' : ''}`}
+              className={`border-primary/20 focus:border-primary pr-10 ${loginError ? 'border-red-500' : ''} transition-all duration-200`}
               disabled={isSubmitting}
             />
             <button 
@@ -150,14 +154,16 @@ export const LoginForm = () => {
         </div>
         
         {loginError && (
-          <div className="text-sm text-red-500 mt-2">{loginError}</div>
+          <div className="text-sm text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-200">
+            {loginError}
+          </div>
         )}
       </CardContent>
       
-      <CardFooter className="flex flex-col">
+      <CardFooter className="flex flex-col pt-2">
         <Button 
           type="submit" 
-          className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700" 
+          className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700 group" 
           disabled={isSubmitting}
         >
           {isSubmitting ? (
@@ -165,7 +171,12 @@ export const LoginForm = () => {
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
               Logging in...
             </>
-          ) : "Login"}
+          ) : (
+            <>
+              <LogIn className="mr-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:scale-110" />
+              Login
+            </>
+          )}
         </Button>
       </CardFooter>
     </form>

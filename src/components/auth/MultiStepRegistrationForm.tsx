@@ -67,6 +67,8 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
           const exists = await checkEmailExists(registerForm.email);
           if (exists) {
             console.log("[MultiStepRegistrationForm] Email exists, preventing next step");
+            errors.email = 'Email is already registered';
+            setRegisterFormErrors(errors);
             canProceed = false;
           }
         } catch (error) {
@@ -75,7 +77,7 @@ export const MultiStepRegistrationForm: React.FC<MultiStepRegistrationFormProps>
         }
       }
       
-      canProceed = canProceed && Object.keys(errors).length === 0 && !emailAlreadyExists;
+      canProceed = canProceed && Object.keys(errors).length === 0;
     }
     
     if (registerForm.currentStep === 2) {

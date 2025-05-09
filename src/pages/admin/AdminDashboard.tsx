@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useTenderList } from '../../hooks/useTenderList';
@@ -8,25 +8,25 @@ const AdminDashboard: React.FC = () => {
   const { isLoading: authLoading, error: authError, isAdmin } = useAuth('admin');
   const navigate = useNavigate();
   const { tenders, isLoading: tendersLoading, error: tendersError } = useTenderList();
-  const [dashboardLoading, setDashboardLoading] = useState(true);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading) {
-      setDashboardLoading(false);
-    }
-    if (authError) {
-      setDashboardError(authError);
-    }
-    
-    // Redirect if not admin
-    if (!isAdmin) {
-      navigate('/auth');
-    }
-  }, [authLoading, authError, isAdmin, navigate]);
+      // Redirect if not admin
+      if (!isAdmin) {
+        navigate('/auth');
+        return;
+      }
 
+      // Redirect to tenders list (as this is just an empty route handler)
+      navigate('/admin/tenders');
+    }
+  }, [authLoading, isAdmin, navigate]);
+
+  // Render loading state while we redirect
   return (
-    <div>Admin Dashboard</div>
+    <div className="flex items-center justify-center h-full">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+    </div>
   );
 };
 
