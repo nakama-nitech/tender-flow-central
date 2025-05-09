@@ -2,17 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Extended RPC functions interface
 interface RPCFunctions {
@@ -42,11 +42,17 @@ interface RPCFunctions {
 // Extend the supabase client's rpc method to include our custom functions
 declare module '@supabase/supabase-js' {
   interface SupabaseClient<Database> {
-    rpc<
-      FunctionName extends keyof RPCFunctions
-    >(
-      fn: FunctionName,
-      args?: Parameters<RPCFunctions[FunctionName]>[0]
-    ): Promise<{ data: any; error: any }>;
+    rpc<T = any>(
+      fn: string,
+      params?: Record<string, unknown>,
+      options?: {
+        count?: 'exact' | 'planned' | 'estimated';
+        head?: boolean;
+      }
+    ): Promise<{
+      data: T;
+      error: Error | null;
+      count: number | null;
+    }>;
   }
 }
