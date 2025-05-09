@@ -22,7 +22,7 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, handleSignOut, isAdmin } = useAuth('supplier');
+  const { user, handleSignOut, isAdmin, setUserRole } = useAuth('supplier');
   
   const menuItems = [
     { id: 'dashboard', name: 'Dashboard', icon: Home, path: '/supplier/dashboard' },
@@ -53,6 +53,7 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
 
   // Function to switch to admin dashboard if user has admin privileges
   const switchToAdmin = () => {
+    setUserRole('admin');
     navigate('/admin');
     toast({
       title: "Admin Dashboard",
@@ -136,7 +137,7 @@ const SupplierSidebar: React.FC<SupplierSidebarProps> = ({
               onClick={switchToAdmin}
             >
               <Shield className="mr-2 h-4 w-4" />
-              <span className={cn(!isOpen && "md:hidden")}>Admin Dashboard</span>
+              <span className={cn(!isOpen && "md:hidden")}>Switch to Admin</span>
             </Button>
           )}
           
