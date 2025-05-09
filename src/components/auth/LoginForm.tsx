@@ -92,53 +92,57 @@ export const LoginForm = () => {
   };
 
   return (
-    <form onSubmit={handleLoginSubmit}>
-      <CardContent className="space-y-4">
+    <form onSubmit={handleLoginSubmit} className="space-y-6">
+      <CardContent className="space-y-6 pt-6">
         {loginError && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="mb-4">
             <AlertDescription>{loginError}</AlertDescription>
           </Alert>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={loginForm.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            required
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
             <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={loginForm.password}
+              id="email"
+              name="email"
+              type="email"
+              value={loginForm.email}
               onChange={handleChange}
-              placeholder="Enter your password"
+              placeholder="Enter your email"
               required
               disabled={isSubmitting}
+              className="w-full"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={loginForm.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+                disabled={isSubmitting}
+                className="w-full"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="flex flex-col space-y-4">
         <Button
           type="submit"
           className="w-full"

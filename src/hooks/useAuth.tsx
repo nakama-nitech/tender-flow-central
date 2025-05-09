@@ -219,6 +219,44 @@ export function useAuth(requiredRole?: UserRole) {
     return userRole === requiredRole;
   }, [requiredRole, userRole]);
 
+  // Add setUserRole function
+  const updateUserRole = useCallback(async (newRole: UserRole) => {
+    if (!user) return;
+    
+    try {
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { role: newRole }
+      });
+      
+      if (updateError) throw updateError;
+      
+      // Update profile in database
+      const { error: profileError } = await supabase
+        .rpc('upsert_profile', {
+          user_id: user.id,
+          user_role: newRole,
+          first_name: user.user_metadata.first_name || '',
+          last_name: user.user_metadata.last_name || ''
+        });
+      
+      if (profileError) throw profileError;
+      
+      setUserRole(newRole);
+      
+      toast({
+        title: "Role updated",
+        description: `Successfully switched to ${newRole} view`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Role update failed",
+        description: err.message || "Failed to update role",
+        variant: "destructive",
+      });
+    }
+  }, [user, toast]);
+
   return {
     user,
     userRole,
@@ -229,6 +267,7 @@ export function useAuth(requiredRole?: UserRole) {
     handleSignOut,
     isAdmin: userRole === 'admin',
     isSupplier: userRole === 'supplier',
-    isInitialized
+    isInitialized,
+    setUserRole: updateUserRole
   };
 }
